@@ -1,0 +1,584 @@
+2025-09-06 17:22:28,654 - INFO - Validation des données réussie
+2025-09-06 17:22:56,469 - INFO - Validation des données réussie
+2025-09-06 17:22:58,111 - INFO - Validation des données réussie
+2025-09-06 17:23:23,904 - INFO - Validation des données réussie
+2025-09-06 17:23:32,337 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 17:23:32,338 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 17:23:32,341 - INFO - État du système sauvegardé
+2025-09-06 17:23:32,341 - INFO - Sauvegarde créée: backup_manual_20250906_172332
+2025-09-06 17:23:40,478 - INFO - Validation des données réussie
+2025-09-06 17:23:48,347 - INFO - Validation des données réussie
+2025-09-06 17:23:56,717 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 17:23:56,718 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 17:23:56,720 - INFO - État du système sauvegardé
+2025-09-06 17:23:56,720 - INFO - Sauvegarde créée: backup_auto_20250906_172356
+2025-09-06 17:24:04,339 - INFO - Validation des données réussie
+2025-09-06 17:25:05,980 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 17:25:05,982 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 17:25:05,983 - INFO - État du système sauvegardé
+2025-09-06 17:25:05,984 - INFO - Sauvegarde créée: backup_manual_20250906_172505
+2025-09-06 17:25:15,012 - INFO - Validation des données réussie
+2025-09-06 17:25:30,404 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 17:25:30,405 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 17:25:30,406 - INFO - État du système sauvegardé
+2025-09-06 17:25:30,406 - INFO - Sauvegarde créée: backup_pre_restore_20250906_172530
+2025-09-06 17:25:30,408 - INFO - Fichier restauré: drinks.csv
+2025-09-06 17:25:30,409 - INFO - Fichier restauré: history.csv
+2025-09-06 17:25:30,409 - INFO - État du système sauvegardé
+2025-09-06 17:25:30,409 - INFO - Sauvegarde restaurée: backup_manual_20250906_172332
+2025-09-06 17:26:15,898 - INFO - État du système chargé
+2025-09-06 17:26:15,899 - INFO - Validation des données réussie
+2025-09-06 17:31:24,594 - INFO - État du système chargé
+2025-09-06 17:31:24,596 - INFO - Validation des données réussie
+2025-09-06 17:31:26,332 - INFO - État du système chargé
+2025-09-06 17:31:26,333 - INFO - Validation des données réussie
+2025-09-06 17:31:51,343 - INFO - État du système chargé
+2025-09-06 17:31:51,344 - INFO - Validation des données réussie
+2025-09-06 18:21:37,480 - INFO - État du système chargé
+2025-09-06 18:21:37,483 - INFO - Validation des données réussie
+2025-09-06 18:21:38,561 - INFO - État du système chargé
+2025-09-06 18:21:38,565 - INFO - Validation des données réussie
+2025-09-06 18:21:40,230 - INFO - État du système chargé
+2025-09-06 18:21:40,231 - INFO - Validation des données réussie
+2025-09-06 18:22:51,896 - INFO - État du système chargé
+2025-09-06 18:22:51,898 - INFO - Validation des données réussie
+2025-09-06 18:22:56,529 - INFO - État du système chargé
+2025-09-06 18:22:56,531 - INFO - Validation des données réussie
+2025-09-06 18:23:00,097 - INFO - État du système chargé
+2025-09-06 18:23:00,098 - INFO - Validation des données réussie
+2025-09-06 18:23:53,164 - INFO - Validation des données réussie
+2025-09-06 18:36:09,393 - INFO - État du système chargé
+2025-09-06 18:36:09,395 - INFO - Validation des données réussie
+2025-09-06 18:39:50,604 - INFO - État du système chargé
+2025-09-06 18:39:50,607 - INFO - Validation des données réussie
+2025-09-06 18:41:52,792 - INFO - État du système chargé
+2025-09-06 18:41:52,794 - INFO - Validation des données réussie
+2025-09-06 18:42:57,941 - INFO - Validation des données réussie
+2025-09-06 18:43:13,522 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 18:43:13,524 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 18:43:13,528 - INFO - État du système sauvegardé
+2025-09-06 18:43:13,529 - INFO - Sauvegarde créée: backup_auto_20250906_184313
+2025-09-06 18:43:28,030 - INFO - Validation des données réussie
+2025-09-06 18:46:05,201 - INFO - État du système chargé
+2025-09-06 18:46:05,203 - INFO - Validation des données réussie
+2025-09-06 18:47:24,815 - INFO - État du système chargé
+2025-09-06 18:47:24,816 - INFO - Validation des données réussie
+2025-09-06 18:55:35,490 - INFO - État du système chargé
+2025-09-06 18:55:35,493 - INFO - Validation des données réussie
+2025-09-06 18:56:30,120 - INFO - Validation des données réussie
+2025-09-06 18:56:39,090 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 18:56:39,092 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 18:56:39,094 - INFO - État du système sauvegardé
+2025-09-06 18:56:39,094 - INFO - Sauvegarde créée: backup_auto_20250906_185639
+2025-09-06 18:57:01,182 - INFO - Validation des données réussie
+2025-09-06 18:57:30,223 - INFO - Validation des données réussie
+2025-09-06 18:58:01,178 - INFO - Validation des données réussie
+2025-09-06 18:58:20,725 - INFO - État du système chargé
+2025-09-06 18:58:20,727 - INFO - Validation des données réussie
+2025-09-06 18:58:30,350 - INFO - Validation des données réussie
+2025-09-06 18:59:00,323 - INFO - Validation des données réussie
+2025-09-06 18:59:31,175 - INFO - Validation des données réussie
+2025-09-06 19:03:34,039 - INFO - État du système chargé
+2025-09-06 19:03:34,040 - INFO - Validation des données réussie
+2025-09-06 19:04:22,076 - INFO - Validation des données réussie
+2025-09-06 19:04:25,485 - INFO - Validation des données réussie
+2025-09-06 19:04:40,292 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:04:40,295 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:04:40,298 - INFO - État du système sauvegardé
+2025-09-06 19:04:40,300 - INFO - Sauvegarde créée: backup_auto_20250906_190440
+2025-09-06 19:04:56,823 - INFO - Validation des données réussie
+2025-09-06 19:05:26,823 - INFO - Validation des données réussie
+2025-09-06 19:05:56,800 - INFO - Validation des données réussie
+2025-09-06 19:06:17,135 - INFO - Validation des données réussie
+2025-09-06 19:06:19,101 - INFO - Validation des données réussie
+2025-09-06 19:06:49,405 - INFO - Validation des données réussie
+2025-09-06 19:07:19,173 - INFO - Validation des données réussie
+2025-09-06 19:07:49,162 - INFO - Validation des données réussie
+2025-09-06 19:08:19,177 - INFO - Validation des données réussie
+2025-09-06 19:08:49,221 - INFO - Validation des données réussie
+2025-09-06 19:09:19,243 - INFO - Validation des données réussie
+2025-09-06 19:09:40,356 - INFO - État du système chargé
+2025-09-06 19:09:40,357 - INFO - Validation des données réussie
+2025-09-06 19:10:22,411 - INFO - Validation des données réussie
+2025-09-06 19:10:31,981 - INFO - Validation des données réussie
+2025-09-06 19:10:53,969 - INFO - Validation des données réussie
+2025-09-06 19:11:26,314 - INFO - Validation des données réussie
+2025-09-06 19:11:27,252 - INFO - Validation des données réussie
+2025-09-06 19:11:35,237 - INFO - Validation des données réussie
+2025-09-06 19:11:45,027 - INFO - Validation des données réussie
+2025-09-06 19:11:47,392 - INFO - Validation des données réussie
+2025-09-06 19:12:18,194 - INFO - Validation des données réussie
+2025-09-06 19:12:27,262 - INFO - Validation des données réussie
+2025-09-06 19:12:48,187 - INFO - Validation des données réussie
+2025-09-06 19:13:18,181 - INFO - Validation des données réussie
+2025-09-06 19:13:27,231 - INFO - Validation des données réussie
+2025-09-06 19:13:48,164 - INFO - Validation des données réussie
+2025-09-06 19:13:49,157 - INFO - Validation des données réussie
+2025-09-06 19:14:18,230 - INFO - Validation des données réussie
+2025-09-06 19:14:19,215 - INFO - Validation des données réussie
+2025-09-06 19:14:48,261 - INFO - Validation des données réussie
+2025-09-06 19:15:27,183 - INFO - Validation des données réussie
+2025-09-06 19:15:27,214 - INFO - Validation des données réussie
+2025-09-06 19:15:49,553 - INFO - Validation des données réussie
+2025-09-06 19:15:56,604 - INFO - Validation des données réussie
+2025-09-06 19:16:25,106 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:16:25,107 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:16:25,119 - INFO - État du système sauvegardé
+2025-09-06 19:16:25,119 - INFO - Sauvegarde créée: backup_auto_20250906_191625
+2025-09-06 19:16:26,701 - INFO - Validation des données réussie
+2025-09-06 19:16:56,709 - INFO - Validation des données réussie
+2025-09-06 19:17:27,193 - INFO - Validation des données réussie
+2025-09-06 19:17:57,238 - INFO - Validation des données réussie
+2025-09-06 19:18:27,280 - INFO - Validation des données réussie
+2025-09-06 19:18:57,271 - INFO - Validation des données réussie
+2025-09-06 19:19:27,295 - INFO - Validation des données réussie
+2025-09-06 19:20:34,059 - INFO - Validation des données réussie
+2025-09-06 19:20:47,023 - INFO - Validation des données réussie
+2025-09-06 19:21:17,114 - INFO - Validation des données réussie
+2025-09-06 19:21:36,147 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:21:36,149 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:21:36,153 - INFO - État du système sauvegardé
+2025-09-06 19:21:36,154 - INFO - Sauvegarde créée: backup_auto_20250906_192136
+2025-09-06 19:21:47,138 - INFO - Validation des données réussie
+2025-09-06 19:22:17,319 - INFO - Validation des données réussie
+2025-09-06 19:22:50,757 - INFO - Validation des données réussie
+2025-09-06 19:23:17,266 - INFO - Validation des données réussie
+2025-09-06 19:23:29,916 - INFO - État du système chargé
+2025-09-06 19:23:29,918 - INFO - Validation des données réussie
+2025-09-06 19:23:37,500 - INFO - Validation des données réussie
+2025-09-06 19:24:30,430 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:24:30,431 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:24:30,432 - INFO - État du système sauvegardé
+2025-09-06 19:24:30,433 - INFO - Sauvegarde créée: backup_auto_20250906_192430
+2025-09-06 19:28:52,767 - INFO - État du système chargé
+2025-09-06 19:28:52,771 - INFO - Validation des données réussie
+2025-09-06 19:31:25,673 - INFO - Validation des données réussie
+2025-09-06 19:33:20,104 - INFO - Validation des données réussie
+2025-09-06 19:33:26,732 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:33:26,733 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:33:26,737 - INFO - État du système sauvegardé
+2025-09-06 19:33:26,738 - INFO - Sauvegarde créée: backup_auto_20250906_193326
+2025-09-06 19:33:29,745 - INFO - Validation des données réussie
+2025-09-06 19:33:38,242 - INFO - Validation des données réussie
+2025-09-06 19:33:53,299 - INFO - Validation des données réussie
+2025-09-06 19:34:34,317 - INFO - Validation des données réussie
+2025-09-06 19:37:10,620 - INFO - État du système chargé
+2025-09-06 19:37:10,620 - WARNING - Problèmes de validation détectés: ['Fichier CSV invalide (pas assez de données): history.csv']
+2025-09-06 19:37:10,621 - INFO - Tentative de récupération d'urgence
+2025-09-06 19:37:10,622 - INFO - État du système sauvegardé
+2025-09-06 19:37:10,622 - WARNING - Problèmes de validation détectés: ['Fichier CSV invalide (pas assez de données): history.csv']
+2025-09-06 19:37:10,626 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:37:10,627 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:37:10,628 - INFO - État du système sauvegardé
+2025-09-06 19:37:10,629 - INFO - Sauvegarde créée: backup_pre_restore_20250906_193710
+2025-09-06 19:37:10,630 - INFO - Fichier restauré: drinks.csv
+2025-09-06 19:37:10,631 - INFO - Fichier restauré: history.csv
+2025-09-06 19:37:10,632 - INFO - État du système sauvegardé
+2025-09-06 19:37:10,632 - INFO - Sauvegarde restaurée: backup_auto_20250906_193326
+2025-09-06 19:37:10,634 - INFO - Validation des données réussie
+2025-09-06 19:37:10,635 - INFO - Récupération d'urgence réussie
+2025-09-06 19:37:29,230 - INFO - État du système chargé
+2025-09-06 19:37:29,232 - INFO - Validation des données réussie
+2025-09-06 19:39:19,809 - INFO - État du système chargé
+2025-09-06 19:39:19,818 - INFO - Validation des données réussie
+2025-09-06 19:39:48,764 - INFO - État du système chargé
+2025-09-06 19:39:48,766 - INFO - Validation des données réussie
+2025-09-06 19:39:49,682 - INFO - État du système chargé
+2025-09-06 19:39:49,686 - INFO - Validation des données réussie
+2025-09-06 19:39:49,877 - INFO - État du système chargé
+2025-09-06 19:39:49,879 - INFO - Validation des données réussie
+2025-09-06 19:40:13,297 - INFO - Validation des données réussie
+2025-09-06 19:40:22,325 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:40:22,326 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:40:22,328 - INFO - État du système sauvegardé
+2025-09-06 19:40:22,328 - INFO - Sauvegarde créée: backup_auto_20250906_194022
+2025-09-06 19:42:16,273 - INFO - État du système chargé
+2025-09-06 19:42:16,275 - INFO - Validation des données réussie
+2025-09-06 19:42:16,907 - INFO - État du système chargé
+2025-09-06 19:42:16,909 - INFO - Validation des données réussie
+2025-09-06 19:42:17,014 - INFO - État du système chargé
+2025-09-06 19:42:17,016 - INFO - Validation des données réussie
+2025-09-06 19:43:08,977 - INFO - Validation des données réussie
+2025-09-06 19:46:02,330 - INFO - État du système chargé
+2025-09-06 19:46:02,337 - INFO - Validation des données réussie
+2025-09-06 19:46:03,354 - INFO - État du système chargé
+2025-09-06 19:46:03,356 - INFO - Validation des données réussie
+2025-09-06 19:46:03,454 - INFO - État du système chargé
+2025-09-06 19:46:03,456 - INFO - Validation des données réussie
+2025-09-06 19:46:37,331 - INFO - Validation des données réussie
+2025-09-06 19:55:28,816 - INFO - État du système chargé
+2025-09-06 19:55:28,820 - INFO - Validation des données réussie
+2025-09-06 19:55:29,681 - INFO - État du système chargé
+2025-09-06 19:55:29,684 - INFO - Validation des données réussie
+2025-09-06 19:55:29,787 - INFO - État du système chargé
+2025-09-06 19:55:29,790 - INFO - Validation des données réussie
+2025-09-06 19:55:45,001 - INFO - Validation des données réussie
+2025-09-06 19:56:33,211 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:56:33,213 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:56:33,214 - INFO - État du système sauvegardé
+2025-09-06 19:56:33,215 - INFO - Sauvegarde créée: backup_auto_20250906_195633
+2025-09-06 19:59:17,279 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 19:59:17,290 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 19:59:17,300 - INFO - État du système sauvegardé
+2025-09-06 19:59:17,304 - INFO - Sauvegarde créée: backup_pre_restore_20250906_195917
+2025-09-06 19:59:17,306 - INFO - Fichier restauré: drinks.csv
+2025-09-06 19:59:17,309 - INFO - Fichier restauré: history.csv
+2025-09-06 19:59:17,310 - INFO - État du système sauvegardé
+2025-09-06 19:59:17,310 - INFO - Sauvegarde restaurée: backup_manual_20250906_172332
+2025-09-06 19:59:17,413 - INFO - Validation des données réussie
+2025-09-06 20:00:02,665 - INFO - État du système chargé
+2025-09-06 20:00:02,667 - INFO - Validation des données réussie
+2025-09-06 20:00:03,527 - INFO - État du système chargé
+2025-09-06 20:00:03,529 - INFO - Validation des données réussie
+2025-09-06 20:00:03,627 - INFO - État du système chargé
+2025-09-06 20:00:03,628 - INFO - Validation des données réussie
+2025-09-06 20:00:09,084 - INFO - Validation des données réussie
+2025-09-06 20:00:43,512 - INFO - État du système chargé
+2025-09-06 20:00:43,513 - INFO - Validation des données réussie
+2025-09-06 20:00:44,118 - INFO - État du système chargé
+2025-09-06 20:00:44,120 - INFO - Validation des données réussie
+2025-09-06 20:00:44,287 - INFO - État du système chargé
+2025-09-06 20:00:44,289 - INFO - Validation des données réussie
+2025-09-06 20:00:45,868 - INFO - Validation des données réussie
+2025-09-06 20:04:05,520 - INFO - État du système chargé
+2025-09-06 20:04:05,522 - INFO - Validation des données réussie
+2025-09-06 20:04:06,178 - INFO - État du système chargé
+2025-09-06 20:04:06,179 - INFO - Validation des données réussie
+2025-09-06 20:04:06,250 - INFO - État du système chargé
+2025-09-06 20:04:06,251 - INFO - Validation des données réussie
+2025-09-06 20:04:19,539 - INFO - Validation des données réussie
+2025-09-06 20:04:45,118 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 20:04:45,119 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 20:04:45,120 - INFO - État du système sauvegardé
+2025-09-06 20:04:45,121 - INFO - Sauvegarde créée: backup_auto_20250906_200445
+2025-09-06 20:10:57,886 - INFO - État du système chargé
+2025-09-06 20:10:57,889 - INFO - Validation des données réussie
+2025-09-06 20:10:58,722 - INFO - État du système chargé
+2025-09-06 20:10:58,724 - INFO - Validation des données réussie
+2025-09-06 20:10:58,839 - INFO - État du système chargé
+2025-09-06 20:10:58,841 - INFO - Validation des données réussie
+2025-09-06 20:12:12,168 - INFO - État du système chargé
+2025-09-06 20:12:12,171 - INFO - Validation des données réussie
+2025-09-06 20:12:13,044 - INFO - État du système chargé
+2025-09-06 20:12:13,046 - INFO - Validation des données réussie
+2025-09-06 20:12:13,153 - INFO - État du système chargé
+2025-09-06 20:12:13,156 - INFO - Validation des données réussie
+2025-09-06 20:12:27,424 - INFO - Validation des données réussie
+2025-09-06 20:12:34,481 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 20:12:34,482 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 20:12:34,483 - INFO - État du système sauvegardé
+2025-09-06 20:12:34,484 - INFO - Sauvegarde créée: backup_auto_20250906_201234
+2025-09-06 20:20:13,145 - INFO - État du système chargé
+2025-09-06 20:20:13,151 - INFO - Validation des données réussie
+2025-09-06 20:20:13,898 - INFO - État du système chargé
+2025-09-06 20:20:13,900 - INFO - Validation des données réussie
+2025-09-06 20:20:13,990 - INFO - État du système chargé
+2025-09-06 20:20:13,992 - INFO - Validation des données réussie
+2025-09-06 20:20:25,130 - INFO - Validation des données réussie
+2025-09-06 20:23:51,398 - INFO - État du système chargé
+2025-09-06 20:23:51,400 - INFO - Validation des données réussie
+2025-09-06 20:23:52,247 - INFO - État du système chargé
+2025-09-06 20:23:52,249 - INFO - Validation des données réussie
+2025-09-06 20:23:52,339 - INFO - État du système chargé
+2025-09-06 20:23:52,342 - INFO - Validation des données réussie
+2025-09-06 20:23:57,442 - INFO - État du système chargé
+2025-09-06 20:23:57,444 - INFO - Validation des données réussie
+2025-09-06 20:23:58,020 - INFO - État du système chargé
+2025-09-06 20:23:58,022 - INFO - Validation des données réussie
+2025-09-06 20:23:58,115 - INFO - État du système chargé
+2025-09-06 20:23:58,116 - INFO - Validation des données réussie
+2025-09-06 20:24:11,495 - INFO - Validation des données réussie
+2025-09-06 20:25:36,491 - INFO - État du système chargé
+2025-09-06 20:25:36,495 - INFO - Validation des données réussie
+2025-09-06 20:25:37,307 - INFO - État du système chargé
+2025-09-06 20:25:37,310 - INFO - Validation des données réussie
+2025-09-06 20:25:37,411 - INFO - État du système chargé
+2025-09-06 20:25:37,413 - INFO - Validation des données réussie
+2025-09-06 20:25:40,316 - INFO - Validation des données réussie
+2025-09-06 20:25:44,139 - INFO - Validation des données réussie
+2025-09-06 20:28:15,469 - INFO - Validation des données réussie
+2025-09-06 20:31:55,692 - INFO - État du système chargé
+2025-09-06 20:31:55,693 - INFO - Validation des données réussie
+2025-09-06 20:31:56,423 - INFO - État du système chargé
+2025-09-06 20:31:56,424 - INFO - Validation des données réussie
+2025-09-06 20:31:56,534 - INFO - État du système chargé
+2025-09-06 20:31:56,535 - INFO - Validation des données réussie
+2025-09-06 20:31:58,379 - INFO - Validation des données réussie
+2025-09-06 20:33:17,264 - INFO - Validation des données réussie
+2025-09-06 20:34:34,923 - INFO - Validation des données réussie
+2025-09-06 20:34:44,473 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-06 20:34:44,474 - INFO - Fichier sauvegardé: history.csv
+2025-09-06 20:34:44,476 - INFO - État du système sauvegardé
+2025-09-06 20:34:44,477 - INFO - Sauvegarde créée: backup_auto_20250906_203444
+2025-09-06 20:35:08,567 - INFO - Validation des données réussie
+2025-09-06 20:35:23,175 - INFO - Validation des données réussie
+2025-09-06 20:37:18,827 - INFO - Validation des données réussie
+2025-09-06 20:37:23,200 - INFO - État du système chargé
+2025-09-06 20:37:23,203 - INFO - Validation des données réussie
+2025-09-06 20:37:24,091 - INFO - État du système chargé
+2025-09-06 20:37:24,095 - INFO - Validation des données réussie
+2025-09-06 20:37:24,231 - INFO - État du système chargé
+2025-09-06 20:37:24,233 - INFO - Validation des données réussie
+2025-09-06 20:37:27,720 - INFO - Validation des données réussie
+2025-09-06 20:37:59,287 - INFO - État du système chargé
+2025-09-06 20:37:59,288 - INFO - Validation des données réussie
+2025-09-06 20:37:59,891 - INFO - État du système chargé
+2025-09-06 20:37:59,893 - INFO - Validation des données réussie
+2025-09-06 20:37:59,972 - INFO - État du système chargé
+2025-09-06 20:37:59,974 - INFO - Validation des données réussie
+2025-09-06 20:38:01,877 - INFO - Validation des données réussie
+2025-09-06 20:40:40,307 - INFO - État du système chargé
+2025-09-06 20:40:40,309 - INFO - Validation des données réussie
+2025-09-06 20:40:41,029 - INFO - État du système chargé
+2025-09-06 20:40:41,031 - INFO - Validation des données réussie
+2025-09-06 20:40:41,139 - INFO - État du système chargé
+2025-09-06 20:40:41,141 - INFO - Validation des données réussie
+2025-09-06 20:40:42,504 - INFO - Validation des données réussie
+2025-09-06 20:43:37,861 - INFO - État du système chargé
+2025-09-06 20:43:37,864 - INFO - Validation des données réussie
+2025-09-06 20:43:38,680 - INFO - État du système chargé
+2025-09-06 20:43:38,682 - INFO - Validation des données réussie
+2025-09-06 20:43:38,761 - INFO - État du système chargé
+2025-09-06 20:43:38,763 - INFO - Validation des données réussie
+2025-09-06 20:43:41,464 - INFO - Validation des données réussie
+2025-09-07 13:09:38,440 - INFO - État du système chargé
+2025-09-07 13:09:38,445 - INFO - Validation des données réussie
+2025-09-07 13:09:39,979 - INFO - État du système chargé
+2025-09-07 13:09:39,981 - INFO - Validation des données réussie
+2025-09-07 13:09:40,062 - INFO - État du système chargé
+2025-09-07 13:09:40,063 - INFO - Validation des données réussie
+2025-09-07 16:19:46,611 - INFO - État du système chargé
+2025-09-07 16:19:46,614 - INFO - Validation des données réussie
+2025-09-07 16:19:47,384 - INFO - État du système chargé
+2025-09-07 16:19:47,387 - INFO - Validation des données réussie
+2025-09-07 16:19:50,231 - INFO - 1 change detected
+2025-09-07 16:19:50,332 - INFO - État du système chargé
+2025-09-07 16:19:50,334 - INFO - Validation des données réussie
+2025-09-07 16:19:50,584 - INFO - 1 change detected
+2025-09-07 16:34:39,215 - INFO - État du système chargé
+2025-09-07 16:34:39,219 - INFO - Validation des données réussie
+2025-09-07 16:34:39,871 - INFO - État du système chargé
+2025-09-07 16:34:39,872 - INFO - Validation des données réussie
+2025-09-07 16:34:40,022 - INFO - État du système chargé
+2025-09-07 16:34:40,023 - INFO - Validation des données réussie
+2025-09-07 16:34:40,370 - INFO - 1 change detected
+2025-09-07 16:35:26,840 - INFO - Validation des données réussie
+2025-09-07 16:35:26,948 - INFO - 1 change detected
+2025-09-07 16:35:54,757 - INFO - Validation des données réussie
+2025-09-07 16:35:54,924 - INFO - 1 change detected
+2025-09-07 16:36:06,608 - INFO - Validation des données réussie
+2025-09-07 16:36:06,899 - INFO - 1 change detected
+2025-09-07 16:36:12,913 - INFO - Validation des données réussie
+2025-09-07 16:36:13,168 - INFO - 1 change detected
+2025-09-07 16:36:13,519 - INFO - 1 change detected
+2025-09-07 16:36:16,559 - INFO - Validation des données réussie
+2025-09-07 16:36:16,831 - INFO - 1 change detected
+2025-09-07 16:41:03,539 - INFO - 1 change detected
+2025-09-07 16:41:03,891 - INFO - 1 change detected
+2025-09-07 16:41:45,966 - INFO - 1 change detected
+2025-09-07 16:41:46,317 - INFO - 1 change detected
+2025-09-07 16:41:46,674 - INFO - 1 change detected
+2025-09-07 16:45:45,914 - INFO - État du système chargé
+2025-09-07 16:45:45,916 - INFO - Validation des données réussie
+2025-09-07 16:45:46,710 - INFO - État du système chargé
+2025-09-07 16:45:46,711 - INFO - Validation des données réussie
+2025-09-07 16:45:46,821 - INFO - État du système chargé
+2025-09-07 16:45:46,823 - INFO - Validation des données réussie
+2025-09-07 16:45:47,114 - INFO - 1 change detected
+2025-09-07 16:45:47,466 - INFO - 1 change detected
+2025-09-07 16:46:04,746 - INFO - Validation des données réussie
+2025-09-07 16:46:05,055 - INFO - 1 change detected
+2025-09-07 16:46:05,407 - INFO - 1 change detected
+2025-09-07 16:46:36,450 - INFO - Validation des données réussie
+2025-09-07 16:46:36,821 - INFO - 1 change detected
+2025-09-07 16:46:45,674 - INFO - Validation des données réussie
+2025-09-07 16:46:45,845 - INFO - 1 change detected
+2025-09-07 16:46:52,414 - INFO - Validation des données réussie
+2025-09-07 16:46:52,813 - INFO - 1 change detected
+2025-09-07 16:59:12,961 - INFO - 1 change detected
+2025-09-07 16:59:13,313 - INFO - 1 change detected
+2025-09-07 16:59:13,664 - INFO - 1 change detected
+2025-09-07 17:01:33,125 - INFO - 1 change detected
+2025-09-07 17:01:33,477 - INFO - 1 change detected
+2025-09-07 17:02:46,747 - INFO - 1 change detected
+2025-09-07 17:02:47,258 - INFO - 1 change detected
+2025-09-07 17:02:47,609 - INFO - 1 change detected
+2025-09-07 17:02:47,745 - INFO - État du système chargé
+2025-09-07 17:02:47,747 - INFO - Validation des données réussie
+2025-09-07 17:02:47,872 - INFO - État du système chargé
+2025-09-07 17:02:47,874 - INFO - Validation des données réussie
+2025-09-07 17:02:48,061 - INFO - 2 changes detected
+2025-09-07 17:02:48,413 - INFO - 1 change detected
+2025-09-07 17:03:29,167 - INFO - 1 change detected
+2025-09-07 17:03:29,719 - INFO - 1 change detected
+2025-09-07 17:03:29,983 - INFO - État du système chargé
+2025-09-07 17:03:29,985 - INFO - Validation des données réussie
+2025-09-07 17:03:30,083 - INFO - État du système chargé
+2025-09-07 17:03:30,085 - INFO - Validation des données réussie
+2025-09-07 17:03:30,220 - INFO - 3 changes detected
+2025-09-07 17:03:43,457 - INFO - 1 change detected
+2025-09-07 17:03:43,809 - INFO - 1 change detected
+2025-09-07 17:07:01,566 - INFO - État du système chargé
+2025-09-07 17:07:01,568 - INFO - Validation des données réussie
+2025-09-07 17:07:02,313 - INFO - État du système chargé
+2025-09-07 17:07:02,315 - INFO - Validation des données réussie
+2025-09-07 17:07:02,400 - INFO - 1 change detected
+2025-09-07 17:07:02,428 - INFO - État du système chargé
+2025-09-07 17:07:02,430 - INFO - Validation des données réussie
+2025-09-07 17:07:14,908 - INFO - Validation des données réussie
+2025-09-07 17:07:15,198 - INFO - 1 change detected
+2025-09-07 17:07:15,549 - INFO - 1 change detected
+2025-09-07 17:07:20,479 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:07:20,480 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:07:20,481 - INFO - État du système sauvegardé
+2025-09-07 17:07:20,482 - INFO - Sauvegarde créée: backup_auto_20250907_170720
+2025-09-07 17:07:20,864 - INFO - 9 changes detected
+2025-09-07 17:07:29,841 - INFO - 2 changes detected
+2025-09-07 17:07:30,192 - INFO - 1 change detected
+2025-09-07 17:07:30,543 - INFO - 1 change detected
+2025-09-07 17:15:46,291 - INFO - 1 change detected
+2025-09-07 17:15:46,643 - INFO - 1 change detected
+2025-09-07 17:17:28,718 - INFO - 1 change detected
+2025-09-07 17:17:29,070 - INFO - 1 change detected
+2025-09-07 17:17:29,421 - INFO - 1 change detected
+2025-09-07 17:19:12,786 - INFO - 1 change detected
+2025-09-07 17:19:13,137 - INFO - 1 change detected
+2025-09-07 17:19:15,325 - INFO - État du système chargé
+2025-09-07 17:19:15,327 - INFO - Validation des données réussie
+2025-09-07 17:19:16,039 - INFO - État du système chargé
+2025-09-07 17:19:16,041 - INFO - Validation des données réussie
+2025-09-07 17:19:16,146 - INFO - État du système chargé
+2025-09-07 17:19:16,148 - INFO - Validation des données réussie
+2025-09-07 17:19:16,159 - INFO - 1 change detected
+2025-09-07 17:19:34,591 - INFO - Validation des données réussie
+2025-09-07 17:19:34,700 - INFO - 1 change detected
+2025-09-07 17:19:42,144 - INFO - Validation des données réussie
+2025-09-07 17:19:42,320 - INFO - 1 change detected
+2025-09-07 17:19:54,655 - INFO - 1 change detected
+2025-09-07 17:19:57,813 - INFO - 1 change detected
+2025-09-07 17:19:58,165 - INFO - 1 change detected
+2025-09-07 17:19:58,519 - INFO - 1 change detected
+2025-09-07 17:20:35,420 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:20:35,422 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:20:35,422 - INFO - État du système sauvegardé
+2025-09-07 17:20:35,423 - INFO - Sauvegarde créée: backup_pre_restore_20250907_172035
+2025-09-07 17:20:35,425 - INFO - Fichier restauré: drinks.csv
+2025-09-07 17:20:35,426 - INFO - Fichier restauré: history.csv
+2025-09-07 17:20:35,427 - INFO - État du système sauvegardé
+2025-09-07 17:20:35,427 - INFO - Sauvegarde restaurée: backup_manual_20250906_172332
+2025-09-07 17:20:35,472 - INFO - Validation des données réussie
+2025-09-07 17:20:35,568 - INFO - 7 changes detected
+2025-09-07 17:20:45,898 - INFO - 2 changes detected
+2025-09-07 17:20:46,249 - INFO - 1 change detected
+2025-09-07 17:20:46,601 - INFO - 1 change detected
+2025-09-07 17:20:59,539 - INFO - 1 change detected
+2025-09-07 17:20:59,890 - INFO - 1 change detected
+2025-09-07 17:21:03,619 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:21:03,620 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:21:03,621 - INFO - État du système sauvegardé
+2025-09-07 17:21:03,622 - INFO - Sauvegarde créée: backup_auto_20250907_172103
+2025-09-07 17:21:03,901 - INFO - 9 changes detected
+2025-09-07 17:23:14,392 - INFO - 2 changes detected
+2025-09-07 17:23:14,743 - INFO - 1 change detected
+2025-09-07 17:35:59,467 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:35:59,467 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:35:59,468 - INFO - État du système sauvegardé
+2025-09-07 17:35:59,468 - INFO - Sauvegarde créée: backup_auto_20250907_173559
+2025-09-07 17:35:59,720 - INFO - 9 changes detected
+2025-09-07 17:36:04,480 - INFO - 1 change detected
+2025-09-07 17:36:04,831 - INFO - 1 change detected
+2025-09-07 17:36:35,920 - INFO - 1 change detected
+2025-09-07 17:36:36,272 - INFO - 1 change detected
+2025-09-07 17:36:36,623 - INFO - 1 change detected
+2025-09-07 17:37:02,417 - INFO - 1 change detected
+2025-09-07 17:37:02,768 - INFO - 1 change detected
+2025-09-07 17:37:34,802 - INFO - 1 change detected
+2025-09-07 17:37:35,153 - INFO - 1 change detected
+2025-09-07 17:37:36,797 - INFO - État du système chargé
+2025-09-07 17:37:36,798 - INFO - Validation des données réussie
+2025-09-07 17:37:37,486 - INFO - État du système chargé
+2025-09-07 17:37:37,488 - INFO - Validation des données réussie
+2025-09-07 17:37:37,594 - INFO - État du système chargé
+2025-09-07 17:37:37,595 - INFO - Validation des données réussie
+2025-09-07 17:37:37,624 - INFO - 1 change detected
+2025-09-07 17:37:57,024 - INFO - Validation des données réussie
+2025-09-07 17:37:57,277 - INFO - 1 change detected
+2025-09-07 17:38:12,582 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:38:12,582 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:38:12,583 - INFO - État du système sauvegardé
+2025-09-07 17:38:12,584 - INFO - Sauvegarde créée: backup_auto_20250907_173812
+2025-09-07 17:38:12,855 - INFO - 9 changes detected
+2025-09-07 17:38:38,828 - INFO - 2 changes detected
+2025-09-07 17:38:39,179 - INFO - 1 change detected
+2025-09-07 17:38:39,531 - INFO - 1 change detected
+2025-09-07 17:38:42,793 - INFO - 2 changes detected
+2025-09-07 17:38:43,144 - INFO - 1 change detected
+2025-09-07 17:38:43,495 - INFO - 1 change detected
+2025-09-07 17:44:57,379 - INFO - 1 change detected
+2025-09-07 17:44:57,731 - INFO - 1 change detected
+2025-09-07 17:46:05,108 - INFO - 1 change detected
+2025-09-07 17:46:05,459 - INFO - 1 change detected
+2025-09-07 17:51:08,030 - INFO - 1 change detected
+2025-09-07 17:51:08,383 - INFO - 1 change detected
+2025-09-07 17:51:08,734 - INFO - 1 change detected
+2025-09-07 17:51:11,496 - INFO - État du système chargé
+2025-09-07 17:51:11,497 - INFO - Validation des données réussie
+2025-09-07 17:51:12,248 - INFO - État du système chargé
+2025-09-07 17:51:12,250 - INFO - Validation des données réussie
+2025-09-07 17:51:12,362 - INFO - État du système chargé
+2025-09-07 17:51:12,363 - INFO - Validation des données réussie
+2025-09-07 17:51:12,620 - INFO - 1 change detected
+2025-09-07 17:52:22,162 - INFO - Fichier sauvegardé: drinks.csv
+2025-09-07 17:52:22,165 - INFO - Fichier sauvegardé: history.csv
+2025-09-07 17:52:22,166 - INFO - État du système sauvegardé
+2025-09-07 17:52:22,167 - INFO - Sauvegarde créée: backup_auto_20250907_175222
+2025-09-07 17:52:22,512 - INFO - 9 changes detected
+2025-09-07 17:53:26,150 - INFO - 1 change detected
+2025-09-07 17:53:26,501 - INFO - 1 change detected
+2025-09-07 18:04:27,918 - INFO - 2 changes detected
+2025-09-07 18:04:28,269 - INFO - 1 change detected
+2025-09-07 18:04:28,620 - INFO - 1 change detected
+2025-09-07 18:05:25,230 - INFO - 2 changes detected
+2025-09-07 18:05:25,582 - INFO - 1 change detected
+2025-09-07 18:09:39,737 - INFO - 1 change detected
+2025-09-07 18:09:40,282 - INFO - 1 change detected
+2025-09-07 18:09:40,633 - INFO - 1 change detected
+2025-09-07 18:09:40,694 - INFO - État du système chargé
+2025-09-07 18:09:40,696 - INFO - Validation des données réussie
+2025-09-07 18:09:40,810 - INFO - État du système chargé
+2025-09-07 18:09:40,811 - INFO - Validation des données réussie
+2025-09-07 18:09:41,084 - INFO - 2 changes detected
+2025-09-07 18:09:41,436 - INFO - 1 change detected
+2025-09-07 18:09:45,045 - INFO - 1 change detected
+2025-09-07 18:09:45,604 - INFO - 1 change detected
+2025-09-07 18:09:45,910 - INFO - État du système chargé
+2025-09-07 18:09:45,912 - INFO - Validation des données réussie
+2025-09-07 18:09:46,020 - INFO - État du système chargé
+2025-09-07 18:09:46,021 - INFO - Validation des données réussie
+2025-09-07 18:09:46,406 - INFO - 3 changes detected
+2025-09-07 18:10:16,297 - INFO - 1 change detected
+2025-09-07 18:10:16,648 - INFO - 1 change detected
+2025-09-07 18:10:32,359 - INFO - 1 change detected
+2025-09-07 18:10:32,711 - INFO - 1 change detected
+2025-09-07 18:13:02,351 - INFO - 1 change detected
+2025-09-07 18:13:02,702 - INFO - 1 change detected
+2025-09-07 18:13:50,310 - INFO - 1 change detected
+2025-09-07 18:13:50,661 - INFO - 1 change detected
+2025-09-07 18:14:12,631 - INFO - 1 change detected
+2025-09-07 18:14:12,982 - INFO - 1 change detected
+2025-09-07 18:14:34,022 - INFO - 1 change detected
+2025-09-07 18:14:34,373 - INFO - 1 change detected
+2025-09-07 18:17:09,713 - INFO - 1 change detected
+2025-09-07 18:17:10,182 - INFO - 1 change detected
+2025-09-07 18:17:10,533 - INFO - 1 change detected
+2025-09-07 18:17:10,884 - INFO - 2 changes detected
+2025-09-07 18:18:06,054 - INFO - 1 change detected
+2025-09-07 18:18:06,523 - INFO - 1 change detected
+2025-09-07 18:18:09,790 - INFO - 2 changes detected
+2025-09-07 18:18:10,143 - INFO - 1 change detected
+2025-09-07 18:18:10,496 - INFO - 1 change detected
+2025-09-07 18:20:34,397 - INFO - 1 change detected
+2025-09-07 18:20:34,749 - INFO - 1 change detected
+2025-09-07 18:22:20,894 - INFO - 1 change detected
+2025-09-07 18:22:21,248 - INFO - 1 change detected
+2025-09-07 18:22:21,599 - INFO - 1 change detected

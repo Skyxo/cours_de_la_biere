@@ -1,0 +1,14 @@
+{
+  "timestamp": "20250907_175222",
+  "backup_type": "auto",
+  "files": [
+    "drinks.csv",
+    "history.csv"
+  ],
+  "system_state": {
+    "last_backup": "20250907_173812",
+    "backup_count": 23,
+    "last_crash": "2025-09-06T19:37:10.621677",
+    "recovery_attempts": 4
+  }
+}

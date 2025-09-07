@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wall Street Bar - Marché en Temps Réel</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+</head>
+<body>
+<!-- Effet de particules en arrière-plan -->
+<div class="particles" id="particles"></div>
+
+<!-- Indicateur de connexion -->
+<div class="connection-status" id="connectionStatus">
+    <span id="statusText">Connexion...</span>
+</div>
+
+<!-- En-tête principal -->
+<h1>📈 WALL STREET BAR 📈</h1>
+<p id="refresh-info" style="margin-bottom: 30px; font-size: 1.2em; opacity: 0.8;">
+    ⏱️ Prochaine actualisation dans : <span id="timer-countdown">10</span> secondes
+</p>
+
+<!-- Conteneur principal pour la disposition -->
+<div class="main-container" style="display: flex; gap: 20px;">
+  <!-- Graphique d'évolution des prix -->
+  <div class="chart-card" style="flex: 1;">
+    <h3>📈 Évolution des Prix</h3>
+    <canvas id="priceChart" width="400" height="200"></canvas>
+  </div>
+
+  <!-- Tableau des prix -->
+  <div style="flex: 1;">
+    <table id="prices" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th>🍺 Boisson</th>
+          <th>💰 Prix (€)</th>
+          <th>📊 Tendance</th>
+          <th>📈 Variation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Les données seront chargées dynamiquement -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Informations de marché -->
+<div style="margin-top: 30px; font-size: 0.9em; opacity: 0.7;">
+    <p>Dernière mise à jour: <span id="lastUpdate">--</span></p>
+    <p>Statut du marché: <span id="marketStatus">🟢 ACTIF</span></p>
+</div>
+
+<!-- Compteur intégré sous le titre principal -->
+
+<!-- Contrôles de démonstration retirés -->
+
+<!-- Lien vers l'interface admin -->
+<div style="margin-top: 30px;">
+    <a href="admin.html" style="
+        color: #00ff41;
+        text-decoration: none;
+        font-size: 1.1em;
+        padding: 10px 20px;
+        border: 2px solid #00ff41;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        display: inline-block;
+    " onmouseover="this.style.background='rgba(0, 255, 65, 0.1)'" onmouseout="this.style.background='transparent'">
+        🔧 Interface Administrateur
+    </a>
+</div>
+
+<script src="charts.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
