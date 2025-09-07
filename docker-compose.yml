@@ -1,22 +1,19 @@
-version: '3.8'
-
 services:
-  wallstreet-bar:
+  wallstreet-bar-app:
     build: .
+    container_name: wallstreet-bar-app
     ports:
-      - "8000:8000"
+      - "8002:8000"
     volumes:
-      # Monter le répertoire data pour la persistance
-      - ./data:/app/data
-      # Monter le code source pour le développement (optionnel)
-      - ./:/app
+      - /home/eclair/docker/data/wallstreet:/app/data
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
-    container_name: wallstreet-bar-app
-    
-    # Configuration de santé (optionnel)
+    networks:
+      - wallstreet_backend
+      - caddy_net
+          
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/prices"]
       interval: 30s
@@ -24,7 +21,9 @@ services:
       retries: 3
       start_period: 40s
 
-# Réseau optionnel pour isolation
 networks:
-  default:
-    name: wallstreet-bar-network
+  wallstreet_backend:
+    name: wallstreet_backend
+  caddy_net:
+    name: $DOCKER_MY_NETWORK
+    external: true
