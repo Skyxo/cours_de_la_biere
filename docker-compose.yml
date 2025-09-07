@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  wallstreet-bar:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Monter le répertoire data pour la persistance
+      - ./data:/app/data
+      # Monter le code source pour le développement (optionnel)
+      - ./:/app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    container_name: wallstreet-bar-app
+    
+    # Configuration de santé (optionnel)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/prices"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# Réseau optionnel pour isolation
+networks:
+  default:
+    name: wallstreet-bar-network
