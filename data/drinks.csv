@@ -1,0 +1,6 @@
+id,name,price,base_price,min_price,max_price
+2,IPA,7.1871,6.0,4.0,12.0
+3,Cocktail,10.8392,9.0,6.0,15.0
+4,Soft,2.4526,3.0,2.0,6.0
+5,Shot,5.5235,4.0,2.0,8.0
+6,Pilsner,5.1452,5.0,3.0,10.0

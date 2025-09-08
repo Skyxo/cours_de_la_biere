@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wall Street Bar - Marché en Temps Réel</title>
+<!-- Bootstrap 5 CSS (CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<!-- Custom styles (override Bootstrap when needed) -->
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
@@ -23,29 +26,35 @@
     ⏱️ Prochaine actualisation dans : <span id="timer-countdown">10</span> secondes
 </p>
 
-<!-- Conteneur principal pour la disposition -->
-<div class="main-container" style="display: flex; gap: 20px;">
-  <!-- Graphique d'évolution des prix -->
-  <div class="chart-card" style="flex: 1;">
-    <h3>📈 Évolution des Prix</h3>
-    <canvas id="priceChart" width="400" height="200"></canvas>
-  </div>
+<!-- Conteneur principal responsive -->
+<div class="container">
+  <div class="row g-3">
+    <!-- Graphique d'évolution des prix -->
+    <div class="col-12 col-lg-6">
+      <div class="chart-card h-100">
+        <h3>📈 Évolution des Prix</h3>
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
 
-  <!-- Tableau des prix -->
-  <div style="flex: 1;">
-    <table id="prices" style="width: 100%; border-collapse: collapse;">
-      <thead>
-        <tr>
-          <th>🍺 Boisson</th>
-          <th>💰 Prix (€)</th>
-          <th>📊 Tendance</th>
-          <th>📈 Variation</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Les données seront chargées dynamiquement -->
-      </tbody>
-    </table>
+    <!-- Tableau des prix -->
+    <div class="col-12 col-lg-6">
+      <div class="table-responsive">
+        <table id="prices">
+          <thead>
+            <tr>
+              <th>🍺 Boisson</th>
+              <th>💰 Prix (€)</th>
+              <th>📊 Tendance</th>
+              <th>📈 Variation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Les données seront chargées dynamiquement -->
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -67,9 +76,9 @@
     </div>
 
 <!-- Sélecteur de thème (5 thèmes) -->
-<div id="theme-controls" class="theme-controls" style="margin-top: 12px; display: inline-flex; align-items: center; gap: 10px;">
-    <label for="theme-select" style="opacity: 0.9;">Thème d'affichage:</label>
-    <select id="theme-select" style="background: transparent; color: inherit; border: 1px solid currentColor; padding: 6px 10px; border-radius: 8px;">
+<div id="theme-controls" class="theme-controls d-inline-flex align-items-center gap-2 mt-2">
+    <label for="theme-select" class="mb-0" style="opacity: 0.9;">Thème d'affichage:</label>
+    <select id="theme-select" class="form-select form-select-sm" style="background: transparent; color: inherit; border: 1px solid currentColor; padding: 6px 10px; border-radius: 8px; width: auto;">
         <option value="matrix">Matrix (vert)</option>
         <option value="blue">Bleu sombre</option>
         <option value="amber">Ambre</option>

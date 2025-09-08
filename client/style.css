@@ -30,8 +30,8 @@ h1 {
 table {
     margin: auto;
     border-collapse: collapse;
-    width: 80%;
-    max-width: 800px;
+    width: 100%;
+    max-width: 100%;
     background: rgba(var(--surface), var(--surface-alpha));
     border: 2px solid rgb(var(--accent));
     box-shadow: 0 0 30px rgba(var(--accent), 0.3);
@@ -226,6 +226,21 @@ tr:hover {
 
 .mini-chart .area {
     fill: rgba(var(--accent), 0.1);
+}
+
+/* ======= Responsive tweaks ======= */
+@media (max-width: 576px) {
+  h1 {
+    font-size: 2em;
+  }
+  .chart-card {
+    height: auto;
+    padding: 16px;
+  }
+  .chart-card canvas {
+    height: 220px !important;
+  }
+  td { padding: 12px; font-size: 1em; }
 }
 
 /* Lien vers l'interface Admin, thème-dépendant */
