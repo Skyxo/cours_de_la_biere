@@ -10,9 +10,10 @@ Persistence: CSV files in ./data/ directory
 """
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
+from typing import List, Optional
 from datetime import datetime
 import os
 import secrets

@@ -18,9 +18,25 @@ class WallStreetCharts {
             soft: '#00bfff',
             shot: '#ff1493'
         };
+        this.theme = this.readThemeColors();
         
         this.initCharts();
     }
+
+    readThemeColors() {
+        const cs = getComputedStyle(document.body);
+        const accent = cs.getPropertyValue('--accent').trim();
+        const text = cs.getPropertyValue('--text').trim();
+        const grid = (cs.getPropertyValue('--grid').trim()) || accent;
+        return {
+            accentRgb: accent, // e.g. "0, 255, 65"
+            textRgb: text,     // e.g. "0, 255, 65" or dark in light theme
+            gridRgb: grid
+        };
+    }
+
+    rgb(rgbStr) { return `rgb(${rgbStr})`; }
+    rgba(rgbStr, a) { return `rgba(${rgbStr}, ${a})`; }
     
     initCharts() {
         this.initPriceChart();
@@ -50,7 +66,7 @@ class WallStreetCharts {
                 plugins: {
                     legend: {
                         labels: {
-                            color: '#00ff41',
+                            color: this.rgb(this.theme.textRgb),
                             font: {
                                 family: 'Courier New, monospace'
                             }
@@ -67,14 +83,14 @@ class WallStreetCharts {
                             maxTicksLimit: 10
                         },
                         grid: {
-                            color: 'rgba(0, 255, 65, 0.1)'
+                            color: this.rgba(this.theme.gridRgb, 0.1)
                         }
                     },
                     y: {
                         beginAtZero: true,
                         max: 100,
                         ticks: {
-                            color: '#00ff41',
+                            color: this.rgb(this.theme.textRgb),
                             font: {
                                 family: 'Courier New, monospace'
                             },
@@ -83,7 +99,7 @@ class WallStreetCharts {
                             }
                         },
                         grid: {
-                            color: 'rgba(0, 255, 65, 0.1)'
+                            color: this.rgba(this.theme.gridRgb, 0.1)
                         }
                     }
                 },
@@ -119,8 +135,8 @@ class WallStreetCharts {
                 datasets: [{
                     label: 'Volume des Transactions',
                     data: [],
-                    backgroundColor: 'rgba(0, 255, 65, 0.3)',
-                    borderColor: '#00ff41',
+                    backgroundColor: this.rgba(this.theme.accentRgb, 0.3),
+                    borderColor: this.rgb(this.theme.accentRgb),
                 }]
             },
             options: {
@@ -280,7 +296,28 @@ class WallStreetCharts {
         if (name.includes('cocktail')) return this.chartColors.cocktail;
         if (name.includes('soft')) return this.chartColors.soft;
         if (name.includes('shot')) return this.chartColors.shot;
-        return '#00ff41'; // Couleur par défaut
+        return this.rgb(this.theme.accentRgb); // Couleur par défaut selon le thème
+    }
+
+    updateTheme() {
+        // Re-lire les couleurs du thème
+        this.theme = this.readThemeColors();
+        // Mettre à jour les options des graphiques
+        if (this.priceChart) {
+            this.priceChart.options.plugins.legend.labels.color = this.rgb(this.theme.textRgb);
+            this.priceChart.options.scales.x.grid.color = this.rgba(this.theme.gridRgb, 0.1);
+            this.priceChart.options.scales.y.ticks.color = this.rgb(this.theme.textRgb);
+            this.priceChart.options.scales.y.grid.color = this.rgba(this.theme.gridRgb, 0.1);
+            this.priceChart.update();
+        }
+        if (this.volumeChart) {
+            const ds = this.volumeChart.data.datasets[0];
+            if (ds) {
+                ds.backgroundColor = this.rgba(this.theme.accentRgb, 0.3);
+                ds.borderColor = this.rgb(this.theme.accentRgb);
+            }
+            this.volumeChart.update();
+        }
     }
     
     createMiniChart(drinkName, history) {

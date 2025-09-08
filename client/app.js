@@ -18,6 +18,7 @@ const statusText = document.getElementById('statusText');
 const lastUpdate = document.getElementById('lastUpdate');
 const marketStatus = document.getElementById('marketStatus');
 const timerElement = document.getElementById('timer-countdown');
+const themeSelect = document.getElementById('theme-select');
 
 // Rendre l'intervalle d'actualisation dynamique
 refreshIntervalMs = parseInt(localStorage.getItem('refreshInterval'), 10) || REFRESH_INTERVAL;
@@ -259,6 +260,8 @@ window.addEventListener('offline', handleConnectionError);
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialiser le thème
+    initTheme();
     initParticles();
     initCharts();
     startAutoRefresh();
@@ -281,6 +284,10 @@ window.addEventListener('storage', (e) => {
             startTimer();
             console.log(`🔁 Nouvel intervalle appliqué: ${Math.ceil(refreshIntervalMs / 1000)}s`);
         }
+    }
+    if (e.key === 'theme' && e.newValue) {
+        applyTheme(e.newValue);
+        if (themeSelect) themeSelect.value = e.newValue;
     }
 });
 
@@ -326,6 +333,10 @@ async function resetPrices() {
 // Fonctions pour les graphiques
 function initCharts() {
     wallStreetCharts = new WallStreetCharts();
+    // Après création des graphiques, appliquer le thème courant aux charts
+    if (document.body.dataset.theme && wallStreetCharts.updateTheme) {
+        wallStreetCharts.updateTheme();
+    }
 }
 
 function updateCharts(prices, history) {
@@ -368,6 +379,31 @@ function createMiniChart(drinkName, history) {
         return wallStreetCharts.createMiniChart(drinkName, history);
     }
     return '<div class="mini-chart">--</div>';
+}
+
+// ==========================
+// Gestion des thèmes (5)
+// ==========================
+
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'matrix';
+    applyTheme(saved);
+    if (themeSelect) {
+        themeSelect.value = saved;
+        themeSelect.addEventListener('change', (e) => {
+            const t = e.target.value;
+            applyTheme(t);
+        });
+    }
+}
+
+function applyTheme(themeName) {
+    document.body.setAttribute('data-theme', themeName);
+    localStorage.setItem('theme', themeName);
+    // Mettre à jour les graphiques si présents
+    if (wallStreetCharts && typeof wallStreetCharts.updateTheme === 'function') {
+        wallStreetCharts.updateTheme();
+    }
 }
 
 // Export pour tests (si nécessaire)

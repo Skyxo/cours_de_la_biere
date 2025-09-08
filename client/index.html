@@ -59,20 +59,23 @@
 
 <!-- Contrôles de démonstration retirés -->
 
-<!-- Lien vers l'interface admin -->
-<div style="margin-top: 30px;">
-    <a href="admin.html" style="
-        color: #00ff41;
-        text-decoration: none;
-        font-size: 1.1em;
-        padding: 10px 20px;
-        border: 2px solid #00ff41;
-        border-radius: 20px;
-        transition: all 0.3s ease;
-        display: inline-block;
-    " onmouseover="this.style.background='rgba(0, 255, 65, 0.1)'" onmouseout="this.style.background='transparent'">
-        🔧 Interface Administrateur
-    </a>
+    <!-- Lien vers l'interface admin -->
+    <div style="margin-top: 30px;">
+        <a href="admin.html" class="admin-link">
+            🔧 Interface Administrateur
+        </a>
+    </div>
+
+<!-- Sélecteur de thème (5 thèmes) -->
+<div id="theme-controls" class="theme-controls" style="margin-top: 12px; display: inline-flex; align-items: center; gap: 10px;">
+    <label for="theme-select" style="opacity: 0.9;">Thème d'affichage:</label>
+    <select id="theme-select" style="background: transparent; color: inherit; border: 1px solid currentColor; padding: 6px 10px; border-radius: 8px;">
+        <option value="matrix">Matrix (vert)</option>
+        <option value="blue">Bleu sombre</option>
+        <option value="amber">Ambre</option>
+        <option value="light">Clair</option>
+        <option value="contrast">Haut contraste</option>
+    </select>
 </div>
 
 <script src="charts.js"></script>
