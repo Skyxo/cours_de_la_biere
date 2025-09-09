@@ -147,6 +147,33 @@
       border-bottom: 2px solid rgba(var(--accent), 0.3);
     }
     
+    /* Styles pour la colonne prix min/max */
+    .price-range {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.85em;
+      line-height: 1.2;
+    }
+    
+    .min-price {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    
+    .max-price {
+      color: #FF5722;
+      font-weight: bold;
+    }
+    
+    .alcohol-degree {
+      color: #FFA500;
+      font-size: 0.75em;
+      font-weight: normal;
+      margin-left: 4px;
+      text-shadow: 0 0 5px rgba(255, 165, 0, 0.6);
+      opacity: 0.9;
+    }
+    
     /* Styles spécifiques pour la section "Historique des transactions" */
     #history-section .table-container {
       max-height: 300px; /* Réduit de 600px à 300px */
@@ -365,7 +392,19 @@
     
     .btn-warning {
       background: linear-gradient(45deg, #FFA726, #FB8C00);
-      color: #111;
+    }
+    
+    /* Animation pour les boutons maximaux */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
     }
     
     .stats-grid {
@@ -615,17 +654,19 @@
         display: none;
       }
       
-      #purchase-table td[data-label="Prix (€)"] {
+      #purchase-table td[data-label="Prix Min/Max (€)"] {
         grid-column: 2;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        font-size: 0.85em;
+        padding: 4px;
+        text-align: center;
+        font-size: 0.8em;
       }
       
-      #purchase-table td[data-label="Prix (€)"]::before {
-        display: none;
+      #purchase-table td[data-label="Prix Min/Max (€)"]::before {
+        content: "Fourchette: ";
+        font-weight: bold;
+        color: #888;
+        display: block;
+        margin-bottom: 2px;
       }
       
       #purchase-table td[data-label="Prix Exact (€)"] {
@@ -844,6 +885,33 @@
         min-width: auto;
         padding: 4px 6px;
       }
+      
+      /* Styles spécifiques pour les prix min/max en version mobile */
+      .mobile-price-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+      }
+      
+      .min-price {
+        color: #28a745 !important;
+        font-weight: bold;
+        font-size: 0.85em;
+      }
+      
+      .max-price {
+        color: #dc3545 !important;
+        font-weight: bold;
+        font-size: 0.85em;
+      }
+      
+      .alcohol-degree {
+        color: #6c757d;
+        font-size: 0.75em;
+        font-style: italic;
+      }
     }
   </style>
 </head>
@@ -909,12 +977,87 @@
       
       <!-- Boutons d'événements marché -->
       <div style="margin: 20px 0; text-align: center;">
-        <button onclick="triggerMarketCrash()" class="btn btn-danger" style="margin-right: 10px;">
-          📉 Déclencher un Krash
-        </button>
-        <button onclick="triggerMarketBoom()" class="btn" style="background: linear-gradient(45deg, #4CAF50, #8BC34A); color: white;">
-          📈 Déclencher un Boom
-        </button>
+        <h3 style="margin-bottom: 15px;">📉 CRASH du Marché</h3>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
+          <button onclick="triggerMarketCrash('small')" class="btn btn-warning" style="background: linear-gradient(45deg, #FF9800, #F57C00);">
+            📉 Petit Crash (-5% à -15%)
+          </button>
+          <button onclick="triggerMarketCrash('medium')" class="btn btn-danger">
+            📉 Crash Moyen (-10% à -30%)
+          </button>
+          <button onclick="triggerMarketCrash('large')" class="btn btn-danger" style="background: linear-gradient(45deg, #D32F2F, #B71C1C);">
+            📉 Gros Crash (-20% à -50%)
+          </button>
+          <button onclick="triggerMarketCrash('maximum')" class="btn btn-danger" style="background: linear-gradient(45deg, #B71C1C, #8B0000); animation: pulse 2s infinite;">
+            � CRASH MAXIMAL (Prix Min)
+          </button>
+        </div>
+        
+        <h3 style="margin-bottom: 15px;">📈 BOOM du Marché</h3>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+          <button onclick="triggerMarketBoom('small')" class="btn" style="background: linear-gradient(45deg, #8BC34A, #689F38);">
+            📈 Petit Boom (+5% à +15%)
+          </button>
+          <button onclick="triggerMarketBoom('medium')" class="btn" style="background: linear-gradient(45deg, #4CAF50, #388E3C);">
+            📈 Boom Moyen (+10% à +30%)
+          </button>
+          <button onclick="triggerMarketBoom('large')" class="btn" style="background: linear-gradient(45deg, #2E7D32, #1B5E20);">
+            📈 Gros Boom (+20% à +50%)
+          </button>
+          <button onclick="triggerMarketBoom('maximum')" class="btn" style="background: linear-gradient(45deg, #1B5E20, #0D4F0D); animation: pulse 2s infinite;">
+            🚀 BOOM MAXIMAL (Prix Max)
+          </button>
+        </div>
+        
+        <!-- Happy Hour intégré dans les contrôles marché -->
+        <div style="margin-top: 25px; padding: 15px; border: 2px solid #FFD700; border-radius: 8px; background: linear-gradient(45deg, #FFF8DC, #FFFACD);">
+          <h4 style="margin: 0 0 15px 0; color: #B8860B; display: flex; align-items: center; gap: 8px;">
+            🍺 Happy Hour !
+          </h4>
+          <div class="market-controls" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Boisson :</label>
+              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: white; font-size: 14px;">
+                <option value="">🍺 Sélectionner une boisson...</option>
+              </select>
+            </div>
+            <div style="min-width: 120px;">
+              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Durée (sec) :</label>
+              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; font-size: 14px;">
+            </div>
+            <button onclick="startHappyHour()" class="btn" style="background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: 600; border: 2px solid #FF8C00; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);">
+              🌟 Lancer Happy Hour
+            </button>
+            <button onclick="stopAllHappyHours()" class="btn" style="background: linear-gradient(45deg, #FF6B6B, #FF5252); color: white; font-weight: 600;">
+              🛑 Arrêter Toutes
+            </button>
+          </div>
+          
+          <!-- Liste des Happy Hours actives -->
+          <div id="active-happy-hours" style="border: 1px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(255, 255, 255, 0.5);">
+            <h5 style="margin: 0 0 8px 0; color: #B8860B;">🌟 Happy Hours Actives :</h5>
+            <div id="happy-hours-list">
+              <p style="color: #666; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Fluctuations Naturelles -->
+    <div class="admin-section">
+      <div class="section-header">
+        <h3>📊 Fluctuations Naturelles du Marché</h3>
+      </div>
+      <div class="section-content">
+        <div class="market-controls">
+          <button onclick="triggerMarketFluctuations()" class="btn" style="background: linear-gradient(45deg, #607D8B, #455A64); color: white;">
+            📊 Déclencher des Fluctuations Naturelles (-2% à +2%)
+          </button>
+        </div>
+        <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+          Applique des variations aléatoires légères sur environ 30% des boissons, simulant les fluctuations naturelles du marché.
+        </p>
       </div>
     </div>
 
@@ -935,6 +1078,7 @@
               <thead>
                 <tr>
                   <th>Boisson</th>
+                  <th>Prix Min/Max (€)</th>
                   <th>Prix Exact (€)</th>
                   <th>Prix Affiché (€)</th>
                   <th>Actions</th>

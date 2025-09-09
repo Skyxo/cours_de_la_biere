@@ -10,6 +10,9 @@ class CSVDataManager:
         self.drinks_file = os.path.join(data_dir, "drinks.csv")
         self.history_file = os.path.join(data_dir, "history.csv")
         
+        # Structure pour gérer les Happy Hours actives
+        self.active_happy_hours = {}  # {drink_id: {'start_time': datetime, 'duration': int}}
+        
         os.makedirs(data_dir, exist_ok=True)
         self._init_files()
     
@@ -22,13 +25,13 @@ class CSVDataManager:
         if not os.path.exists(self.drinks_file):
             with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                writer.writerow(['id', 'name', 'price', 'base_price', 'min_price', 'max_price'])
+                writer.writerow(['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
                 drinks = [
-                    [1, 'Pilsner', 5.0, 5.0, 3.0, 10.0],
-                    [2, 'IPA', 6.0, 6.0, 4.0, 12.0],
-                    [3, 'Cocktail', 9.0, 9.0, 6.0, 15.0],
-                    [4, 'Soft', 3.0, 3.0, 2.0, 6.0],
-                    [5, 'Shot', 4.0, 4.0, 2.0, 8.0],
+                    [1, 'Pilsner', 5.0, 5.0, 3.0, 10.0, 5.0],
+                    [2, 'IPA', 6.0, 6.0, 4.0, 12.0, 6.5],
+                    [3, 'Cocktail', 9.0, 9.0, 6.0, 15.0, 12.0],
+                    [4, 'Soft', 3.0, 3.0, 2.0, 6.0, 0.0],
+                    [5, 'Shot', 4.0, 4.0, 2.0, 8.0, 40.0],
                 ]
                 writer.writerows(drinks)
         
@@ -39,22 +42,42 @@ class CSVDataManager:
     
     def get_all_prices(self) -> List[Dict]:
         prices = []
+        # Nettoyer les Happy Hours expirées avant de calculer les prix
+        self._clean_expired_happy_hours()
+        
         with open(self.drinks_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
+                drink_id = int(row['id'])
                 exact_price = float(row['price'])
+                min_price = float(row['min_price'])
+                
+                # Vérifier si cette boisson est en Happy Hour
+                display_price = exact_price
+                is_happy_hour = drink_id in self.active_happy_hours
+                
+                if is_happy_hour:
+                    # Pendant une Happy Hour, le prix affiché est le prix minimum
+                    display_price = min_price
+                
                 prices.append({
-                    'id': int(row['id']),
+                    'id': drink_id,
                     'name': row['name'],
-                    'price': exact_price,
-                    'price_rounded': self.round_to_ten_cents(exact_price),
+                    'price': exact_price,  # Prix réel (pour les calculs internes)
+                    'display_price': display_price,  # Prix affiché (réduit pendant Happy Hour)
+                    'price_rounded': self.round_to_ten_cents(display_price),
                     'base_price': float(row['base_price']),
-                    'min_price': float(row['min_price']),
-                    'max_price': float(row['max_price'])
+                    'min_price': min_price,
+                    'max_price': float(row['max_price']),
+                    'alcohol_degree': float(row.get('alcohol_degree', 0)),  # Degré d'alcool
+                    'is_happy_hour': is_happy_hour
                 })
         return prices
     
     def get_drink_by_id(self, drink_id: int) -> Optional[Dict]:
+        # Nettoyer les Happy Hours expirées
+        self._clean_expired_happy_hours()
+        
         with open(self.drinks_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             for row in reader:
@@ -63,14 +86,26 @@ class CSVDataManager:
                     exact_base_price = float(row['base_price'])
                     exact_min_price = float(row['min_price'])
                     exact_max_price = float(row['max_price'])
+                    
+                    # Vérifier si cette boisson est en Happy Hour
+                    display_price = exact_price
+                    is_happy_hour = drink_id in self.active_happy_hours
+                    
+                    if is_happy_hour:
+                        # Pendant une Happy Hour, le prix affiché est le prix minimum
+                        display_price = exact_min_price
+                    
                     return {
                         'id': int(row['id']),
                         'name': row['name'],
-                        'price': exact_price,
-                        'price_rounded': self.round_to_ten_cents(exact_price),
+                        'price': exact_price,  # Prix réel (pour les calculs internes)
+                        'display_price': display_price,  # Prix affiché (réduit pendant Happy Hour)
+                        'price_rounded': self.round_to_ten_cents(display_price),
                         'base_price': exact_base_price,
                         'min_price': exact_min_price,
-                        'max_price': exact_max_price
+                        'max_price': exact_max_price,
+                        'alcohol_degree': float(row.get('alcohol_degree', 0)),  # Degré d'alcool
+                        'is_happy_hour': is_happy_hour
                     }
         return None
     
@@ -85,7 +120,7 @@ class CSVDataManager:
                 drinks.append(row)
         
         with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price'])
+            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
             writer.writeheader()
             writer.writerows(drinks)
     
@@ -106,8 +141,8 @@ class CSVDataManager:
                 datetime.now().isoformat()
             ])
         
-        # Limiter l'historique à 10 entrées pour éviter l'accumulation
-        self._limit_history(10)
+        # Limiter l'historique à 50 entrées pour avoir plus de visibilité
+        self._limit_history(50)
     
     def _limit_history(self, max_entries: int = 10):
         """Limite l'historique au nombre d'entrées spécifié pour éviter l'accumulation infinie"""
@@ -279,25 +314,71 @@ class CSVDataManager:
             self.update_drink_price(drink['id'], drink['base_price'])
             self.add_history_entry(drink['id'], drink['name'], drink['base_price'], 0, 0, 'reset')
     
-    def trigger_crash(self):
+    def trigger_crash(self, level='medium'):
+        """
+        Déclenche un crash du marché avec différents niveaux d'intensité
+        level: 'small', 'medium', 'large', 'maximum'
+        """
         drinks = self.get_all_prices()
+        
+        # Définir les plages d'effets selon le niveau
+        effect_ranges = {
+            'small': (-0.15, -0.05),   # Petit crash: -5% à -15%
+            'medium': (-0.3, -0.1),    # Moyen crash: -10% à -30%
+            'large': (-0.5, -0.2),     # Gros crash: -20% à -50%
+            'maximum': (None, None)     # Maximum: prix minimum
+        }
+        
+        if level not in effect_ranges:
+            level = 'medium'
+            
         for drink in drinks:
-            crash_effect = random.uniform(-0.3, -0.1) * drink['price']
-            new_price = max(drink['min_price'], drink['price'] + crash_effect)
+            if level == 'maximum':
+                # Crash maximal: aller directement au prix minimum
+                new_price = drink['min_price']
+            else:
+                # Crash avec pourcentage aléatoire dans la plage
+                min_effect, max_effect = effect_ranges[level]
+                crash_effect = random.uniform(min_effect, max_effect) * drink['price']
+                new_price = max(drink['min_price'], drink['price'] + crash_effect)
+            
             change = new_price - drink['price']
             if change != 0:
                 self.update_drink_price(drink['id'], new_price)
-                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, 'crash')
+                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'crash_{level}')
     
-    def trigger_boom(self):
+    def trigger_boom(self, level='medium'):
+        """
+        Déclenche un boom du marché avec différents niveaux d'intensité
+        level: 'small', 'medium', 'large', 'maximum'
+        """
         drinks = self.get_all_prices()
+        
+        # Définir les plages d'effets selon le niveau
+        effect_ranges = {
+            'small': (0.05, 0.15),     # Petit boom: +5% à +15%
+            'medium': (0.1, 0.3),      # Moyen boom: +10% à +30%
+            'large': (0.2, 0.5),       # Gros boom: +20% à +50%
+            'maximum': (None, None)     # Maximum: prix maximum
+        }
+        
+        if level not in effect_ranges:
+            level = 'medium'
+            
         for drink in drinks:
-            boom_effect = random.uniform(0.1, 0.3) * drink['price']
-            new_price = min(drink['max_price'], drink['price'] + boom_effect)
+            if level == 'maximum':
+                # Boom maximal: aller directement au prix maximum
+                new_price = drink['max_price']
+            else:
+                # Boom avec pourcentage aléatoire dans la plage
+                min_effect, max_effect = effect_ranges[level]
+                boom_effect = random.uniform(min_effect, max_effect) * drink['price']
+                new_price = min(drink['max_price'], drink['price'] + boom_effect)
+            
             change = new_price - drink['price']
             if change != 0:
                 self.update_drink_price(drink['id'], new_price)
-                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, 'boom')
+                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'boom_{level}')
     
     def _next_drink_id(self) -> int:
         drinks = self.get_all_prices()
@@ -391,3 +472,126 @@ class CSVDataManager:
         with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp'])
+
+    def apply_market_fluctuations(self) -> int:
+        """Applique des fluctuations naturelles du marché et retourne le nombre de prix modifiés"""
+        drinks = self.get_all_prices()
+        changes_count = 0
+        
+        for drink in drinks:
+            # 30% de chance qu'une boisson voit son prix fluctuer
+            if random.random() < 0.3:
+                # Fluctuation entre -2% et +2% du prix actuel
+                fluctuation_percent = random.uniform(-0.02, 0.02)
+                price_change = drink['price'] * fluctuation_percent
+                new_price = max(drink['min_price'], min(drink['max_price'], drink['price'] + price_change))
+                
+                # Seulement mettre à jour si le changement est significatif (plus de 0.01€)
+                if abs(new_price - drink['price']) > 0.01:
+                    change = new_price - drink['price']
+                    self.update_drink_price(drink['id'], new_price)
+                    self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, 'market_fluctuation')
+                    changes_count += 1
+        
+        return changes_count
+
+    def start_happy_hour(self, drink_id: int, duration_seconds: int) -> Dict:
+        """Démarre une Happy Hour pour une boisson spécifique"""
+        drink = self.get_drink_by_id(drink_id)
+        if not drink:
+            raise ValueError('Boisson introuvable')
+        
+        # Nettoyer les Happy Hours expirées
+        self._clean_expired_happy_hours()
+        
+        # Ajouter la nouvelle Happy Hour
+        self.active_happy_hours[drink_id] = {
+            'start_time': datetime.now(),
+            'duration': duration_seconds,
+            'drink_name': drink['name']
+        }
+        
+        # Ajouter à l'historique
+        self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, f'happy_hour_start_{duration_seconds}s')
+        
+        return {
+            'drink_id': drink_id,
+            'drink_name': drink['name'],
+            'duration': duration_seconds,
+            'start_time': datetime.now().isoformat()
+        }
+    
+    def stop_happy_hour(self, drink_id: int) -> bool:
+        """Arrête une Happy Hour pour une boisson spécifique"""
+        if drink_id in self.active_happy_hours:
+            drink_info = self.active_happy_hours[drink_id]
+            drink = self.get_drink_by_id(drink_id)
+            
+            if drink:
+                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop')
+            
+            del self.active_happy_hours[drink_id]
+            return True
+        return False
+    
+    def stop_all_happy_hours(self) -> int:
+        """Arrête toutes les Happy Hours actives"""
+        count = len(self.active_happy_hours)
+        
+        # Ajouter à l'historique pour chaque Happy Hour arrêtée
+        for drink_id, happy_hour_info in self.active_happy_hours.items():
+            drink = self.get_drink_by_id(drink_id)
+            if drink:
+                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop_all')
+        
+        self.active_happy_hours.clear()
+        return count
+    
+    def get_active_happy_hours(self) -> List[Dict]:
+        """Retourne la liste des Happy Hours actives"""
+        # Nettoyer les Happy Hours expirées
+        self._clean_expired_happy_hours()
+        
+        active_hours = []
+        for drink_id, happy_hour_info in self.active_happy_hours.items():
+            start_time = happy_hour_info['start_time']
+            duration = happy_hour_info['duration']
+            elapsed = (datetime.now() - start_time).total_seconds()
+            remaining = max(0, duration - elapsed)
+            
+            active_hours.append({
+                'drink_id': drink_id,
+                'drink_name': happy_hour_info['drink_name'],
+                'start_time': start_time.isoformat(),
+                'duration': duration,
+                'elapsed': int(elapsed),
+                'remaining': int(remaining)
+            })
+        
+        return active_hours
+    
+    def _clean_expired_happy_hours(self):
+        """Nettoie automatiquement les Happy Hours expirées"""
+        current_time = datetime.now()
+        expired_drinks = []
+        
+        for drink_id, happy_hour_info in self.active_happy_hours.items():
+            start_time = happy_hour_info['start_time']
+            duration = happy_hour_info['duration']
+            
+            if (current_time - start_time).total_seconds() >= duration:
+                expired_drinks.append(drink_id)
+        
+        # Supprimer les Happy Hours expirées
+        for drink_id in expired_drinks:
+            happy_hour_info = self.active_happy_hours[drink_id]
+            drink_name = happy_hour_info.get('drink_name', f'Drink {drink_id}')
+            # Éviter la récursion en ne cherchant pas le drink par ID
+            # Utiliser les infos stockées dans happy_hour_info
+            self.add_history_entry(drink_id, drink_name, 0, 0, 0, 'happy_hour_expired')
+            del self.active_happy_hours[drink_id]
+    
+    def is_drink_in_happy_hour(self, drink_id: int) -> bool:
+        """Vérifie si une boisson est actuellement en Happy Hour"""
+        self._clean_expired_happy_hours()
+        return drink_id in self.active_happy_hours

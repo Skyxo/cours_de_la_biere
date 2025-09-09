@@ -10,6 +10,7 @@ let refreshIntervalMs = null; // durée en ms entre deux rafraîchissements
 let refreshIntervalId = null; // handle de setInterval pour le fetch auto
 let sortMode = localStorage.getItem('sort-mode') || 'price'; // Mode de tri: 'price' ou 'alphabetical'
 let chartColorBalance = 0; // Pour équilibrer rouge/vert : positif = plus de verts, négatif = plus de rouges
+let activeHappyHours = []; // Liste des Happy Hours actives
 
 // Fonction pour vérifier si on est en mode transaction immédiate (timer = 0)
 function isImmediateMode() {
@@ -19,6 +20,10 @@ function isImmediateMode() {
 // Fonction pour nettoyer les anciennes animations avant d'en ajouter de nouvelles
 function clearPreviousAnimations() {
     document.querySelectorAll('.price-change').forEach(el => el.classList.remove('price-change'));
+    document.querySelectorAll('.price-flash-up').forEach(el => el.classList.remove('price-flash-up'));
+    document.querySelectorAll('.price-flash-down').forEach(el => el.classList.remove('price-flash-down'));
+    document.querySelectorAll('.price-flash-neutral').forEach(el => el.classList.remove('price-flash-neutral'));
+    // Garde l'ancienne classe pour compatibilité
     document.querySelectorAll('.price-flash').forEach(el => el.classList.remove('price-flash'));
 }
 
@@ -28,6 +33,8 @@ function getSortedDrinks(drinks) {
     
     if (sortMode === 'alphabetical') {
         sortedDrinks.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    } else if (sortMode === 'alcohol') {
+        sortedDrinks.sort((a, b) => (b.alcohol_degree || 0) - (a.alcohol_degree || 0));
     } else {
         sortedDrinks.sort((a, b) => b.price - a.price);
     }
@@ -37,36 +44,58 @@ function getSortedDrinks(drinks) {
 
 // Fonction pour basculer le mode de tri
 function toggleSortMode() {
-    const currentMode = sortMode;
-    sortMode = sortMode === 'price' ? 'alphabetical' : 'price';
-    
-    localStorage.setItem('sort-mode', sortMode);
-    
-    localStorage.setItem('sort-toggle-signal', Date.now().toString());
-    
-    const toggleButton = document.getElementById('sort-type-toggle');
-    if (toggleButton) {
-        const label = toggleButton.querySelector('span');
-        if (label) {
-            label.textContent = sortMode === 'price' ? 'Prix' : 'A-Z';
-        }
-        
-        toggleButton.setAttribute('data-sort-mode', sortMode);
+    // Cycle entre les 3 modes de tri : price -> alphabetical -> alcohol -> price
+    if (sortMode === 'price') {
+        sortMode = 'alphabetical';
+    } else if (sortMode === 'alphabetical') {
+        sortMode = 'alcohol';
+    } else {
+        sortMode = 'price';
     }
     
+    // Sauvegarder immédiatement dans localStorage
+    localStorage.setItem('sort-mode', sortMode);
+    
+    // Mettre à jour l'interface
+    updateSortButtonDisplay();
+    
+    // Envoyer signal de synchronisation pour d'autres onglets/fenêtres
+    localStorage.setItem('sort-toggle-signal', Date.now().toString());
+    
+    // Appliquer immédiatement le nouveau tri
     if (lastDrinksData && lastDrinksData.length > 0) {
         const sortedDrinks = getSortedDrinks(lastDrinksData);
         reorderStockTiles(sortedDrinks);
     }
 }
 
+// Fonction pour mettre à jour l'affichage du bouton de tri
+function updateSortButtonDisplay() {
+    const toggleButton = document.getElementById('sort-type-toggle');
+    if (toggleButton) {
+        const label = toggleButton.querySelector('span');
+        if (label) {
+            let labelText = 'Prix';
+            if (sortMode === 'alphabetical') {
+                labelText = 'A-Z';
+            } else if (sortMode === 'alcohol') {
+                labelText = '🍺%';
+            }
+            label.textContent = labelText;
+        }
+        toggleButton.setAttribute('data-sort-mode', sortMode);
+    }
+}
+
 let timerIntervalId = null;   // handle de setInterval pour le compteur 1s
+let happyHourTimerIntervalId = null; // handle pour le timer Happy Hour
 let wallStreetCharts = null;
 let currentChartType = localStorage.getItem('chart-type') || 'candlestick'; // Type de graphique actuel
 let activeDrinks = new Set(); // Set des drink_id qui ont été achetés et dont les graphiques doivent être mis à jour
 let isInitialLoad = true; // Flag pour savoir si c'est le premier chargement
 let previousPrices = {}; // Pour stocker les prix précédents et détecter les vrais changements
 let lastDrinksData = []; // Pour stocker les dernières données des boissons pour le re-tri
+let previousHappyHours = []; // Pour détecter les nouveaux Happy Hours
 
 // Couleurs distinctes pour chaque boisson
 const drinkColors = [
@@ -231,6 +260,68 @@ function stopTimer() {
     }
 }
 
+// Fonctions pour gérer les timers Happy Hour
+function startHappyHourTimers() {
+    stopHappyHourTimers();
+    happyHourTimerIntervalId = setInterval(updateHappyHourTimers, 1000);
+}
+
+function stopHappyHourTimers() {
+    if (happyHourTimerIntervalId) {
+        clearInterval(happyHourTimerIntervalId);
+        happyHourTimerIntervalId = null;
+    }
+}
+
+function updateHappyHourTimers() {
+    const happyHourTiles = document.querySelectorAll('.happy-hour-active');
+    
+    happyHourTiles.forEach(tile => {
+        const remaining = parseInt(tile.getAttribute('data-remaining'));
+        const duration = parseInt(tile.getAttribute('data-duration'));
+        
+        if (!isNaN(remaining) && !isNaN(duration) && remaining >= 0) {
+            // Décrémenter le temps restant avec interpolation pour une animation plus fluide
+            const newRemaining = Math.max(0, remaining - 1);
+            tile.setAttribute('data-remaining', newRemaining);
+            
+            const percentageRemaining = duration > 0 ? (newRemaining / duration) * 100 : 0;
+            const progressDegrees = (percentageRemaining / 100) * 360;
+            
+            // Calculer les minutes et secondes restantes
+            const minutesRemaining = Math.floor(newRemaining / 60);
+            const secondsRemaining = newRemaining % 60;
+            const timeText = minutesRemaining > 0 ? `${minutesRemaining}m` : `${secondsRemaining}s`;
+            
+            // Mettre à jour le timer avec animation fluide
+            const timerElement = tile.querySelector('.happy-hour-timer');
+            if (timerElement) {
+                // Animation fluide du camembert
+                timerElement.style.transition = 'background 0.8s ease-in-out';
+                timerElement.style.setProperty('--progress', `${progressDegrees}deg`);
+                timerElement.textContent = timeText;
+                
+                // Si le timer est fini, enlever les classes Happy Hour
+                if (newRemaining <= 0) {
+                    // Extraire l'ID de la boisson depuis l'ID de la tuile
+                    const drinkId = parseInt(tile.id.replace('tile-', ''));
+                    
+                    tile.classList.remove('happy-hour-active');
+                    const stars = tile.querySelector('.happy-hour-stars');
+                    const timer = tile.querySelector('.happy-hour-timer');
+                    if (stars) stars.remove();
+                    if (timer) timer.remove();
+                    
+                    // Actualiser le graphique pour supprimer visuellement le Happy Hour
+                    setTimeout(() => {
+                        refreshDrinkDisplay(drinkId);
+                    }, 500);
+                }
+            }
+        }
+    });
+}
+
 // Initialisation des particules
 function initParticles() {
     const particlesContainer = document.getElementById('particles');
@@ -271,10 +362,29 @@ function updateTimestamp() {
 // Récupération des prix depuis l'API
 async function fetchPrices() {
     try {
-        const res = await fetch(`${API_BASE}/prices`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Récupérer les prix et les Happy Hours en parallèle
+        const [pricesRes, happyHoursRes] = await Promise.all([
+            fetch(`${API_BASE}/prices`),
+            fetch(`${API_BASE}/happy-hour/active`)
+        ]);
         
-        const data = await res.json();
+        if (!pricesRes.ok) throw new Error(`HTTP ${pricesRes.status}`);
+        
+        const data = await pricesRes.json();
+        
+        // Récupérer les Happy Hours (même si la requête échoue, continuer)
+        if (happyHoursRes.ok) {
+            const happyHoursData = await happyHoursRes.json();
+            const newActiveHappyHours = happyHoursData.active_happy_hours || [];
+            
+            // Détecter les nouveaux Happy Hours
+            if (!isInitialLoad) {
+                detectNewHappyHours(newActiveHappyHours);
+            }
+            
+            activeHappyHours = newActiveHappyHours;
+            previousHappyHours = [...newActiveHappyHours];
+        }
         
         // Mettre à jour la liste des boissons actives (pour info)
         if (data.active_drinks) {
@@ -286,6 +396,11 @@ async function fetchPrices() {
         handleReconnection();
         updateTimestamp();
         
+        // Démarrer les timers Happy Hour s'il y en a
+        if (activeHappyHours.length > 0) {
+            startHappyHourTimers();
+        }
+        
         // Réinitialiser le compteur après une actualisation réussie
         countdown = Math.ceil(refreshIntervalMs / 1000);
         if (timerElement) {
@@ -296,6 +411,77 @@ async function fetchPrices() {
         console.error('Erreur lors de la récupération des prix:', error);
         // Erreur de connexion
         handleConnectionError();
+    }
+}
+
+// Fonction pour détecter les nouveaux Happy Hours et actualiser les graphiques
+function detectNewHappyHours(newActiveHappyHours) {
+    const currentHappyHourIds = new Set(previousHappyHours.map(hh => hh.drink_id));
+    const newHappyHourIds = new Set(newActiveHappyHours.map(hh => hh.drink_id));
+    
+    // Détecter les nouveaux Happy Hours
+    newActiveHappyHours.forEach(happyHour => {
+        if (!currentHappyHourIds.has(happyHour.drink_id)) {
+            console.log(`Nouveau Happy Hour détecté pour la boisson ${happyHour.drink_id}`);
+            // Actualiser immédiatement le graphique de cette boisson
+            setTimeout(() => {
+                refreshDrinkDisplay(happyHour.drink_id);
+            }, 500);
+        }
+    });
+    
+    // Détecter les Happy Hours terminés (optionnel, déjà géré par le timer)
+    previousHappyHours.forEach(happyHour => {
+        if (!newHappyHourIds.has(happyHour.drink_id)) {
+            console.log(`Happy Hour terminé pour la boisson ${happyHour.drink_id}`);
+            // Actualiser le graphique pour supprimer l'animation
+            setTimeout(() => {
+                refreshDrinkDisplay(happyHour.drink_id);
+            }, 300);
+        }
+    });
+}
+
+// Fonction pour actualiser un graphique spécifique lors d'un Happy Hour
+async function refreshDrinkDisplay(drinkId) {
+    try {
+        // Récupérer les données actualisées
+        const [pricesRes, happyHoursRes] = await Promise.all([
+            fetch('/prices'),
+            fetch('/happy-hour/active')
+        ]);
+        
+        if (pricesRes.ok && happyHoursRes.ok) {
+            const pricesData = await pricesRes.json();
+            const happyHoursData = await happyHoursRes.json();
+            
+            // Mettre à jour activeHappyHours
+            activeHappyHours = happyHoursData.active_happy_hours || [];
+            
+            // Trouver la boisson spécifique
+            const drink = pricesData.prices.find(d => d.id === drinkId);
+            if (drink) {
+                // Trouver le conteneur de la boisson
+                const tile = document.getElementById(`tile-${drinkId}`);
+                if (tile) {
+                    // Sauvegarder la position de scroll
+                    const scrollTop = window.pageYOffset;
+                    
+                    // Re-créer la tuile avec les nouvelles données
+                    const newTile = createStockTile(drink);
+                    tile.parentNode.replaceChild(newTile, tile);
+                    
+                    // Créer le graphique avec setTimeout pour laisser le DOM se mettre à jour
+                    setTimeout(() => {
+                        createOrUpdateStockChart(drink);
+                        // Restaurer la position de scroll
+                        window.scrollTo(0, scrollTop);
+                    }, 100);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors de l\'actualisation du graphique:', error);
     }
 }
 
@@ -447,13 +633,43 @@ function createStockTile(drink) {
     const variation = calculateVariation(drink);
     const drinkColor = getDrinkColor(drink.name, drink.id);
     
+    // Générer les indicateurs de tendance
+    const trendIndicators = getTrendIndicators(trend.class);
+    
+    // Vérifier si la boisson est en Happy Hour
+    const isInHappyHour = activeHappyHours.some(hh => hh.drink_id === drink.id);
+    
     const tile = document.createElement('div');
     tile.className = `stock-tile trend-${trend.class}`;
     tile.id = `tile-${drink.id}`;
     
-    // Animation flash si le prix change
+    // Ajouter la classe Happy Hour si nécessaire
+    if (isInHappyHour) {
+        tile.classList.add('happy-hour-active');
+        
+        // Trouver les détails du Happy Hour pour ce drink
+        const happyHour = activeHappyHours.find(hh => hh.drink_id === drink.id);
+        if (happyHour) {
+            // Utiliser les données du serveur (remaining en secondes, duration en secondes)
+            const timeRemaining = Math.max(0, happyHour.remaining * 1000); // Convertir en ms
+            const totalDuration = happyHour.duration * 1000; // Convertir en ms
+            const percentageRemaining = totalDuration > 0 ? (timeRemaining / totalDuration) * 100 : 0;
+            const progressDegrees = (percentageRemaining / 100) * 360;
+            
+            // Calculer les minutes et secondes restantes
+            const minutesRemaining = Math.floor(happyHour.remaining / 60);
+            const secondsRemaining = happyHour.remaining % 60;
+            const timeText = minutesRemaining > 0 ? `${minutesRemaining}m` : `${secondsRemaining}s`;
+            
+            // Stocker les données du timer pour cet élément
+            tile.setAttribute('data-remaining', happyHour.remaining);
+            tile.setAttribute('data-duration', happyHour.duration);
+        }
+    }
+    
+    // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
-        tile.classList.add('price-flash');
+        tile.classList.add(`price-flash-${trend.class}`);
         // L'animation restera jusqu'à la prochaine actualisation du graphique
     }
     
@@ -462,13 +678,68 @@ function createStockTile(drink) {
             <canvas id="chart-${drink.id}" width="100%" height="100%"></canvas>
         </div>
         <div class="tile-info">
-            <div class="tile-name">${drink.name}</div>
-            <div class="tile-price">${drink.price_rounded.toFixed(1)} €</div>
+            <div class="tile-name">
+                <span class="trend-indicator left">${trendIndicators.left}</span>
+                <span class="drink-name-text">${drink.name} <span class="alcohol-degree">${drink.alcohol_degree || 0}°</span>${isInHappyHour ? ' 🌟' : ''}</span>
+                <span class="trend-indicator right">${trendIndicators.right}</span>
+            </div>
+            <div class="tile-price">
+                ${isInHappyHour ? `<span class="happy-hour-price">${drink.price_rounded.toFixed(1)} €</span>` : `${drink.price_rounded.toFixed(1)} €`}
+            </div>
             <div class="tile-variation ${trend.class}">${variation}</div>
         </div>
+        ${isInHappyHour ? '<div class="happy-hour-stars"></div>' : ''}
+        ${isInHappyHour ? '<div class="happy-hour-timer" id="timer-' + drink.id + '"></div>' : ''}
     `;
     
+    // Mettre à jour le timer Happy Hour si nécessaire
+    if (isInHappyHour) {
+        const happyHour = activeHappyHours.find(hh => hh.drink_id === drink.id);
+        if (happyHour) {
+            const timeRemaining = Math.max(0, happyHour.remaining * 1000);
+            const totalDuration = happyHour.duration * 1000;
+            const percentageRemaining = totalDuration > 0 ? (timeRemaining / totalDuration) * 100 : 0;
+            const progressDegrees = (percentageRemaining / 100) * 360;
+            
+            const minutesRemaining = Math.floor(happyHour.remaining / 60);
+            const secondsRemaining = happyHour.remaining % 60;
+            const timeText = minutesRemaining > 0 ? `${minutesRemaining}m` : `${secondsRemaining}s`;
+            
+            setTimeout(() => {
+                const timerElement = document.getElementById(`timer-${drink.id}`);
+                if (timerElement) {
+                    // Animation fluide du camembert
+                    timerElement.style.transition = 'background 0.8s ease-in-out';
+                    timerElement.style.setProperty('--progress', `${progressDegrees}deg`);
+                    timerElement.textContent = timeText;
+                }
+            }, 0);
+        }
+    }
+    
     return tile;
+}
+
+// Fonction pour générer les indicateurs de tendance
+function getTrendIndicators(trendClass) {
+    switch (trendClass) {
+        case 'up':
+            return {
+                left: '▲',
+                right: '▲'
+            };
+        case 'down':
+            return {
+                left: '▼',
+                right: '▼'
+            };
+        case 'neutral':
+        default:
+            return {
+                left: '▬',
+                right: '▬'
+            };
+    }
 }
 
 // Mettre à jour seulement le prix dans une tuile existante
@@ -480,6 +751,18 @@ function updateStockTilePrice(drink) {
     
     const trend = calculateTrend(drink);
     const variation = calculateVariation(drink);
+    
+    // Mettre à jour les indicateurs de tendance
+    const trendIndicators = getTrendIndicators(trend.class);
+    const leftIndicator = tile.querySelector('.trend-indicator.left');
+    const rightIndicator = tile.querySelector('.trend-indicator.right');
+    
+    if (leftIndicator) {
+        leftIndicator.textContent = trendIndicators.left;
+    }
+    if (rightIndicator) {
+        rightIndicator.textContent = trendIndicators.right;
+    }
     
     // Mettre à jour le prix
     const priceElement = tile.querySelector('.tile-price');
@@ -497,9 +780,9 @@ function updateStockTilePrice(drink) {
     // Mettre à jour la classe de tendance de la tuile
     tile.className = `stock-tile trend-${trend.class}`;
     
-    // Animation flash si le prix change
+    // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
-        tile.classList.add('price-flash');
+        tile.classList.add(`price-flash-${trend.class}`);
         // L'animation restera jusqu'à la prochaine actualisation du graphique
     }
     
@@ -602,7 +885,10 @@ function createCandlestickChart(drink, canvas) {
         const numCandles = 3 + Math.floor(Math.random() * 5); // 3-7 bougies
         
         for (let i = 0; i < numCandles; i++) {
-            const x = i; // Index simple au lieu de timestamp
+            // En mode manuel, utiliser des timestamps, sinon des index
+            const x = isImmediateMode() ? 
+                Date.now() - (numCandles - i) * 60000 + Math.random() * 10000 : // Timestamps espacés en mode manuel 
+                i; // Index simple en mode automatique
             
             // Variation aléatoire mais cohérente
             const variation = (Math.random() - 0.5) * 0.3;
@@ -624,25 +910,34 @@ function createCandlestickChart(drink, canvas) {
         drinkPriceHistory.set(drink.id, ohlcHistory);
     }
     
-    // Ajouter un nouveau candlestick seulement lors de transactions réelles
-    // Cette fonction n'est appelée que quand le prix a vraiment changé
+    // Ajouter un nouveau candlestick SEULEMENT si le prix actuel est différent du dernier prix enregistré
     const lastCandle = ohlcHistory[ohlcHistory.length - 1];
-    const transactionIndex = ohlcHistory.length; // Index basé sur le nombre de transactions
+    const lastRecordedPrice = lastCandle ? lastCandle.c : null;
     
-    // Toujours ajouter une nouvelle bougie car il y a eu une transaction
-    const open = lastCandle ? lastCandle.c : currentPrice;
-    const variation = (Math.random() - 0.5) * 0.2;
-    const close = currentPrice;
-    const high = Math.max(open, close) + Math.random() * 0.05;
-    const low = Math.min(open, close) - Math.random() * 0.05;
+    // Vérifier si c'est un vrai changement de prix ou juste un changement de mode
+    const isRealPriceChange = lastRecordedPrice === null || Math.abs(currentPrice - lastRecordedPrice) > 0.001;
     
-    ohlcHistory.push({
-        x: transactionIndex, // Utiliser l'index de transaction au lieu du timestamp
-        o: Math.max(0.5, open),
-        h: Math.max(0.5, high),
-        l: Math.max(0.5, low),
-        c: Math.max(0.5, close)
-    });
+    if (isRealPriceChange) {
+        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon utiliser un index
+        const transactionIndex = isImmediateMode() ? 
+            Date.now() + Math.random() * 1000 : // Timestamp unique en mode manuel
+            (lastCandle ? lastCandle.x + 1 : 0); // Index séquentiel en mode automatique
+        
+        // Ajouter une nouvelle bougie car il y a eu une vraie transaction
+        const open = lastCandle ? lastCandle.c : currentPrice;
+        const variation = (Math.random() - 0.5) * 0.2;
+        const close = currentPrice;
+        const high = Math.max(open, close) + Math.random() * 0.05;
+        const low = Math.min(open, close) - Math.random() * 0.05;
+        
+        ohlcHistory.push({
+            x: transactionIndex,
+            o: Math.max(0.5, open),
+            h: Math.max(0.5, high),
+            l: Math.max(0.5, low),
+            c: Math.max(0.5, close)
+        });
+    }
     
     // Garder seulement les 10 dernières bougies pour éviter les lags
     if (ohlcHistory.length > 10) {
@@ -652,7 +947,7 @@ function createCandlestickChart(drink, canvas) {
     // Trier par timestamp
     ohlcHistory.sort((a, b) => a.x - b.x);
     
-    // Sauvegarder l'historique au format OHLC
+    // Sauvegarder l'historique au format OHLC (important pour préserver lors du changement de mode)
     drinkPriceHistory.set(drink.id, ohlcHistory);
     
     
@@ -665,6 +960,9 @@ function createCandlestickChart(drink, canvas) {
         
         const trend = calculateTrendFromHistoryOHLC(ohlcHistory);
         
+        // Vérifier si cette boisson est en Happy Hour
+        const isInHappyHour = activeHappyHours.some(hh => hh.drink_id === drink.id);
+        
         try {
             const chart = new Chart(ctx, {
                 type: 'candlestick',
@@ -672,10 +970,14 @@ function createCandlestickChart(drink, canvas) {
                     datasets: [{
                         label: drink.name,
                         data: [...ohlcHistory],
-                        color: {
-                            up: '#00ff41',   // Couleur pour les bougies haussières
-                            down: '#ff4444', // Couleur pour les bougies baissières
-                            unchanged: '#00ff41' // Vert par défaut au lieu de gris
+                        color: isInHappyHour ? {
+                            up: '#FFD700',     // Or pour les bougies haussières en Happy Hour
+                            down: '#FFA500',   // Orange doré pour les bougies baissières en Happy Hour
+                            unchanged: '#FFD700' // Or pour les bougies inchangées en Happy Hour
+                        } : {
+                            up: '#48ff00ff',   // Couleur normale pour les bougies haussières
+                            down: '#ff4444',   // Couleur normale pour les bougies baissières
+                            unchanged: '#00ff41' // Vert par défaut
                         }
                     }]
                 },
@@ -705,13 +1007,20 @@ function createCandlestickChart(drink, canvas) {
                     scales: {
                         x: {
                             type: 'linear',
-                            display: false
+                            display: false,
+                            grid: {
+                                color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                            }
                         },
                         y: {
                             display: false,
-                            beginAtZero: false
+                            beginAtZero: false,
+                            grid: {
+                                color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                            }
                         }
-                    }
+                    },
+                    backgroundColor: isInHappyHour ? 'rgba(255, 215, 0, 0.05)' : 'transparent'
                 }
             });
             
@@ -722,7 +1031,6 @@ function createCandlestickChart(drink, canvas) {
         }
 }
 
-// Créer un graphique linéaire
 // Créer un graphique linéaire
 function createLineChart(drink, canvas) {
     // Initialiser l'historique si nécessaire (format simple {x, y})
@@ -756,7 +1064,10 @@ function createLineChart(drink, canvas) {
         const isIncreasing = Math.random() > 0.5; // 50% croissant, 50% décroissant
         
         for (let i = 0; i < numPoints; i++) {
-            const x = i; // Index simple au lieu de timestamp
+            // En mode manuel, utiliser des timestamps, sinon des index
+            const x = isImmediateMode() ? 
+                Date.now() - (numPoints - i) * 60000 + Math.random() * 10000 : // Timestamps espacés en mode manuel
+                i; // Index simple en mode automatique
             
             // Variation progressive selon la tendance
             const progress = i / (numPoints - 1);
@@ -773,12 +1084,22 @@ function createLineChart(drink, canvas) {
         drinkPriceHistory.set(drink.id, lineHistory);
     }
     
-    // Ajouter un nouveau point seulement lors de transactions réelles
-    // Cette fonction n'est appelée que quand le prix a vraiment changé
-    const transactionIndex = lineHistory.length; // Index basé sur le nombre de transactions
+    // Ajouter un nouveau point SEULEMENT si le prix actuel est différent du dernier prix enregistré
+    const lastPoint = lineHistory[lineHistory.length - 1];
+    const lastRecordedPrice = lastPoint ? lastPoint.y : null;
     
-    // Toujours ajouter un nouveau point car il y a eu une transaction
-    lineHistory.push({ x: transactionIndex, y: currentPrice });
+    // Vérifier si c'est un vrai changement de prix ou juste un changement de mode
+    const isRealPriceChange = lastRecordedPrice === null || Math.abs(currentPrice - lastRecordedPrice) > 0.001;
+    
+    if (isRealPriceChange) {
+        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon utiliser un index
+        const transactionIndex = isImmediateMode() ? 
+            Date.now() + Math.random() * 1000 : // Timestamp unique en mode manuel
+            (lastPoint ? lastPoint.x + 1 : 0); // Index séquentiel en mode automatique
+        
+        // Ajouter un nouveau point car il y a eu une vraie transaction
+        lineHistory.push({ x: transactionIndex, y: currentPrice });
+    }
     
     // Garder seulement les 10 derniers points pour éviter les lags
     if (lineHistory.length > 10) {
@@ -788,7 +1109,7 @@ function createLineChart(drink, canvas) {
     // Trier par timestamp
     lineHistory.sort((a, b) => a.x - b.x);
     
-    // Sauvegarder l'historique au format line
+    // Sauvegarder l'historique au format line (important pour préserver lors du changement de mode)
     drinkPriceHistory.set(drink.id, lineHistory);
     
     
@@ -800,7 +1121,12 @@ function createLineChart(drink, canvas) {
     }
     
     const trend = calculateTrendFromHistory(lineHistory);
-    const trendColor = getTrendColor(trend);
+    
+    // Vérifier si cette boisson est en Happy Hour
+    const isInHappyHour = activeHappyHours.some(hh => hh.drink_id === drink.id);
+    
+    const trendColor = isInHappyHour ? '#FFD700' : getTrendColor(trend);
+    const backgroundColor = isInHappyHour ? 'rgba(255, 215, 0, 0.2)' : getTrendColor(trend, 0.2);
     
     try {
         const chart = new Chart(ctx, {
@@ -809,8 +1135,8 @@ function createLineChart(drink, canvas) {
                 datasets: [{
                     data: [...lineHistory],
                     borderColor: trendColor,
-                    backgroundColor: getTrendColor(trend, 0.2), // Aire colorée selon la tendance
-                    borderWidth: 2,
+                    backgroundColor: backgroundColor, // Aire colorée selon Happy Hour ou tendance
+                    borderWidth: isInHappyHour ? 3 : 2, // Ligne plus épaisse en Happy Hour
                     fill: true,
                     tension: 0.4,
                     pointRadius: 0,
@@ -835,13 +1161,20 @@ function createLineChart(drink, canvas) {
                 scales: {
                     x: {
                         type: 'linear',
-                        display: false
+                        display: false,
+                        grid: {
+                            color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                        }
                     },
                     y: {
                         display: false,
-                        beginAtZero: false
+                        beginAtZero: false,
+                        grid: {
+                            color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
+                        }
                     }
                 },
+                backgroundColor: isInHappyHour ? 'rgba(255, 215, 0, 0.05)' : 'transparent',
                 elements: {
                     line: { tension: 0.4 },
                     point: { radius: 0 }
@@ -895,8 +1228,11 @@ function getTrendColor(trend, alpha = 1) {
             return alpha === 1 ? '#00ff41' : `rgba(0, 255, 65, ${alpha})`;
         case 'down':
             return alpha === 1 ? '#ff4444' : `rgba(255, 68, 68, ${alpha})`;
+        case 'neutral':
+            // Pour les tendances neutres, utiliser un vert plus foncé par défaut
+            return alpha === 1 ? '#00aa2b' : `rgba(0, 170, 43, ${alpha})`;
         default:
-            // Pour les tendances neutres, utiliser vert par défaut (pas de gris)
+            // Couleur par défaut si trend est undefined ou autre
             return alpha === 1 ? '#00ff41' : `rgba(0, 255, 65, ${alpha})`;
     }
 }
@@ -1022,9 +1358,11 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         stopAutoRefresh();
         stopTimer();
+        stopHappyHourTimers();
     } else {
         startAutoRefresh();
         startTimer();
+        startHappyHourTimers();
     }
 });
 
@@ -1080,16 +1418,24 @@ function recreateAllCharts() {
     // Détruire tous les graphiques existants
     destroyAllCharts();
     
+    // IMPORTANT: NE PAS vider l'historique des prix lors du changement de mode
+    // L'historique doit être préservé pour maintenir les couleurs et tendances
+    
     // Forcer le mode initial load pour recréer tous les graphiques
     isInitialLoad = true;
     
     // Attendre un court délai pour s'assurer que la destruction est complète
     setTimeout(() => {
-        // Obtenir les données actuelles des boissons et forcer la recréation
-        fetchPrices().then(() => {
-        }).catch(error => {
-            console.error('Debug: Error recreating charts:', error);
-        });
+        // Si on a des données récentes, les utiliser directement
+        if (lastDrinksData && lastDrinksData.length > 0) {
+            renderStockWall(lastDrinksData);
+        } else {
+            // Sinon, récupérer de nouvelles données
+            fetchPrices().then(() => {
+            }).catch(error => {
+                console.error('Debug: Error recreating charts:', error);
+            });
+        }
     }, 100);
 }
 
@@ -1100,15 +1446,15 @@ function initSortToggle() {
         return;
     }
     
-    // Synchroniser l'état initial du bouton avec sortMode
-    const label = sortToggleButton.querySelector('span');
-    if (label) {
-        label.textContent = sortMode === 'price' ? 'Prix' : 'A-Z';
-    }
-    sortToggleButton.setAttribute('data-sort-mode', sortMode);
+    // Supprimer tous les event listeners existants en clonant le bouton
+    const newButton = sortToggleButton.cloneNode(true);
+    sortToggleButton.parentNode.replaceChild(newButton, sortToggleButton);
     
-    // Ajouter l'événement click
-    sortToggleButton.addEventListener('click', toggleSortMode);
+    // Synchroniser l'état initial du bouton avec sortMode
+    updateSortButtonDisplay();
+    
+    // Ajouter l'événement click UNE SEULE FOIS
+    newButton.addEventListener('click', toggleSortMode);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1126,6 +1472,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialiser le bouton de tri avec synchronisation
     initSortToggle();
+    
+    // Initialiser l'écoute des événements de marché
+    initMarketEventListener();
     
     // Pas besoin d'initCharts pour le mur de bourse - les graphiques sont créés individuellement
     
@@ -1162,6 +1511,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Écouter les changements de localStorage (depuis admin.html ou autres onglets)
 window.addEventListener('storage', (e) => {
+    // Écouter les signaux de Happy Hour depuis l'interface admin
+    if (e.key === 'happy-hour-started' && e.newValue) {
+        try {
+            const signal = JSON.parse(e.newValue);
+            console.log(`Signal Happy Hour démarré reçu pour la boisson ${signal.drinkId}`);
+            
+            // Actualiser immédiatement le graphique de cette boisson
+            setTimeout(() => {
+                refreshDrinkDisplay(signal.drinkId);
+            }, 500);
+            
+            // Nettoyer le signal
+            localStorage.removeItem('happy-hour-started');
+        } catch (error) {
+            console.error('Erreur lors du traitement du signal Happy Hour:', error);
+        }
+    }
+    
+    if (e.key === 'happy-hour-stopped' && e.newValue) {
+        try {
+            const signal = JSON.parse(e.newValue);
+            console.log(`Signal Happy Hour arrêté reçu pour la boisson ${signal.drinkId}`);
+            
+            // Actualiser immédiatement le graphique de cette boisson
+            setTimeout(() => {
+                refreshDrinkDisplay(signal.drinkId);
+            }, 300);
+            
+            // Nettoyer le signal
+            localStorage.removeItem('happy-hour-stopped');
+        } catch (error) {
+            console.error('Erreur lors du traitement du signal Happy Hour arrêté:', error);
+        }
+    }
+    
+    if (e.key === 'happy-hour-all-stopped' && e.newValue) {
+        try {
+            console.log('Signal arrêt de tous les Happy Hours reçu');
+            
+            // Actualiser tous les graphiques après un délai
+            setTimeout(() => {
+                fetchPrices();
+            }, 500);
+            
+            // Nettoyer le signal
+            localStorage.removeItem('happy-hour-all-stopped');
+        } catch (error) {
+            console.error('Erreur lors du traitement du signal arrêt de tous les Happy Hours:', error);
+        }
+    }
+    
     // Synchronisation de l'intervalle de rafraîchissement
     if (e.key === 'refreshInterval') {
         const newMs = parseInt(e.newValue, 10);
@@ -1257,30 +1657,23 @@ window.addEventListener('storage', (e) => {
         recreateAllCharts();
     }
     
-    // Synchronisation du toggle de tri depuis l'admin
+    // Synchronisation du toggle de tri depuis l'admin (SEULEMENT pour synchroniser entre onglets)
     if (e.key === 'sort-toggle-signal') {
-        // Lire l'état actuel du tri depuis localStorage pour savoir comment basculer
-        const currentSortMode = localStorage.getItem('sort-mode') || 'price';
-        const newSortMode = currentSortMode === 'price' ? 'alphabetical' : 'price';
+        // Récupérer le mode actuel depuis localStorage (peut avoir été changé par un autre onglet)
+        const newSortMode = localStorage.getItem('sort-mode') || 'price';
         
-        // Mettre à jour la variable locale
-        sortMode = newSortMode;
-        
-        
-        // Mettre à jour le texte du bouton si il existe
-        const toggleButton = document.getElementById('sort-type-toggle');
-        if (toggleButton) {
-            const label = toggleButton.querySelector('span');
-            if (label) {
-                label.textContent = sortMode === 'price' ? 'Prix' : 'A-Z';
+        // Mettre à jour la variable locale SEULEMENT si elle est différente
+        if (sortMode !== newSortMode) {
+            sortMode = newSortMode;
+            
+            // Mettre à jour l'affichage du bouton
+            updateSortButtonDisplay();
+            
+            // Refaire le rendu avec le nouveau tri
+            if (lastDrinksData && lastDrinksData.length > 0) {
+                const sortedDrinks = getSortedDrinks(lastDrinksData);
+                reorderStockTiles(sortedDrinks);
             }
-            toggleButton.setAttribute('data-sort-mode', sortMode);
-        }
-        
-        // Refaire le rendu avec le nouveau tri
-        if (lastDrinksData && lastDrinksData.length > 0) {
-            const sortedDrinks = getSortedDrinks(lastDrinksData);
-            reorderStockTiles(sortedDrinks);
         }
     }
     
@@ -1439,4 +1832,57 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
         initCharts,
         updateCharts
     };
+};
+
+// Fonction pour initialiser l'écoute des événements de marché
+function initMarketEventListener() {
+    // Écouter les signaux d'actualisation immédiate depuis l'interface admin
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'trigger-immediate-refresh') {
+            console.log('Signal d actualisation immediate recu depuis l admin');
+            
+            // Déclencher une actualisation immédiate
+            fetchPrices().then(() => {
+                console.log('Actualisation immediate terminee');
+            }).catch(error => {
+                console.error('Erreur lors de l actualisation immediate:', error);
+            });
+            
+            // Réinitialiser le compteur à zéro
+            if (refreshIntervalMs > 0) {
+                countdown = Math.ceil(refreshIntervalMs / 1000);
+                if (timerElement) {
+                    timerElement.textContent = countdown;
+                }
+                
+                // Redémarrer le timer pour synchroniser
+                startTimer();
+            }
+        }
+        
+        if (event.key === 'market-event-signal') {
+            try {
+                const signalData = JSON.parse(event.newValue);
+                if (signalData && signalData.type === 'market_event') {
+                    console.log('Evenement de marche detecte, actualisation des graphiques...');
+                    
+                    // Animation visuelle pour indiquer l'événement de marché
+                    if (marketStatus) {
+                        const originalText = marketStatus.innerHTML;
+                        const originalColor = marketStatus.style.color;
+                        
+                        marketStatus.innerHTML = '🚀 ÉVÉNEMENT MARCHÉ';
+                        marketStatus.style.color = '#ffa500';
+                        
+                        setTimeout(() => {
+                            marketStatus.innerHTML = originalText;
+                            marketStatus.style.color = originalColor;
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors du traitement du signal de marche:', error);
+            }
+        }
+    });
 }

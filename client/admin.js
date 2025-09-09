@@ -487,8 +487,14 @@ async function loadInitialData() {
     loadAdminDrinksList(),
   ]);
   
-  // Charger l'historique séparément après un délai pour éviter la surcharge
-  setTimeout(() => loadHistory(), 1000);
+  // Charger les données Happy Hour après que le DOM soit prêt
+  await loadHappyHourDrinks();
+  
+  // Charger l'historique et les Happy Hours actives séparément après un délai pour éviter la surcharge
+  setTimeout(() => {
+    loadHistory();
+    loadActiveHappyHours();
+  }, 1000);
   
   // Initialiser les graphiques
   initCharts();
@@ -513,20 +519,21 @@ async function loadDrinks() {
         });
     const data = await res.json();
 
+    // Ancienne liste (pour compatibilité)
     const select = document.getElementById("drink");
     if (!select) {
       // Ignorer sans erreur si l'élément n'existe pas
-      console.log("Élément select #drink non trouvé");
-      return;
+      console.log("Élément select #drink non trouvé (normal si non utilisé)");
+    } else {
+      select.innerHTML = "";
+      data.drinks.forEach(drink => {
+        const option = document.createElement("option");
+        option.value = drink.id;
+        option.textContent = `${drink.name} – ${drink.price.toFixed(2)} €`;
+        select.appendChild(option);
+      });
     }
-    select.innerHTML = "";
 
-        data.drinks.forEach(drink => {
-      const option = document.createElement("option");
-      option.value = drink.id;
-      option.textContent = `${drink.name} – ${drink.price.toFixed(2)} €`;
-      select.appendChild(option);
-    });
     updateConnectionStatus(true);
   } catch (error) {
     console.error("Erreur chargement boissons:", error);
@@ -949,7 +956,13 @@ async function loadPurchaseTable() {
             const adminInfo_drink = adminInfo[drink.id] || { min_price: 0, max_price: 100 };
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td data-label="Boisson">${drink.name}</td>
+                <td data-label="Boisson">${drink.name} <span class="alcohol-degree">${drink.alcohol_degree || 0}°</span></td>
+                <td data-label="Prix Min/Max (€)">
+                  <span class="price-range">
+                    <span class="min-price">${adminInfo_drink.min_price}€</span> - 
+                    <span class="max-price">${adminInfo_drink.max_price}€</span>
+                  </span>
+                </td>
                 <td data-label="Prix Exact (€)">
                   <span class="price-exact-display" data-id="${drink.id}">${drink.price.toFixed(2)}€</span>
                   <input class="price-edit hidden" data-id="${drink.id}" type="number" step="0.01" min="${adminInfo_drink.min_price}" max="${adminInfo_drink.max_price}" value="${drink.price.toFixed(2)}">
@@ -1188,13 +1201,22 @@ function cleanupPriceDisplay() {
 }
 
 // Fonctions pour les événements de marché
-async function triggerMarketCrash() {
-    if (!confirm('⚠️ Déclencher un KRASH du marché ? Tous les prix vont chuter drastiquement !')) {
+async function triggerMarketCrash(level = 'medium') {
+    const levelMessages = {
+        'small': 'un PETIT CRASH (baisse de 5% à 15%)',
+        'medium': 'un CRASH MOYEN (baisse de 10% à 30%)', 
+        'large': 'un GROS CRASH (baisse de 20% à 50%)',
+        'maximum': 'un CRASH MAXIMAL (prix minimum pour toutes les boissons)'
+    };
+    
+    const message = levelMessages[level] || levelMessages['medium'];
+    
+    if (!confirm(`💥 Déclencher ${message} ? Tous les prix vont chuter !`)) {
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE}/admin/market/crash`, {
+        const response = await fetch(`${API_BASE}/admin/market/crash?level=${level}`, {
             method: 'POST',
             headers: { 
                 'Authorization': 'Basic ' + authToken,
@@ -1204,16 +1226,19 @@ async function triggerMarketCrash() {
 
         if (response.ok) {
             const result = await response.json();
-            showMessage('history-message', `📉 KRASH DÉCLENCHÉ ! ${result.affected_drinks || 'Toutes'} bières impactées`, 'error');
+            showMessage('history-message', `📉 CRASH ${level.toUpperCase()} DÉCLENCHÉ ! Toutes les bières impactées`, 'success');
             
-            // Rafraîchir toutes les données
+            // Rafraîchir toutes les données admin
             await loadPurchaseTable();
             await loadHistory();
             await loadAdminDrinksList();
             
+            // Déclencher actualisation immédiate côté client + reset compteur
+            await triggerImmediateRefresh();
+            
         } else {
             const error = await response.json();
-            showMessage('history-message', `❌ Erreur krash: ${error.detail || 'Erreur inconnue'}`, 'error');
+            showMessage('history-message', `❌ Erreur crash: ${error.detail || 'Erreur inconnue'}`, 'error');
         }
         
     } catch (error) {
@@ -1222,13 +1247,22 @@ async function triggerMarketCrash() {
     }
 }
 
-async function triggerMarketBoom() {
-    if (!confirm('🚀 Déclencher un BOOM du marché ? Tous les prix vont exploser à la hausse !')) {
+async function triggerMarketBoom(level = 'medium') {
+    const levelMessages = {
+        'small': 'un PETIT BOOM (hausse de 5% à 15%)',
+        'medium': 'un BOOM MOYEN (hausse de 10% à 30%)', 
+        'large': 'un GROS BOOM (hausse de 20% à 50%)',
+        'maximum': 'un BOOM MAXIMAL (prix maximum pour toutes les boissons)'
+    };
+    
+    const message = levelMessages[level] || levelMessages['medium'];
+    
+    if (!confirm(`🚀 Déclencher ${message} ? Tous les prix vont exploser à la hausse !`)) {
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE}/admin/market/boom`, {
+        const response = await fetch(`${API_BASE}/admin/market/boom?level=${level}`, {
             method: 'POST',
             headers: { 
                 'Authorization': 'Basic ' + authToken,
@@ -1238,12 +1272,15 @@ async function triggerMarketBoom() {
 
         if (response.ok) {
             const result = await response.json();
-            showMessage('history-message', `📈 BOOM DÉCLENCHÉ ! ${result.affected_drinks || 'Toutes'} bières impactées`, 'success');
+            showMessage('history-message', `📈 BOOM ${level.toUpperCase()} DÉCLENCHÉ ! Toutes les bières impactées`, 'success');
             
-            // Rafraîchir toutes les données
+            // Rafraîchir toutes les données admin
             await loadPurchaseTable();
             await loadHistory();
             await loadAdminDrinksList();
+            
+            // Déclencher actualisation immédiate côté client + reset compteur
+            await triggerImmediateRefresh();
             
         } else {
             const error = await response.json();
@@ -1254,6 +1291,302 @@ async function triggerMarketBoom() {
         console.error('Erreur lors du déclenchement du boom:', error);
         showMessage('history-message', '❌ Erreur de connexion lors du boom', 'error');
     }
+}
+
+async function triggerMarketFluctuations() {
+    if (!confirm('📊 Déclencher des fluctuations naturelles du marché ? Cela va appliquer des variations légères (-2% à +2%) sur environ 30% des boissons.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/market/fluctuate`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': 'Basic ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showMessage('history-message', `📊 Fluctuations appliquées ! ${result.changes_count} prix modifiés`, 'success');
+            
+            // Rafraîchir toutes les données admin
+            await loadPurchaseTable();
+            await loadHistory();
+            await loadAdminDrinksList();
+            
+            // Déclencher actualisation immédiate côté client + reset compteur
+            await triggerImmediateRefresh();
+            
+        } else {
+            const error = await response.json();
+            showMessage('history-message', `❌ Erreur fluctuations: ${error.detail || 'Erreur inconnue'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors des fluctuations:', error);
+        showMessage('history-message', '❌ Erreur de connexion lors des fluctuations', 'error');
+    }
+}
+
+// ========== Fonctions Happy Hour ==========
+
+async function loadHappyHourDrinks() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/drinks`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const drinks = data.drinks || []; // Accéder à la propriété drinks
+            const select = document.getElementById('happyHourDrinkSelect');
+            
+            if (!select) {
+                console.error('Element happyHourDrinkSelect not found');
+                return;
+            }
+            
+            // Vider la liste
+            select.innerHTML = '<option value="">Sélectionner une boisson...</option>';
+            
+            // Ajouter chaque boisson
+            drinks.forEach(drink => {
+                const option = document.createElement('option');
+                option.value = drink.id;
+                option.textContent = `${drink.name} (${drink.price.toFixed(2)}€)`;
+                select.appendChild(option);
+            });
+            
+            console.log(`Loaded ${drinks.length} drinks for Happy Hour selector`);
+        } else {
+            console.error('Failed to load drinks for Happy Hour');
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des boissons pour Happy Hour:', error);
+    }
+}
+
+async function startHappyHour() {
+    const drinkId = document.getElementById('happyHourDrinkSelect').value;
+    const duration = parseInt(document.getElementById('happyHourDuration').value);
+    
+    if (!drinkId) {
+        showMessage('history-message', '❌ Veuillez sélectionner une boisson', 'error');
+        return;
+    }
+    
+    if (!duration || duration < 10 || duration > 7200) {
+        showMessage('history-message', '❌ Durée invalide (10-7200 secondes)', 'error');
+        return;
+    }
+    
+    const drinkName = document.getElementById('happyHourDrinkSelect').selectedOptions[0].textContent;
+    
+    if (!confirm(`🌟 Démarrer une Happy Hour pour ${drinkName} pendant ${duration} secondes ?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/happy-hour/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + authToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                drink_id: parseInt(drinkId),
+                duration: duration
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showMessage('history-message', `🌟 Happy Hour démarrée pour ${result.data.drink_name} !`, 'success');
+            
+            // Signal pour l'interface publique d'actualiser ce graphique spécifique
+            localStorage.setItem('happy-hour-started', JSON.stringify({
+                drinkId: parseInt(drinkId),
+                timestamp: Date.now()
+            }));
+            
+            // Actualiser les données
+            await loadActiveHappyHours();
+            await loadHistory();
+            
+            // Réinitialiser le formulaire
+            document.getElementById('happyHourDrinkSelect').value = '';
+            document.getElementById('happyHourDuration').value = '300';
+            
+        } else {
+            const error = await response.json();
+            showMessage('history-message', `❌ Erreur Happy Hour: ${error.detail || 'Erreur inconnue'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors du démarrage de la Happy Hour:', error);
+        showMessage('history-message', '❌ Erreur de connexion lors du démarrage', 'error');
+    }
+}
+
+async function stopAllHappyHours() {
+    if (!confirm('🛑 Arrêter toutes les Happy Hours actives ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/happy-hour/stop-all`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showMessage('history-message', `🛑 ${result.count} Happy Hour(s) arrêtée(s)`, 'success');
+            
+            // Signal pour l'interface publique d'actualiser tous les graphiques
+            localStorage.setItem('happy-hour-all-stopped', JSON.stringify({
+                timestamp: Date.now()
+            }));
+            
+            // Actualiser les données
+            await loadActiveHappyHours();
+            await loadHistory();
+            
+        } else {
+            const error = await response.json();
+            showMessage('history-message', `❌ Erreur: ${error.detail || 'Erreur inconnue'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'arrêt des Happy Hours:', error);
+        showMessage('history-message', '❌ Erreur de connexion', 'error');
+    }
+}
+
+async function stopHappyHour(drinkId) {
+    try {
+        const response = await fetch(`${API_BASE}/admin/happy-hour/stop/${drinkId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            showMessage('history-message', '🛑 Happy Hour arrêtée', 'success');
+            
+            // Signal pour l'interface publique d'actualiser ce graphique spécifique
+            localStorage.setItem('happy-hour-stopped', JSON.stringify({
+                drinkId: parseInt(drinkId),
+                timestamp: Date.now()
+            }));
+            
+            await loadActiveHappyHours();
+            await loadHistory();
+        } else {
+            const error = await response.json();
+            showMessage('history-message', `❌ Erreur: ${error.detail || 'Erreur inconnue'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'arrêt de la Happy Hour:', error);
+        showMessage('history-message', '❌ Erreur de connexion', 'error');
+    }
+}
+
+let happyHourAdminTimerIntervalId = null; // Timer pour l'interface admin
+
+async function loadActiveHappyHours() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/happy-hour/active`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const container = document.getElementById('happy-hours-list');
+            
+            if (data.active_happy_hours.length === 0) {
+                container.innerHTML = '<p style="color: #666; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>';
+                // Arrêter le timer s'il n'y a plus de Happy Hours
+                if (happyHourAdminTimerIntervalId) {
+                    clearInterval(happyHourAdminTimerIntervalId);
+                    happyHourAdminTimerIntervalId = null;
+                }
+            } else {
+                container.innerHTML = data.active_happy_hours.map(hh => {
+                    // Utiliser les données du serveur directement
+                    const remaining = Math.max(0, hh.remaining || 0);
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    
+                    return `
+                        <div style="background: white; padding: 8px; margin: 4px 0; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #FFD700; font-size: 0.9em;" data-remaining="${remaining}">
+                            <div>
+                                <strong>🌟 ${hh.drink_name}</strong><br>
+                                <small class="happy-hour-countdown">⏱️ ${minutes}:${seconds.toString().padStart(2,'0')}</small>
+                            </div>
+                            <button onclick="stopHappyHour(${hh.drink_id})" class="btn btn-danger" style="font-size: 0.8em; padding: 4px 8px;">
+                                🛑 Arrêter
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Démarrer le timer de mise à jour si pas déjà actif
+                if (!happyHourAdminTimerIntervalId) {
+                    startHappyHourAdminTimer();
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des Happy Hours actives:', error);
+    }
+}
+
+// Timer pour mettre à jour l'interface admin en temps réel
+function startHappyHourAdminTimer() {
+    happyHourAdminTimerIntervalId = setInterval(() => {
+        const happyHourElements = document.querySelectorAll('[data-remaining]');
+        let activeCount = 0;
+        
+        happyHourElements.forEach(element => {
+            const remaining = parseInt(element.getAttribute('data-remaining'));
+            
+            if (!isNaN(remaining) && remaining > 0) {
+                // Décrémenter le temps restant
+                const newRemaining = Math.max(0, remaining - 1);
+                element.setAttribute('data-remaining', newRemaining);
+                
+                const minutes = Math.floor(newRemaining / 60);
+                const seconds = newRemaining % 60;
+                const countdownElement = element.querySelector('.happy-hour-countdown');
+                if (countdownElement) {
+                    countdownElement.textContent = `⏱️ ${minutes}:${seconds.toString().padStart(2,'0')}`;
+                }
+                
+                if (newRemaining > 0) {
+                    activeCount++;
+                }
+            } else if (remaining === 0) {
+                // Happy Hour terminé, recharger la liste
+                loadActiveHappyHours();
+                return;
+            }
+        });
+        
+        // Si plus de Happy Hours actives, arrêter le timer
+        if (activeCount === 0) {
+            clearInterval(happyHourAdminTimerIntervalId);
+            happyHourAdminTimerIntervalId = null;
+        }
+    }, 1000);
 }
 
 // Fonction pour le toggle du menu déroulant des boissons existantes
@@ -1516,3 +1849,23 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleSection('history-section');
     }, 100);
 });
+
+// Fonction pour déclencher une actualisation immédiate côté client
+async function triggerImmediateRefresh() {
+    try {
+        // Envoyer un signal pour déclencher une actualisation immédiate sur l'interface publique
+        // Utiliser localStorage pour communiquer entre les onglets
+        localStorage.setItem('trigger-immediate-refresh', Date.now().toString());
+        
+        // Signal pour indiquer qu'un événement de marché s'est produit
+        localStorage.setItem('market-event-signal', JSON.stringify({
+            timestamp: Date.now(),
+            type: 'market_event'
+        }));
+        
+        console.log('Signal d\'actualisation immédiate envoyé');
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi du signal d\'actualisation:', error);
+    }
+}

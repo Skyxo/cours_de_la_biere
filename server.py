@@ -253,19 +253,81 @@ async def admin_clear_history(admin: str = Depends(get_current_admin)):
     return {'status': 'cleared'}
 
 @app.post('/admin/market/crash')
-async def admin_trigger_crash(admin: str = Depends(get_current_admin)):
-    data_manager.trigger_crash()
-    return {'status': 'crash_triggered', 'admin': admin}
+async def admin_trigger_crash(level: str = "medium", admin: str = Depends(get_current_admin)):
+    """
+    Déclenche un crash du marché avec différents niveaux
+    level: small, medium, large, maximum
+    """
+    valid_levels = ['small', 'medium', 'large', 'maximum']
+    if level not in valid_levels:
+        raise HTTPException(status_code=400, detail=f"Niveau invalide. Utilisez: {', '.join(valid_levels)}")
+    
+    data_manager.trigger_crash(level)
+    return {'status': 'crash_triggered', 'level': level, 'admin': admin}
 
 @app.post('/admin/market/boom')
-async def admin_trigger_boom(admin: str = Depends(get_current_admin)):
-    data_manager.trigger_boom()
-    return {'status': 'boom_triggered', 'admin': admin}
+async def admin_trigger_boom(level: str = "medium", admin: str = Depends(get_current_admin)):
+    """
+    Déclenche un boom du marché avec différents niveaux
+    level: small, medium, large, maximum
+    """
+    valid_levels = ['small', 'medium', 'large', 'maximum']
+    if level not in valid_levels:
+        raise HTTPException(status_code=400, detail=f"Niveau invalide. Utilisez: {', '.join(valid_levels)}")
+    
+    data_manager.trigger_boom(level)
+    return {'status': 'boom_triggered', 'level': level, 'admin': admin}
 
 @app.post('/admin/market/reset')
 async def admin_reset_market(admin: str = Depends(get_current_admin)):
     data_manager.reset_prices()
     return {'status': 'market_reset', 'admin': admin}
+
+@app.post('/admin/market/fluctuate')
+async def admin_market_fluctuations(admin: str = Depends(get_current_admin)):
+    changes_count = data_manager.apply_market_fluctuations()
+    return {'status': 'market_fluctuations_applied', 'changes_count': changes_count, 'admin': admin}
+
+@app.post('/admin/happy-hour/start')
+async def admin_start_happy_hour(request: Request, admin: str = Depends(get_current_admin)):
+    data = await request.json()
+    drink_id = data.get('drink_id')
+    duration = data.get('duration', 300)  # 5 minutes par défaut
+    
+    if not drink_id:
+        raise HTTPException(status_code=400, detail="drink_id requis")
+    
+    if duration <= 0 or duration > 7200:  # Maximum 2 heures
+        raise HTTPException(status_code=400, detail="Durée invalide (1-7200 secondes)")
+    
+    try:
+        result = data_manager.start_happy_hour(drink_id, duration)
+        return {'status': 'happy_hour_started', 'data': result, 'admin': admin}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post('/admin/happy-hour/stop/{drink_id}')
+async def admin_stop_happy_hour(drink_id: int, admin: str = Depends(get_current_admin)):
+    success = data_manager.stop_happy_hour(drink_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Happy Hour non trouvée pour cette boisson")
+    return {'status': 'happy_hour_stopped', 'drink_id': drink_id, 'admin': admin}
+
+@app.post('/admin/happy-hour/stop-all')
+async def admin_stop_all_happy_hours(admin: str = Depends(get_current_admin)):
+    count = data_manager.stop_all_happy_hours()
+    return {'status': 'all_happy_hours_stopped', 'count': count, 'admin': admin}
+
+@app.get('/admin/happy-hour/active')
+async def admin_get_active_happy_hours(admin: str = Depends(get_current_admin)):
+    active_hours = data_manager.get_active_happy_hours()
+    return {'active_happy_hours': active_hours}
+
+@app.get('/happy-hour/active')
+async def get_public_active_happy_hours():
+    """Endpoint public pour que le client puisse connaître les Happy Hours actives"""
+    active_hours = data_manager.get_active_happy_hours()
+    return {'active_happy_hours': active_hours}
 
 @app.get('/admin/stats')
 async def admin_get_stats(admin: str = Depends(get_current_admin)):

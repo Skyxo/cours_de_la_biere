@@ -157,6 +157,66 @@ body.stock-wall {
     line-height: 1.2;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.drink-name-text {
+    flex: 1;
+    text-align: center;
+}
+
+.alcohol-degree {
+    color: #FFA500;
+    font-size: 0.75em;
+    font-weight: normal;
+    margin-left: 4px;
+    text-shadow: 0 0 5px rgba(255, 165, 0, 0.6);
+    opacity: 0.9;
+}
+
+.trend-indicator {
+    font-size: 0.8em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px currentColor;
+    animation: pulse-glow 2s infinite;
+}
+
+.trend-indicator.left,
+.trend-indicator.right {
+    min-width: 12px;
+    text-align: center;
+}
+
+/* Couleurs selon la tendance */
+.stock-tile.trend-up .trend-indicator {
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.8);
+}
+
+.stock-tile.trend-down .trend-indicator {
+    color: #ff4444;
+    text-shadow: 0 0 8px rgba(255, 68, 68, 0.8);
+}
+
+.stock-tile.trend-neutral .trend-indicator {
+    color: #888888;
+    text-shadow: 0 0 5px rgba(136, 136, 136, 0.6);
+}
+
+/* Animation de pulsation pour les indicateurs */
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
 }
 
 .tile-price-container {
@@ -460,6 +520,11 @@ body.stock-wall {
     
     .tile-name {
         font-size: 1.1em;
+        gap: 6px;
+    }
+    
+    .trend-indicator {
+        font-size: 0.7em;
     }
     
     .tile-price {
@@ -587,6 +652,23 @@ body.stock-wall {
         text-align: center;
         font-size: 0.8em;
     }
+    
+    /* Ajustement des indicateurs de tendance pour mobile */
+    .trend-indicator {
+        font-size: 8px;
+        min-width: 6px;
+        height: 6px;
+        line-height: 6px;
+        padding: 1px;
+    }
+    
+    .trend-indicator.left {
+        margin-right: 3px;
+    }
+    
+    .trend-indicator.right {
+        margin-left: 3px;
+    }
 }
 
 /* Effet de particules adapté */
@@ -627,14 +709,206 @@ body.stock-wall {
 }
 
 /* Animation pour changements de prix */
-.price-flash {
-    animation: priceFlash 0.5s ease-in-out;
+.price-flash-up {
+    animation: priceFlashUp 0.5s ease-in-out;
 }
 
-@keyframes priceFlash {
-    0% { background: rgba(0, 255, 65, 0.3); }
-    50% { background: rgba(0, 255, 65, 0.6); }
-    100% { background: rgba(0, 255, 65, 0.1); }
+.price-flash-down {
+    animation: priceFlashDown 0.5s ease-in-out;
+}
+
+.price-flash-neutral {
+    animation: priceFlashNeutral 0.5s ease-in-out;
+}
+
+@keyframes priceFlashUp {
+    0% { background: rgba(34, 197, 94, 0.3); } /* Vert */
+    50% { background: rgba(34, 197, 94, 0.6); }
+    100% { background: rgba(34, 197, 94, 0.1); }
+}
+
+@keyframes priceFlashDown {
+    0% { background: rgba(239, 68, 68, 0.3); } /* Rouge */
+    50% { background: rgba(239, 68, 68, 0.6); }
+    100% { background: rgba(239, 68, 68, 0.1); }
+}
+
+@keyframes priceFlashNeutral {
+    0% { background: rgba(107, 114, 128, 0.3); } /* Gris */
+    50% { background: rgba(107, 114, 128, 0.6); }
+    100% { background: rgba(107, 114, 128, 0.1); }
+}
+
+/* ========== Animations Happy Hour ========== */
+
+.happy-hour-active {
+    position: relative;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.8) !important;
+    border: 3px solid #FFD700 !important;
+    /* Cadre jaune permanent au lieu d'animation */
+    overflow: visible;
+}
+
+/* Timer camembert pour Happy Hour */
+.happy-hour-timer {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(#FFD700 0deg, #FFD700 var(--progress, 360deg), rgba(255, 215, 0, 0.2) var(--progress, 360deg));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #333;
+    z-index: 15;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    border: 2px solid #FFA500;
+    /* Animations ultra-smooth pour le camembert */
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: background;
+}
+
+.happy-hour-timer::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: -1;
+}
+
+.happy-hour-stars {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.happy-hour-stars::before,
+.happy-hour-stars::after {
+    content: '⭐';
+    position: absolute;
+    font-size: 16px;
+    animation: starFloat 3s ease-in-out infinite;
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.happy-hour-stars::before {
+    top: -5px;
+    left: -5px;
+    animation-delay: 0s;
+}
+
+.happy-hour-stars::after {
+    top: -5px;
+    right: -5px;
+    animation-delay: 1.5s;
+}
+
+@keyframes happyHourGlow {
+    0% { 
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.3);
+        border-color: #FFD700;
+    }
+    100% { 
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.9), 0 0 60px rgba(255, 215, 0, 0.5);
+        border-color: #FFA500;
+    }
+}
+
+@keyframes starFloat {
+    0%, 100% { 
+        transform: translateY(0px) rotate(0deg) scale(1);
+        opacity: 1;
+    }
+    25% { 
+        transform: translateY(-8px) rotate(90deg) scale(1.2);
+        opacity: 0.8;
+    }
+    50% { 
+        transform: translateY(-12px) rotate(180deg) scale(1.1);
+        opacity: 0.9;
+    }
+    75% { 
+        transform: translateY(-8px) rotate(270deg) scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Étoiles supplémentaires pour un effet plus riche */
+.happy-hour-active::before,
+.happy-hour-active::after {
+    content: '✨';
+    position: absolute;
+    font-size: 12px;
+    color: #FFD700;
+    animation: sparkle 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 15;
+}
+
+.happy-hour-active::before {
+    top: 10px;
+    right: 10px;
+    animation-delay: 0.5s;
+}
+
+.happy-hour-active::after {
+    bottom: 10px;
+    left: 10px;
+    animation-delay: 1s;
+}
+
+@keyframes sparkle {
+    0%, 100% { 
+        opacity: 0;
+        transform: scale(0.5) rotate(0deg);
+    }
+    50% { 
+        opacity: 1;
+        transform: scale(1.2) rotate(180deg);
+    }
+}
+
+/* Style pour les prix en Happy Hour */
+.happy-hour-price {
+    color: #FFD700 !important;
+    font-weight: bold;
+    text-shadow: 0 0 8px #FFD700;
+    animation: priceGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes priceGlow {
+    0% { 
+        text-shadow: 0 0 8px #FFD700, 0 0 12px #FFD700;
+    }
+    100% { 
+        text-shadow: 0 0 12px #FFD700, 0 0 16px #FFA500, 0 0 20px #FFD700;
+    }
+}
+
+/* Adaptation mobile pour Happy Hour */
+@media (max-width: 600px) {
+    .happy-hour-stars::before,
+    .happy-hour-stars::after {
+        font-size: 12px;
+    }
+    
+    .happy-hour-active::before,
+    .happy-hour-active::after {
+        font-size: 10px;
+    }
 }
 
 /* Reste du CSS original pour compatibilité avec admin.html */
