@@ -1044,7 +1044,7 @@ th {
     font-weight: 700;
     font-size: 1.1em;
     padding: 10px 12px;
-    color: white !important;
+    color: rgb(var(--th-text)) !important;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
     border-radius: 6px;
     margin: 2px;
@@ -1329,13 +1329,30 @@ body[data-theme="light"] {
     --text: 33, 37, 41;          /* Noir doux */
     --title: 0, 102, 51;         /* Vert foncé */
     --accent: 0, 150, 40;        /* Vert moins fluorescent */
-    --th-text: 255, 255, 255;    /* Blanc sur fond vert */
+    --th-text: 255, 255, 255;    /* Blanc sur fond vert pour meilleur contraste */
     --grid: 200, 200, 200;       /* Gris pour bordures */
     --grid-alpha: 0.5;
     --up: 40, 167, 69;           /* Vert bootstrap */
     --down: 220, 53, 69;         /* Rouge bootstrap */
     --danger: 220, 53, 69;
     --particle: 0, 150, 40;      /* Particules vertes moins vives */
+}
+
+/* Ajustements spécifiques au thème clair pour améliorer la lisibilité */
+body[data-theme="light"] h1 {
+    text-shadow: 0 0 10px rgba(var(--accent), 0.3);
+}
+
+body[data-theme="light"] .drinks-table .name-cell {
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.7);
+}
+
+body[data-theme="light"] .drinks-table .price-cell {
+    text-shadow: 0 0 4px rgba(var(--accent), 0.2);
+}
+
+body[data-theme="light"] table {
+    box-shadow: 0 0 20px rgba(var(--accent), 0.2);
 }
 
 /* Thème sombre explicite pour l'interface principale */
@@ -1480,7 +1497,7 @@ th {
     font-weight: 700;
     font-size: 1.1em;
     padding: 10px 12px;
-    color: white !important;
+    color: rgb(var(--th-text)) !important;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
     border-radius: 6px;
     margin: 2px;
@@ -1848,23 +1865,45 @@ tbody tr:nth-child(even) {
     --down: 198, 40, 40;       /* #C62828 – rouge cohérent avec le thème */
 }
 
-/* Thème clair explicite (fond blanc pur) */
-body[data-theme="light"] {
-    --title: 198, 40, 40;     /* #C62828 */
-    --accent: 198, 40, 40;    /* #C62828 */
-    --text: 33, 33, 33;       /* #212121 */
-    --danger: 229, 57, 53;    /* #E53935 */
-    --bg-start: 255, 255, 255; /* #FFFFFF */
-    --bg-mid: 255, 255, 255;
-    --bg-end: 255, 255, 255;
-    --surface: 255, 255, 255;  /* cartes */
-    --surface-alpha: 0.95;
-    --grid: 176, 190, 197;    /* #B0BEC5 */
-    --particle: 176, 190, 197;
-    --th-text: 255, 255, 255;  /* texte des <th> */
-    --grid-alpha: 0.25;        /* rend la grille plus visible en thème clair */
-    --up: 46, 125, 50;         /* #2E7D32 */
-    --down: 198, 40, 40;       /* #C62828 */
+/* Ajustements spécifiques pour l'admin en thème clair */
+body[data-theme="light"] .admin-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(var(--grid), 0.3);
+}
+
+body[data-theme="light"] .admin-card h3 {
+    text-shadow: none;
+}
+
+body[data-theme="light"] .btn {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+body[data-theme="light"] .table-responsive {
+    border: 1px solid rgba(var(--grid), 0.4);
+}
+
+body[data-theme="light"] #purchase-table tr:hover {
+    background: rgba(var(--accent), 0.05);
+}
+
+/* Améliorer la visibilité des graphiques en thème clair */
+body[data-theme="light"] .chart-section {
+    background: rgba(var(--surface), 0.98);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .stock-tile {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(var(--grid), 0.2);
+}
+
+body[data-theme="light"] .stock-tile:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Thème sombre CLC (plus de rouge) */
@@ -1936,4 +1975,303 @@ body[data-theme="dark"] {
     font-weight: bold;
     color: #00ff41;
     text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
+
+/* ===========================================
+   GESTION DES SESSIONS (TRÉSORERIE)
+   =========================================== */
+.session-section {
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    background: var(--background-light);
+}
+
+.session-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.session-controls input {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--background-color);
+    color: var(--text-color);
+}
+
+.session-controls button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-start {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-start:hover {
+    background: #45a049;
+}
+
+.btn-resume {
+    background: #FF9800;
+    color: white;
+}
+
+.btn-resume:hover {
+    background: #e68900;
+}
+
+.btn-end {
+    background: #f44336;
+    color: white;
+}
+
+.btn-end:hover {
+    background: #da190b;
+}
+
+.session-status {
+    padding: 15px;
+    border-radius: 8px;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+}
+
+.session-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--background-light);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.session-info {
+    margin-bottom: 15px;
+}
+
+.session-info h4 {
+    margin: 0 0 10px 0;
+    color: var(--primary-color);
+}
+
+.session-info p {
+    margin: 5px 0;
+    color: var(--text-color);
+}
+
+.session-timer {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.message {
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.message.hidden {
+    display: none;
+}
+
+/* Couleurs des prix min/base/max */
+.price-range .min-price {
+    color: #d32f2f; /* Rouge pour prix min */
+    font-weight: 500;
+}
+
+.price-range .base-price {
+    color: #f57c00; /* Orange pour prix de base */
+    font-weight: bold;
+}
+
+.price-range .max-price {
+    color: #388e3c; /* Vert pour prix max */
+    font-weight: 500;
+}
+
+/* ===========================================
+   MODE SOMBRE - AMÉLIORATION VISIBILITÉ
+   =========================================== */
+body.dark-theme {
+    --background-color: #1a1a1a;
+    --background-light: #2d2d2d;
+    --text-color: #e0e0e0;
+    --text-muted: #b0b0b0;
+    --primary-color: #ffd700;
+    --border-color: #444;
+    --card-background: #2a2a2a;
+    --input-background: #333;
+    --button-background: #444;
+    --danger-color: #ff6b6b;
+    
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #e0e0e0;
+}
+
+body.dark-theme .session-status {
+    background: var(--card-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-theme .stat-item {
+    background: var(--background-light);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-theme .stat-label {
+    color: var(--text-muted);
+}
+
+body.dark-theme .session-controls input {
+    background: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-theme .message.success {
+    background: #1a4a1a;
+    color: #4CAF50;
+    border-color: #2e7d32;
+}
+
+body.dark-theme .message.error {
+    background: #4a1a1a;
+    color: #f44336;
+    border-color: #d32f2f;
+}
+
+body.dark-theme table, 
+body.dark-theme .responsive-table {
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+body.dark-theme th {
+    background: var(--background-light);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme td {
+    background: var(--card-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .drinks-table-header {
+    background: var(--background-light);
+    color: var(--text-color);
+}
+
+body.dark-theme .drinks-table-row {
+    background: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .drinks-table-row input {
+    background: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .price-range .min-price {
+    color: #ff6b6b; /* Rouge pour prix min */
+}
+
+body.dark-theme .price-range .base-price {
+    color: #ffd700; /* Doré pour prix de base */
+    font-weight: bold;
+}
+
+body.dark-theme .price-range .max-price {
+    color: #4CAF50; /* Vert pour prix max */
+}
+
+body.dark-theme .alcohol-degree {
+    color: var(--text-muted);
+}
+
+body.dark-theme .section-header {
+    background: var(--background-light);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .section-content {
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+body.dark-theme .btn {
+    background: var(--button-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-theme .btn:hover {
+    background: var(--primary-color);
+    color: #1a1a1a;
+}
+
+body.dark-theme .public-price {
+    color: #00ff41 !important; /* S'assurer que le prix public reste visible */
+    text-shadow: 0 0 4px rgba(0, 255, 65, 0.3);
+}
+
+body.dark-theme .price-exact-display {
+    color: var(--text-color);
+}
+
+body.dark-theme .section-title {
+    color: var(--text-color);
+}
+
+body.dark-theme .toggle-icon {
+    color: var(--primary-color);
 }

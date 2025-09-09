@@ -2,6 +2,270 @@
 let currentChartType = localStorage.getItem('chart-type') || 'candlestick';
 let sortMode = localStorage.getItem('sort-mode') || 'price';
 
+// Variables pour la session
+let currentSession = null;
+let sessionStartTime = null;
+let sessionUpdateInterval = null;
+
+// ===========================================
+// GESTION DES SESSIONS DE SERVICE
+// ===========================================
+
+async function startSession() {
+    const barmanName = document.getElementById('barmanName').value.trim();
+    const startingCash = parseFloat(document.getElementById('startingCash').value) || 0;
+    
+    if (!barmanName) {
+        showMessage('session-message', 'Veuillez entrer le nom du barman', 'error');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/start`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + authToken 
+            },
+            body: JSON.stringify({ 
+                barman_name: barmanName,
+                starting_cash: startingCash 
+            })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            currentSession = data.session;
+            sessionStartTime = new Date(currentSession.start_time);
+            
+            // Afficher l'interface de session active
+            showActiveSession();
+            
+            // Démarrer la mise à jour du timer
+            startSessionTimer();
+            
+            showMessage('session-message', '✅ Session démarrée avec succès', 'success');
+        } else {
+            const err = await res.json();
+            showMessage('session-message', 'Erreur: ' + err.detail, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', 'Erreur réseau lors du démarrage de la session', 'error');
+    }
+}
+
+async function resumeSession() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/resume`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            
+            if (data.status === 'resumed') {
+                currentSession = data.session;
+                sessionStartTime = new Date(currentSession.start_time);
+                showActiveSession();
+                startSessionTimer();
+                showMessage('session-message', `✅ Session reprise (${data.sales_count} ventes)`, 'success');
+            } else if (data.status === 'already_active') {
+                currentSession = data.session;
+                sessionStartTime = new Date(currentSession.start_time);
+                showActiveSession();
+                startSessionTimer();
+                showMessage('session-message', '✅ Session déjà active', 'success');
+            } else {
+                showMessage('session-message', '❌ Aucune session à reprendre', 'error');
+            }
+        } else {
+            const err = await res.json();
+            showMessage('session-message', 'Erreur: ' + err.detail, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', 'Erreur réseau lors de la reprise de session', 'error');
+    }
+}
+
+async function endSession() {
+    if (!confirm('Êtes-vous sûr de vouloir terminer la session ? Cela créera un fichier CSV avec toutes les ventes.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/end`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            
+            // Arrêter le timer
+            stopSessionTimer();
+            
+            // Masquer l'interface de session active
+            showNoSession();
+            
+            // Réinitialiser les variables
+            currentSession = null;
+            sessionStartTime = null;
+            
+            showMessage('session-message', `✅ ${data.message}`, 'success');
+        } else {
+            const err = await res.json();
+            showMessage('session-message', 'Erreur: ' + err.detail, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', 'Erreur réseau lors de la fin de session', 'error');
+    }
+}
+
+async function updateSessionStats() {
+    if (!currentSession) return;
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/current`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            
+            if (data.stats) {
+                const stats = data.stats;
+                
+                // Mettre à jour les statistiques
+                document.getElementById('session-revenue').textContent = `${stats.total_sales.toFixed(2)} €`;
+                document.getElementById('session-profit').textContent = `${stats.total_profit_loss.toFixed(2)} €`;
+                document.getElementById('session-drinks').textContent = stats.drinks_sold;
+                
+                // Changer la couleur du bénéfice selon le signe
+                const profitElement = document.getElementById('session-profit');
+                if (stats.total_profit_loss > 0) {
+                    profitElement.style.color = '#4CAF50'; // Vert pour bénéfice
+                } else if (stats.total_profit_loss < 0) {
+                    profitElement.style.color = '#f44336'; // Rouge pour perte
+                } else {
+                    profitElement.style.color = '#FF9800'; // Orange pour neutre
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Erreur mise à jour stats session:', e);
+    }
+}
+
+function showActiveSession() {
+    document.getElementById('no-session').classList.add('hidden');
+    document.getElementById('active-session').classList.remove('hidden');
+    
+    if (currentSession) {
+        document.getElementById('session-barman').textContent = currentSession.barman_name;
+        document.getElementById('session-start').textContent = new Date(currentSession.start_time).toLocaleString();
+    }
+    
+    // Mettre à jour les stats immédiatement
+    updateSessionStats();
+}
+
+function showNoSession() {
+    document.getElementById('no-session').classList.remove('hidden');
+    document.getElementById('active-session').classList.add('hidden');
+    
+    // Réinitialiser les champs
+    document.getElementById('barmanName').value = '';
+    document.getElementById('startingCash').value = '0';
+}
+
+function startSessionTimer() {
+    if (sessionUpdateInterval) {
+        clearInterval(sessionUpdateInterval);
+    }
+    
+    sessionUpdateInterval = setInterval(() => {
+        // Mettre à jour la durée
+        if (sessionStartTime) {
+            const now = new Date();
+            const duration = Math.floor((now - sessionStartTime) / 1000);
+            const hours = Math.floor(duration / 3600);
+            const minutes = Math.floor((duration % 3600) / 60);
+            const seconds = duration % 60;
+            
+            document.getElementById('session-duration').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Mettre à jour les stats seulement toutes les 5 secondes
+        if (Date.now() % 5000 < 1000) {
+            updateSessionStats();
+        }
+    }, 1000);
+}
+
+function stopSessionTimer() {
+    if (sessionUpdateInterval) {
+        clearInterval(sessionUpdateInterval);
+        sessionUpdateInterval = null;
+    }
+}
+
+function showMessage(containerId, message, type) {
+    // Créer un élément de message temporaire si pas de conteneur spécifique
+    let messageEl = document.getElementById(containerId);
+    if (!messageEl) {
+        messageEl = document.createElement('div');
+        messageEl.className = `message ${type}`;
+        messageEl.textContent = message;
+        
+        // Ajouter près de la section session
+        const sessionSection = document.getElementById('session-section');
+        if (sessionSection) {
+            sessionSection.appendChild(messageEl);
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.parentNode.removeChild(messageEl);
+                }
+            }, 3000);
+        }
+        return;
+    }
+    
+    messageEl.textContent = message;
+    messageEl.className = `message ${type}`;
+    messageEl.classList.remove('hidden');
+    
+    setTimeout(() => {
+        messageEl.classList.add('hidden');
+    }, 3000);
+}
+
+// Vérifier s'il y a une session au chargement
+async function checkExistingSession() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/current`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            
+            if (data.session && data.session.is_active) {
+                currentSession = data.session;
+                sessionStartTime = new Date(currentSession.start_time);
+                showActiveSession();
+                startSessionTimer();
+            } else {
+                showNoSession();
+            }
+        }
+    } catch (e) {
+        console.error('Erreur vérification session:', e);
+        showNoSession();
+    }
+}
+
 // Supprimer tout l'historique
 async function clearHistory() {
     try {
@@ -88,8 +352,8 @@ async function loadAdminDrinksList() {
             div.className = 'drinks-table-row';
             div.innerHTML = `
                 <input type="text" value="${d.name}" data-field="name">
-                <input type="number" step="0.01" value="${d.base_price}" data-field="base_price">
                 <input type="number" step="0.01" value="${d.min_price}" data-field="min_price">
+                <input type="number" step="0.01" value="${d.base_price}" data-field="base_price">
                 <input type="number" step="0.01" value="${d.max_price}" data-field="max_price">
                 <span class="public-price" style="color: #00ff41; font-weight: bold; padding: 8px; display: flex; align-items: center;">
                     ${publicPrice.toFixed(2)} €
@@ -957,9 +1221,10 @@ async function loadPurchaseTable() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Boisson">${drink.name} <span class="alcohol-degree">${drink.alcohol_degree || 0}°</span></td>
-                <td data-label="Prix Min/Max (€)">
+                <td data-label="Prix Min/Base/Max (€)">
                   <span class="price-range">
-                    <span class="min-price">${adminInfo_drink.min_price}€</span> - 
+                    <span class="min-price">${adminInfo_drink.min_price}€</span> / 
+                    <span class="base-price">${adminInfo_drink.base_price || drink.price.toFixed(2)}€</span> / 
                     <span class="max-price">${adminInfo_drink.max_price}€</span>
                   </span>
                 </td>
@@ -1290,43 +1555,6 @@ async function triggerMarketBoom(level = 'medium') {
     } catch (error) {
         console.error('Erreur lors du déclenchement du boom:', error);
         showMessage('history-message', '❌ Erreur de connexion lors du boom', 'error');
-    }
-}
-
-async function triggerMarketFluctuations() {
-    if (!confirm('📊 Déclencher des fluctuations naturelles du marché ? Cela va appliquer des variations légères (-2% à +2%) sur environ 30% des boissons.')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE}/admin/market/fluctuate`, {
-            method: 'POST',
-            headers: { 
-                'Authorization': 'Basic ' + authToken,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            showMessage('history-message', `📊 Fluctuations appliquées ! ${result.changes_count} prix modifiés`, 'success');
-            
-            // Rafraîchir toutes les données admin
-            await loadPurchaseTable();
-            await loadHistory();
-            await loadAdminDrinksList();
-            
-            // Déclencher actualisation immédiate côté client + reset compteur
-            await triggerImmediateRefresh();
-            
-        } else {
-            const error = await response.json();
-            showMessage('history-message', `❌ Erreur fluctuations: ${error.detail || 'Erreur inconnue'}`, 'error');
-        }
-        
-    } catch (error) {
-        console.error('Erreur lors des fluctuations:', error);
-        showMessage('history-message', '❌ Erreur de connexion lors des fluctuations', 'error');
     }
 }
 
@@ -1847,6 +2075,9 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         toggleSection('purchase-section');
         toggleSection('history-section');
+        
+        // Vérifier une session existante
+        checkExistingSession();
     }, 100);
 });
 

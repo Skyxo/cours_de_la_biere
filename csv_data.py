@@ -141,6 +141,34 @@ class CSVDataManager:
                 datetime.now().isoformat()
             ])
         
+        # Nettoyage automatique si l'historique devient trop volumineux
+        self._cleanup_history_if_needed()
+    
+    def _cleanup_history_if_needed(self):
+        """Nettoie l'historique si il dépasse 10000 entrées pour maintenir les performances"""
+        try:
+            # Compter les lignes
+            with open(self.history_file, 'r', encoding='utf-8') as f:
+                line_count = sum(1 for _ in f)
+            
+            # Si plus de 10000 lignes, garder seulement les 5000 dernières
+            if line_count > 10000:
+                with open(self.history_file, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    header = next(reader)
+                    all_rows = list(reader)
+                
+                # Garder les 5000 dernières entrées
+                recent_rows = all_rows[-5000:]
+                
+                with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(header)
+                    writer.writerows(recent_rows)
+                    
+        except Exception as e:
+            print(f"Erreur lors du nettoyage historique: {e}")
+        
         # Limiter l'historique à 50 entrées pour avoir plus de visibilité
         self._limit_history(50)
     
@@ -472,28 +500,6 @@ class CSVDataManager:
         with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp'])
-
-    def apply_market_fluctuations(self) -> int:
-        """Applique des fluctuations naturelles du marché et retourne le nombre de prix modifiés"""
-        drinks = self.get_all_prices()
-        changes_count = 0
-        
-        for drink in drinks:
-            # 30% de chance qu'une boisson voit son prix fluctuer
-            if random.random() < 0.3:
-                # Fluctuation entre -2% et +2% du prix actuel
-                fluctuation_percent = random.uniform(-0.02, 0.02)
-                price_change = drink['price'] * fluctuation_percent
-                new_price = max(drink['min_price'], min(drink['max_price'], drink['price'] + price_change))
-                
-                # Seulement mettre à jour si le changement est significatif (plus de 0.01€)
-                if abs(new_price - drink['price']) > 0.01:
-                    change = new_price - drink['price']
-                    self.update_drink_price(drink['id'], new_price)
-                    self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, 'market_fluctuation')
-                    changes_count += 1
-        
-        return changes_count
 
     def start_happy_hour(self, drink_id: int, duration_seconds: int) -> Dict:
         """Démarre une Happy Hour pour une boisson spécifique"""

@@ -9,14 +9,49 @@ import os
 import secrets
 import uvicorn
 import json
+import csv
 from csv_data import CSVDataManager
 
 app = FastAPI()
+
 data_manager = CSVDataManager()
 
 current_refresh_interval = 10000
 active_drinks = set()
 timer_start_time = datetime.now()
+
+# Variables de session
+current_session = None
+session_sales = []  # Liste des ventes de la session en cours
+
+def load_session_if_exists():
+    """Charger la session sauvegardée s'il y en a une"""
+    global current_session, session_sales
+    try:
+        if os.path.exists('data/current_session.json'):
+            with open('data/current_session.json', 'r') as f:
+                session_data = json.load(f)
+                current_session = session_data.get('session')
+                session_sales = session_data.get('sales', [])
+    except Exception as e:
+        print(f"Erreur lors du chargement de la session: {e}")
+
+def save_session():
+    """Sauvegarder la session courante"""
+    global current_session, session_sales
+    if current_session:
+        try:
+            session_data = {
+                'session': current_session,
+                'sales': session_sales
+            }
+            with open('data/current_session.json', 'w') as f:
+                json.dump(session_data, f, indent=2)
+        except Exception as e:
+            print(f"Erreur lors de la sauvegarde de la session: {e}")
+
+# Charger la session au démarrage
+load_session_if_exists()
 
 app = FastAPI(title="Wall Street Bar")
 security = HTTPBasic()
@@ -65,6 +100,31 @@ class CreateDrinkRequest(BaseModel):
     base_price: float
     min_price: float
     max_price: float
+
+class SessionStartRequest(BaseModel):
+    barman_name: str
+    starting_cash: Optional[float] = 0.0
+
+class SessionSale(BaseModel):
+    drink_id: int
+    drink_name: str
+    quantity: int
+    unit_price: float
+    base_price: float
+    total_price: float
+    profit_loss: float
+    timestamp: str
+
+class SessionStats(BaseModel):
+    session_id: Optional[str]
+    barman_name: Optional[str]
+    start_time: Optional[str]
+    starting_cash: float
+    total_sales: float
+    total_profit_loss: float
+    drinks_sold: int
+    is_active: bool
+    sales: List[SessionSale]
 @app.get("/prices")
 async def get_prices():
     prices = data_manager.get_all_prices()
@@ -92,7 +152,7 @@ async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(ge
 
 @app.post("/buy")
 async def buy(request: Request):
-    global active_drinks
+    global active_drinks, session_sales
     
     try:
         data = await request.json()
@@ -101,10 +161,37 @@ async def buy(request: Request):
         
         active_drinks.add(drink_id)
         
+        # Obtenir le prix avant la transaction pour calculer le profit/perte
+        current_drink = data_manager.get_drink_by_id(drink_id)
+        if not current_drink:
+            raise ValueError(f"Boisson avec ID {drink_id} non trouvée")
+        
+        unit_price = current_drink['price']
+        base_price = current_drink['base_price']
+        
         if current_refresh_interval == 0:
             updated_drink = data_manager.apply_buy(drink_id, quantity)
         else:
             updated_drink = data_manager.apply_buy(drink_id, quantity)
+        
+        # Enregistrer la vente dans la session si une session est active
+        if current_session:
+            total_price = unit_price * quantity
+            profit_loss = (unit_price - base_price) * quantity
+            
+            sale = {
+                "drink_id": drink_id,
+                "drink_name": current_drink['name'],
+                "quantity": quantity,
+                "unit_price": unit_price,
+                "base_price": base_price,
+                "total_price": total_price,
+                "profit_loss": profit_loss,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            session_sales.append(sale)
+            save_session()  # Sauvegarder automatiquement
             
         return {
             "status": "ok", 
@@ -132,6 +219,148 @@ def health():
 def reset():
     data_manager.reset_prices()
     return {'status': 'reset'}
+
+# ==========================================
+# ENDPOINTS DE SESSION POUR LES BARMANS
+# ==========================================
+
+@app.post("/admin/session/start")
+async def start_session(request: SessionStartRequest, admin: str = Depends(get_current_admin)):
+    """Démarrer une nouvelle session de service"""
+    global current_session, session_sales
+    
+    if current_session and current_session.get('is_active'):
+        raise HTTPException(status_code=400, detail="Une session est déjà active")
+    
+    session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    
+    current_session = {
+        "session_id": session_id,
+        "barman_name": request.barman_name,
+        "start_time": datetime.now().isoformat(),
+        "starting_cash": request.starting_cash,
+        "is_active": True
+    }
+    
+    session_sales = []
+    save_session()
+    
+    return {"status": "success", "session": current_session}
+
+@app.get("/admin/session/current")
+async def get_current_session(admin: str = Depends(get_current_admin)):
+    """Obtenir les statistiques de la session courante"""
+    if not current_session:
+        return {"session": None, "stats": None}
+    
+    # Calculer les statistiques
+    total_sales = sum(sale['total_price'] for sale in session_sales)
+    total_profit_loss = sum(sale['profit_loss'] for sale in session_sales)
+    drinks_sold = sum(sale['quantity'] for sale in session_sales)
+    
+    stats = SessionStats(
+        session_id=current_session.get('session_id'),
+        barman_name=current_session.get('barman_name'),
+        start_time=current_session.get('start_time'),
+        starting_cash=current_session.get('starting_cash', 0),
+        total_sales=total_sales,
+        total_profit_loss=total_profit_loss,
+        drinks_sold=drinks_sold,
+        is_active=current_session.get('is_active', False),
+        sales=[SessionSale(**sale) for sale in session_sales]
+    )
+    
+    return {"session": current_session, "stats": stats}
+
+@app.post("/admin/session/end")
+async def end_session(admin: str = Depends(get_current_admin)):
+    """Terminer la session courante et sauvegarder dans un fichier CSV"""
+    global current_session, session_sales
+    
+    if not current_session or not current_session.get('is_active'):
+        raise HTTPException(status_code=400, detail="Aucune session active")
+    
+    # Calculer les totaux finaux
+    total_sales = sum(sale['total_price'] for sale in session_sales)
+    total_profit_loss = sum(sale['profit_loss'] for sale in session_sales)
+    drinks_sold = sum(sale['quantity'] for sale in session_sales)
+    
+    # Créer le fichier CSV de la session
+    session_filename = f"data/session_{current_session['session_id']}.csv"
+    
+    try:
+        with open(session_filename, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['drink_id', 'drink_name', 'quantity', 'unit_price', 'base_price', 
+                         'total_price', 'profit_loss', 'timestamp']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
+            # En-tête avec infos de session
+            writer.writeheader()
+            
+            # Ligne de résumé de session
+            writer.writerow({
+                'drink_id': 'SESSION_SUMMARY',
+                'drink_name': f'Barman: {current_session["barman_name"]}',
+                'quantity': drinks_sold,
+                'unit_price': f'Start: {current_session["start_time"]}',
+                'base_price': f'End: {datetime.now().isoformat()}',
+                'total_price': total_sales,
+                'profit_loss': total_profit_loss,
+                'timestamp': f'Starting Cash: {current_session.get("starting_cash", 0)}'
+            })
+            
+            # Ligne vide pour séparer
+            writer.writerow({k: '' for k in fieldnames})
+            
+            # Toutes les ventes
+            for sale in session_sales:
+                writer.writerow(sale)
+    
+        # Marquer la session comme terminée
+        current_session['is_active'] = False
+        current_session['end_time'] = datetime.now().isoformat()
+        current_session['total_sales'] = total_sales
+        current_session['total_profit_loss'] = total_profit_loss
+        current_session['drinks_sold'] = drinks_sold
+        
+        # Supprimer le fichier de session temporaire
+        if os.path.exists('data/current_session.json'):
+            os.remove('data/current_session.json')
+        
+        session_data = {
+            "session": current_session,
+            "stats": {
+                "total_sales": total_sales,
+                "total_profit_loss": total_profit_loss,
+                "drinks_sold": drinks_sold,
+                "session_file": session_filename
+            }
+        }
+        
+        # Réinitialiser pour la prochaine session
+        current_session = None
+        session_sales = []
+        
+        return {"status": "success", "message": f"Session sauvegardée dans {session_filename}", "data": session_data}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la sauvegarde: {str(e)}")
+
+@app.post("/admin/session/resume")
+async def resume_session(admin: str = Depends(get_current_admin)):
+    """Reprendre une session interrompue (en cas de crash)"""
+    global current_session, session_sales
+    
+    if current_session and current_session.get('is_active'):
+        return {"status": "already_active", "session": current_session}
+    
+    # Charger la session sauvegardée
+    load_session_if_exists()
+    
+    if current_session and current_session.get('is_active'):
+        return {"status": "resumed", "session": current_session, "sales_count": len(session_sales)}
+    else:
+        return {"status": "no_session", "message": "Aucune session à reprendre"}
 
 @app.post('/crash')
 def crash():
@@ -282,11 +511,6 @@ async def admin_trigger_boom(level: str = "medium", admin: str = Depends(get_cur
 async def admin_reset_market(admin: str = Depends(get_current_admin)):
     data_manager.reset_prices()
     return {'status': 'market_reset', 'admin': admin}
-
-@app.post('/admin/market/fluctuate')
-async def admin_market_fluctuations(admin: str = Depends(get_current_admin)):
-    changes_count = data_manager.apply_market_fluctuations()
-    return {'status': 'market_fluctuations_applied', 'changes_count': changes_count, 'admin': admin}
 
 @app.post('/admin/happy-hour/start')
 async def admin_start_happy_hour(request: Request, admin: str = Depends(get_current_admin)):

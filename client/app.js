@@ -3,6 +3,66 @@ const API_BASE = window.location.origin;
 const REFRESH_INTERVAL = 10000; // 10 secondes
 const ANIMATION_DURATION = 500;
 
+// Configuration pour la robustesse
+const API_CONFIG = {
+    maxRetries: 3,
+    retryDelay: 1000,
+    timeout: 10000
+};
+
+// Throttling pour les animations
+let animationQueue = [];
+let isAnimating = false;
+
+function queueAnimation(animationFn) {
+    animationQueue.push(animationFn);
+    if (!isAnimating) {
+        processAnimationQueue();
+    }
+}
+
+function processAnimationQueue() {
+    if (animationQueue.length === 0) {
+        isAnimating = false;
+        return;
+    }
+    
+    isAnimating = true;
+    const nextAnimation = animationQueue.shift();
+    
+    requestAnimationFrame(() => {
+        nextAnimation();
+        setTimeout(processAnimationQueue, 50); // 50ms entre animations
+    });
+}
+
+// Fonction utilitaire pour les requêtes avec retry
+async function fetchWithRetry(url, options = {}, retries = API_CONFIG.maxRetries) {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
+        
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return response;
+    } catch (error) {
+        if (retries > 0 && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+            await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay));
+            return fetchWithRetry(url, options, retries - 1);
+        }
+        throw error;
+    }
+}
+
 // État global
 let lastPrices = {};
 let isConnected = false;
@@ -120,6 +180,20 @@ const drinkPriceHistory = new Map();
 
 // Mapping des boissons vers leurs couleurs
 const drinkColorMap = new Map();
+
+// Nettoyage automatique toutes les 10 minutes pour éviter l'accumulation
+setInterval(() => {
+    cleanupCache();
+    // Nettoyer le localStorage si trop volumineux
+    try {
+        const storageSize = JSON.stringify(localStorage).length;
+        if (storageSize > 500000) { // > 500KB
+            localStorage.removeItem('chart-history-cache');
+        }
+    } catch (e) {
+        console.warn('Erreur nettoyage localStorage:', e);
+    }
+}, 600000); // 10 minutes
 
 // Fonction de nettoyage du cache pour éviter l'accumulation pendant la soirée
 function cleanupCache() {
@@ -362,10 +436,10 @@ function updateTimestamp() {
 // Récupération des prix depuis l'API
 async function fetchPrices() {
     try {
-        // Récupérer les prix et les Happy Hours en parallèle
+        // Récupérer les prix et les Happy Hours en parallèle avec retry
         const [pricesRes, happyHoursRes] = await Promise.all([
-            fetch(`${API_BASE}/prices`),
-            fetch(`${API_BASE}/happy-hour/active`)
+            fetchWithRetry(`${API_BASE}/prices`),
+            fetchWithRetry(`${API_BASE}/happy-hour/active`)
         ]);
         
         if (!pricesRes.ok) throw new Error(`HTTP ${pricesRes.status}`);

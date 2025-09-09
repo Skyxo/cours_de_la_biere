@@ -156,21 +156,21 @@
     }
     
     .min-price {
-      color: #4CAF50;
+      color: rgb(var(--up));
       font-weight: bold;
     }
     
     .max-price {
-      color: #FF5722;
+      color: rgb(var(--down));
       font-weight: bold;
     }
     
     .alcohol-degree {
-      color: #FFA500;
+      color: rgb(var(--accent));
       font-size: 0.75em;
       font-weight: normal;
       margin-left: 4px;
-      text-shadow: 0 0 5px rgba(255, 165, 0, 0.6);
+      text-shadow: 0 0 5px rgba(var(--accent), 0.6);
       opacity: 0.9;
     }
     
@@ -654,15 +654,15 @@
         display: none;
       }
       
-      #purchase-table td[data-label="Prix Min/Max (€)"] {
+      #purchase-table td[data-label="Prix Min/Base/Max (€)"] {
         grid-column: 2;
         padding: 4px;
         text-align: center;
         font-size: 0.8em;
       }
       
-      #purchase-table td[data-label="Prix Min/Max (€)"]::before {
-        content: "Fourchette: ";
+      #purchase-table td[data-label="Prix Min/Base/Max (€)"]::before {
+        content: "Min/Base/Max: ";
         font-weight: bold;
         color: #888;
         display: block;
@@ -896,19 +896,19 @@
       }
       
       .min-price {
-        color: #28a745 !important;
+        color: rgb(var(--up)) !important;
         font-weight: bold;
         font-size: 0.85em;
       }
       
       .max-price {
-        color: #dc3545 !important;
+        color: rgb(var(--down)) !important;
         font-weight: bold;
         font-size: 0.85em;
       }
       
       .alcohol-degree {
-        color: #6c757d;
+        color: rgb(var(--accent));
         font-size: 0.75em;
         font-style: italic;
       }
@@ -974,6 +974,71 @@
       
       <h1>🔧 Interface Administrateur</h1>
       <p>Gestion du marché des boissons en temps réel</p>
+      
+      <!-- Section Gestion Session -->
+      <div id="session-section" style="margin: 20px 0; padding: 15px; border: 2px solid rgb(var(--accent)); border-radius: 8px; background: rgba(var(--surface), 0.9);">
+        <h3 style="margin: 0 0 15px 0; color: rgb(var(--accent)); display: flex; align-items: center; gap: 8px;">
+          💼 Session de Service
+        </h3>
+        
+        <!-- Indicateur de session -->
+        <div id="session-status" style="margin-bottom: 15px;">
+          <div id="no-session" class="session-state">
+            <p style="color: #999; margin: 0;">❌ Aucune session active</p>
+            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: end;">
+              <div style="flex: 1; min-width: 150px;">
+                <label for="barmanName" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Nom du barman :</label>
+                <input type="text" id="barmanName" placeholder="Nom du barman" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8);">
+              </div>
+              <div style="min-width: 120px;">
+                <label for="startingCash" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Caisse départ (€) :</label>
+                <input type="number" id="startingCash" value="0" min="0" step="0.01" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8);">
+              </div>
+              <button onclick="startSession()" class="btn" style="background: linear-gradient(45deg, #4CAF50, #45a049);">
+                🚀 Démarrer Session
+              </button>
+              <button onclick="resumeSession()" class="btn btn-warning">
+                🔄 Reprendre Session
+              </button>
+            </div>
+          </div>
+          
+          <div id="active-session" class="session-state hidden">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px;">
+              <div class="stat-card">
+                <div class="stat-value" id="session-revenue" style="color: #4CAF50;">0.00 €</div>
+                <div class="stat-label">Chiffre d'Affaires</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="session-profit" style="color: #FF9800;">0.00 €</div>
+                <div class="stat-label">Bénéfice/Perte</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="session-drinks" style="color: rgb(var(--accent));">0</div>
+                <div class="stat-label">Boissons Vendues</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="session-duration" style="color: #666;">00:00</div>
+                <div class="stat-label">Durée</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div>
+                <strong style="color: rgb(var(--accent));">Barman:</strong> <span id="session-barman">-</span><br>
+                <strong style="color: rgb(var(--accent));">Démarrée:</strong> <span id="session-start">-</span>
+              </div>
+              <button onclick="endSession()" class="btn btn-danger">
+                🏁 Terminer Session
+              </button>
+            </div>
+            
+            <div style="font-size: 0.9em; color: #999;">
+              💾 Session sauvegardée automatiquement
+            </div>
+          </div>
+        </div>
+      </div>
       
       <!-- Boutons d'événements marché -->
       <div style="margin: 20px 0; text-align: center;">
@@ -1044,25 +1109,6 @@
       </div>
     </div>
 
-    <!-- Section Fluctuations Naturelles -->
-    <div class="admin-section">
-      <div class="section-header">
-        <h3>📊 Fluctuations Naturelles du Marché</h3>
-      </div>
-      <div class="section-content">
-        <div class="market-controls">
-          <button onclick="triggerMarketFluctuations()" class="btn" style="background: linear-gradient(45deg, #607D8B, #455A64); color: white;">
-            📊 Déclencher des Fluctuations Naturelles (-2% à +2%)
-          </button>
-        </div>
-        <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
-          Applique des variations aléatoires légères sur environ 30% des boissons, simulant les fluctuations naturelles du marché.
-        </p>
-      </div>
-    </div>
-
-    
-
     <!-- Sections accordéon pour l'interface admin -->
     <div class="accordion-container">
       
@@ -1078,7 +1124,7 @@
               <thead>
                 <tr>
                   <th>Boisson</th>
-                  <th>Prix Min/Max (€)</th>
+                  <th>Prix Min/Base/Max (€)</th>
                   <th>Prix Exact (€)</th>
                   <th>Prix Affiché (€)</th>
                   <th>Actions</th>
@@ -1168,8 +1214,8 @@
             <div id="drinks-table-content" class="collapse show" style="display: none;">
               <div class="drinks-table-header">
                 <div>Nom</div>
-                <div>Prix de base</div>
                 <div>Prix min</div>
+                <div>Prix base</div>
                 <div>Prix max</div>
                 <div>Prix public</div>
                 <div>Actions</div>
