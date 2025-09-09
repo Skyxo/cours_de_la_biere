@@ -28,10 +28,13 @@ class WallStreetCharts {
         const accent = cs.getPropertyValue('--accent').trim();
         const text = cs.getPropertyValue('--text').trim();
         const grid = (cs.getPropertyValue('--grid').trim()) || accent;
+        const gridAlphaStr = cs.getPropertyValue('--grid-alpha').trim();
+        const gridAlpha = parseFloat(gridAlphaStr || '0.2');
         return {
             accentRgb: accent, // e.g. "0, 255, 65"
             textRgb: text,     // e.g. "0, 255, 65" or dark in light theme
-            gridRgb: grid
+            gridRgb: grid,
+            gridAlpha
         };
     }
 
@@ -48,7 +51,6 @@ class WallStreetCharts {
         
         // Si l'élément n'existe pas, sortir de la fonction
         if (!chartEl) {
-            console.log('Price chart element not found, skipping initialization');
             return;
         }
         
@@ -80,10 +82,24 @@ class WallStreetCharts {
                     x: {
                         type: 'linear',
                         ticks: {
-                            maxTicksLimit: 10
+                            maxTicksLimit: 8,
+                            callback: function(value) {
+                                // Afficher le temps en format simple
+                                const date = new Date(value);
+                                return date.toLocaleTimeString('fr-FR', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    second: '2-digit'
+                                });
+                            }
                         },
                         grid: {
-                            color: this.rgba(this.theme.gridRgb, 0.1)
+                            color: this.rgba(this.theme.gridRgb, this.theme.gridAlpha)
+                        },
+                        title: {
+                            display: true,
+                            text: 'Temps',
+                            color: this.rgb(this.theme.textRgb)
                         }
                     },
                     y: {
@@ -99,17 +115,18 @@ class WallStreetCharts {
                             }
                         },
                         grid: {
-                            color: this.rgba(this.theme.gridRgb, 0.1)
+                            color: this.rgba(this.theme.gridRgb, this.theme.gridAlpha)
                         }
                     }
                 },
                 elements: {
                     line: {
-                        tension: 0.4
+                        tension: 0.4,
+                        borderWidth: 2
                     },
                     point: {
-                        radius: 3,
-                        hoverRadius: 6
+                        radius: 4,
+                        hoverRadius: 7
                     }
                 },
                 animation: false // Disable animation to prevent curves from starting at the bottom
@@ -122,7 +139,6 @@ class WallStreetCharts {
     
         // Si l'élément n'existe pas, simplement sortir de la fonction
         if (!volumeChartEl) {
-            console.log('Volume chart element not found, skipping initialization');
             return;
         }
         
@@ -135,8 +151,9 @@ class WallStreetCharts {
                 datasets: [{
                     label: 'Volume des Transactions',
                     data: [],
-                    backgroundColor: this.rgba(this.theme.accentRgb, 0.3),
+                    backgroundColor: this.rgba(this.theme.accentRgb, 0.35),
                     borderColor: this.rgb(this.theme.accentRgb),
+                    borderWidth: 2,
                 }]
             },
             options: {
@@ -146,11 +163,13 @@ class WallStreetCharts {
                     x: {
                         ticks: {
                             maxTicksLimit: 10
-                        }
+                        },
+                        grid: { color: this.rgba(this.theme.gridRgb, this.theme.gridAlpha) }
                     },
                     y: {
                         beginAtZero: true,
-                        max: 100 /* Exemple de limite supérieure */
+                        max: 100, /* Exemple de limite supérieure */
+                        grid: { color: this.rgba(this.theme.gridRgb, this.theme.gridAlpha) }
                     }
                 }
             }
@@ -173,25 +192,37 @@ class WallStreetCharts {
 
         // Créer les datasets pour chaque boisson et déterminer les min/max globaux
         this.priceHistory.forEach((history, drinkName) => {
-            const color = this.getDrinkColor(drinkName);
+            // Chercher la couleur personnalisée dans les données passées
+            let customColor = null;
+            if (Array.isArray(prices)) {
+                const drinkData = prices.find(p => p.name === drinkName);
+                if (drinkData && drinkData.color) {
+                    customColor = drinkData.color;
+                }
+            }
+            
+            const color = this.getDrinkColor(drinkName, customColor);
             // Limiter le nombre de points
             const limitedHistory = history.slice(-this.maxDataPoints);
-            const prices = limitedHistory.map(point => point.price);
+            const priceValues = limitedHistory.map(point => point.price);
 
-            // Filtrer les valeurs aberrantes seulement si nous avons assez de données
-            let filteredPrices = prices;
-            if (prices.length >= 4) {
-                const sorted = [...prices].sort((a, b) => a - b);
+            // Filtrer les valeurs aberrantes de manière plus permissive
+            let filteredPrices = priceValues;
+            if (priceValues.length >= 10) { // Augmenter le seuil minimal pour activer le filtrage
+                const sorted = [...priceValues].sort((a, b) => a - b);
                 const q1 = sorted[Math.floor(sorted.length / 4)];
                 const q3 = sorted[Math.floor((3 * sorted.length) / 4)];
                 const iqr = q3 - q1;
-                const lowerBound = q1 - 1.5 * iqr;
-                const upperBound = q3 + 1.5 * iqr;
-                filteredPrices = prices.filter(price => price >= lowerBound && price <= upperBound);
-                // Si tout est filtré, revenir aux données originales pour éviter l'effacement des courbes
-                if (filteredPrices.length === 0) {
-                    filteredPrices = prices;
+                // Utiliser un facteur plus permissif (3.0 au lieu de 1.5)
+                const lowerBound = q1 - 3.0 * iqr;
+                const upperBound = q3 + 3.0 * iqr;
+                const candidateFiltered = priceValues.filter(price => price >= lowerBound && price <= upperBound);
+                
+                // Seulement filtrer si on garde au moins 80% des données
+                if (candidateFiltered.length >= priceValues.length * 0.8) {
+                    filteredPrices = candidateFiltered;
                 }
+                // Sinon, garder toutes les données originales
             }
 
             // Mettre à jour les min/max globaux
@@ -202,13 +233,21 @@ class WallStreetCharts {
                 globalMaxPrice = Math.max(globalMaxPrice, maxPrice);
             }
 
+            // Créer les données au format Chart.js avec x,y pour chaque point
+            const chartData = limitedHistory.map(point => ({
+                x: point.time,
+                y: point.price
+            }));
+
             datasets.push({
                 label: drinkName,
-                data: filteredPrices,
+                data: chartData,
                 borderColor: color,
                 backgroundColor: color + '20',
                 fill: false,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 2,
+                pointHoverRadius: 4
             });
         });
 
@@ -223,9 +262,10 @@ class WallStreetCharts {
             this.priceChart.options.scales.y.max = 10;
         }
 
-        this.priceChart.data.labels = labels;
+        // Pas besoin de labels séparés avec les données x,y
+        this.priceChart.data.labels = [];
         this.priceChart.data.datasets = datasets;
-        this.priceChart.update(); // Cette ligne manquante est cruciale
+        this.priceChart.update('none'); // Pas d'animation pour éviter les scintillements
     }
 
     updateVolumeChart(historyData) {
@@ -289,7 +329,38 @@ class WallStreetCharts {
         this.volumeChart.update();
     }
     
-    getDrinkColor(drinkName) {
+    getDrinkColor(drinkName, customColor = null) {
+        // Si une couleur personnalisée est fournie, l'utiliser
+        if (customColor) {
+            return customColor;
+        }
+        
+        // Calculer la couleur basée sur la tendance des prix
+        const history = this.priceHistory.get(drinkName);
+        if (history && history.length >= 2) {
+            // Prendre les derniers points pour calculer la tendance
+            const recentPoints = history.slice(-Math.min(5, history.length)); // 5 derniers points max
+            const firstPrice = recentPoints[0].price;
+            const lastPrice = recentPoints[recentPoints.length - 1].price;
+            
+            // Calculer la tendance
+            if (lastPrice > firstPrice) {
+                // Tendance haussière -> vert
+                return '#00ff41';
+            } else if (lastPrice < firstPrice) {
+                // Tendance baissière -> rouge
+                return '#ff4444';
+            } else {
+                // Prix stable -> couleur selon le nom de la boisson
+                return this.getNameBasedColor(drinkName);
+            }
+        }
+        
+        // Si pas d'historique, utiliser l'ancien système basé sur le nom
+        return this.getNameBasedColor(drinkName);
+    }
+    
+    getNameBasedColor(drinkName) {
         const name = drinkName.toLowerCase();
         if (name.includes('pilsner')) return this.chartColors.pilsner;
         if (name.includes('ipa')) return this.chartColors.ipa;
@@ -449,5 +520,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
 
 

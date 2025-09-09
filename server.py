@@ -1,38 +1,30 @@
-# File: server.py
-"""
-Step 1 implementation for the "Wall Street Bar" project.
-FastAPI backend with three endpoints implemented:
- - GET /prices    -> current prices
- - POST /buy      -> register a purchase
- - GET /history   -> full history
-
-Persistence: CSV files in ./data/ directory
-"""
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import os
 import secrets
+import uvicorn
+import json
 from csv_data import CSVDataManager
 
-# Initialiser le gestionnaire de données CSV
+app = FastAPI()
 data_manager = CSVDataManager()
 
-app = FastAPI(title="Wall Street Bar - Step 1 Backend")
+current_refresh_interval = 10000
+active_drinks = set()
+timer_start_time = datetime.now()
 
-# Configuration de l'authentification
+app = FastAPI(title="Wall Street Bar")
 security = HTTPBasic()
 
-# Credentials admin (en production, utiliser des variables d'environnement)
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "wallstreet2024"
 
 def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    """Vérifie les credentials admin"""
     is_correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
     is_correct_password = secrets.compare_digest(credentials.password, ADMIN_PASSWORD)
     
@@ -43,13 +35,12 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username
-
-# Serve frontend from client/ - will be mounted after API routes
-
-# --- Pydantic models ---
 class BuyRequest(BaseModel):
     drink_id: int
     quantity: int = 1
+
+class IntervalRequest(BaseModel):
+    interval_ms: int
 
 class PriceItem(BaseModel):
     id: int
@@ -69,71 +60,86 @@ class HistoryItem(BaseModel):
     event: str
     timestamp: str
 
-# --- CSV Data helpers ---
-# Toutes les fonctions de base de données sont maintenant gérées par CSVDataManager
-
-# --- API endpoints ---
-
-# --- Routes API ---
+class CreateDrinkRequest(BaseModel):
+    name: str
+    base_price: float
+    min_price: float
+    max_price: float
 @app.get("/prices")
 async def get_prices():
-    """Retourne les prix actuels depuis les fichiers CSV"""
     prices = data_manager.get_all_prices()
-    return {"prices": [{"id": p['id'], "name": p['name'], "price": p['price']} for p in prices]}
+    return {
+        "prices": prices,
+        "active_drinks": list(active_drinks),
+        "timer_start": timer_start_time.isoformat(),
+        "interval_ms": current_refresh_interval
+    }
+
+@app.get("/config/interval")
+async def get_refresh_interval():
+    return {"interval_ms": current_refresh_interval}
+
+@app.post("/config/interval")
+async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(get_current_admin)):
+    global current_refresh_interval, active_drinks, timer_start_time
+    
+    current_refresh_interval = max(0, request.interval_ms)
+    active_drinks.clear()
+    timer_start_time = datetime.now()
+    
+    return {"status": "ok", "interval_ms": current_refresh_interval}
 
 
 @app.post("/buy")
 async def buy(request: Request):
-    """Enregistre un achat et met à jour les prix"""
+    global active_drinks
+    
     try:
         data = await request.json()
         drink_id = int(data.get("drink_id"))
         quantity = int(data.get("quantity", 1))
         
-        print(f"DEBUG: Processing buy request - drink_id: {drink_id}, quantity: {quantity}")
+        active_drinks.add(drink_id)
         
-        updated_drink = data_manager.apply_buy(drink_id, quantity)
-        print(f"DEBUG: Buy successful - new_price: {updated_drink['price']}")
-        
-        return {"status": "ok", "drink_id": drink_id, "quantity": quantity, "new_price": updated_drink['price']}
+        if current_refresh_interval == 0:
+            updated_drink = data_manager.apply_buy(drink_id, quantity)
+        else:
+            updated_drink = data_manager.apply_buy(drink_id, quantity)
+            
+        return {
+            "status": "ok", 
+            "drink_id": drink_id, 
+            "quantity": quantity, 
+            "new_price": updated_drink['price'],
+            "mode": "immediate" if current_refresh_interval == 0 else "market",
+            "active_drinks": list(active_drinks)
+        }
     except ValueError as e:
-        print(f"DEBUG: ValueError in buy: {e}")
         return JSONResponse(status_code=400, content={"detail": str(e)})
     except Exception as e:
-        print(f"DEBUG: Unexpected error in buy: {e}")
-        import traceback
-        traceback.print_exc()
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
 @app.get("/history")
 async def get_history():
-    """Retourne l'historique complet depuis les fichiers CSV"""
-    history = data_manager.get_history(limit=100)
+    history = data_manager.get_history(limit=10)
     return {"history": history}
 
-
-# --- Optional: simple health check and reset endpoint (non-authenticated for step 1) ---
 @app.get('/health')
 def health():
     return {'status': 'ok', 'time': datetime.utcnow().isoformat()}
 
 @app.post('/reset')
 def reset():
-    """Remet tous les prix à leur valeur de base"""
     data_manager.reset_prices()
     return {'status': 'reset'}
 
 @app.post('/crash')
 def crash():
-    """Déclenche un krach : baisse brutale de tous les prix"""
     data_manager.trigger_crash()
     return {'status': 'crash_triggered'}
 
-# --- Endpoints Admin Protégés ---
-
 @app.get('/admin/status')
 async def admin_status(admin: str = Depends(get_current_admin)):
-    """Statut de l'administration"""
     prices = data_manager.get_all_prices()
     history = data_manager.get_history(limit=10)
     
@@ -147,15 +153,8 @@ async def admin_status(admin: str = Depends(get_current_admin)):
 
 @app.get('/admin/drinks')
 async def admin_get_drinks(admin: str = Depends(get_current_admin)):
-    """Récupère toutes les boissons avec détails complets"""
     drinks = data_manager.get_all_prices()
     return {'drinks': drinks}
-
-class CreateDrinkRequest(BaseModel):
-    name: str
-    base_price: float
-    min_price: float
-    max_price: float
 
 @app.post('/admin/drinks')
 async def admin_create_drink(payload: CreateDrinkRequest, admin: str = Depends(get_current_admin)):
@@ -192,7 +191,6 @@ async def admin_delete_drink(drink_id: int, admin: str = Depends(get_current_adm
 
 @app.post('/admin/drinks/{drink_id}/price')
 async def admin_update_price(drink_id: int, request: Request, admin: str = Depends(get_current_admin)):
-    """Met à jour manuellement le prix d'une boisson"""
     data = await request.json()
     new_price = data.get('new_price')
     
@@ -203,7 +201,6 @@ async def admin_update_price(drink_id: int, request: Request, admin: str = Depen
     if not drink:
         raise HTTPException(status_code=404, detail="Boisson introuvable")
     
-    # Vérifier que le nouveau prix est dans les bornes
     if new_price < drink['min_price'] or new_price > drink['max_price']:
         raise HTTPException(
             status_code=400, 
@@ -224,14 +221,12 @@ async def admin_update_price(drink_id: int, request: Request, admin: str = Depen
     }
 
 @app.get('/admin/history')
-async def admin_get_history(limit: int = 100, admin: str = Depends(get_current_admin)):
-    """Récupère l'historique complet des transactions"""
+async def admin_get_history(limit: int = 10, admin: str = Depends(get_current_admin)):
     history = data_manager.get_history(limit=limit)
     return {'history': history}
 
 @app.post('/admin/history/update/{entry_id}')
 async def admin_update_history(entry_id: int, request: Request, admin: str = Depends(get_current_admin)):
-    """Met à jour une entrée de l'historique (quantité / événement). Ne re-calcule pas rétroactivement les prix."""
     data = await request.json()
     quantity = data.get('quantity')
     event = data.get('event')
@@ -247,7 +242,6 @@ async def admin_update_history(entry_id: int, request: Request, admin: str = Dep
 
 @app.delete('/admin/history/{entry_id}')
 async def admin_delete_history(entry_id: int, admin: str = Depends(get_current_admin)):
-    """Supprime une entrée d'historique par ID"""
     success = data_manager.revert_and_delete_history_entry(entry_id)
     if not success:
         raise HTTPException(status_code=404, detail="Entrée d'historique introuvable")
@@ -260,22 +254,23 @@ async def admin_clear_history(admin: str = Depends(get_current_admin)):
 
 @app.post('/admin/market/crash')
 async def admin_trigger_crash(admin: str = Depends(get_current_admin)):
-    """Déclenche un krach (admin seulement)"""
     data_manager.trigger_crash()
     return {'status': 'crash_triggered', 'admin': admin}
 
+@app.post('/admin/market/boom')
+async def admin_trigger_boom(admin: str = Depends(get_current_admin)):
+    data_manager.trigger_boom()
+    return {'status': 'boom_triggered', 'admin': admin}
+
 @app.post('/admin/market/reset')
 async def admin_reset_market(admin: str = Depends(get_current_admin)):
-    """Remet tous les prix à leur valeur de base (admin seulement)"""
     data_manager.reset_prices()
     return {'status': 'market_reset', 'admin': admin}
 
 @app.get('/admin/stats')
 async def admin_get_stats(admin: str = Depends(get_current_admin)):
-    """Statistiques du marché (simplifiées)"""
     prices = data_manager.get_all_prices()
-    history = data_manager.get_history(limit=1000)
-    # Calculer les statistiques de base
+    history = data_manager.get_history(limit=10)
     total_transactions = len([h for h in history if h['event'] == 'buy'])
     total_volume = sum(h['quantity'] for h in history if h['event'] == 'buy')
     avg_price = sum(p['price'] for p in prices) / len(prices)
@@ -291,15 +286,9 @@ async def admin_get_stats(admin: str = Depends(get_current_admin)):
         'market_volatility': round(max_price - min_price, 2)
     }
 
-# Endpoints de statut/événements/évolution supprimés pour simplification
-
-## Gestion des sauvegardes supprimée pour simplification
-
-# --- Static frontend ---
 client_path = os.path.join(os.path.dirname(__file__), 'client')
 if os.path.isdir(client_path):
     app.mount("/", StaticFiles(directory=client_path, html=True), name="static")
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

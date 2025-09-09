@@ -1,23 +1,1098 @@
+/* ==============================================
+   STYLE MUR DE BOURSE - WALL STREET BAR
+   ============================================== */
+
+/* Style de base pour le mur de bourse - priorité absolue */
+body.stock-wall {
+    font-family: 'Courier New', monospace !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
+}
+
+/* Forcer le style pour tous les éléments dans le mur de bourse */
+.stock-wall * {
+    box-sizing: border-box;
+}
+
+/* En-tête avec disposition flexible */
+.wall-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Aligner les contrôles à droite */
+    padding: 15px 20px;
+    background: linear-gradient(90deg, #001122 0%, #002244 100%);
+    border-bottom: 2px solid #00ff41;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    min-height: 80px;
+    position: relative; /* Pour permettre le positionnement absolu du centre */
+}
+
+/* Zone centrale - Titre et timer (centré absolument par rapport à l'écran) */
+.header-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: auto; /* Prendre seulement la largeur nécessaire */
+}
+
+/* Zone droite - Admin */
+.header-right {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 20px;
+    min-width: 150px;
+}
+
+.wall-header h1 {
+    font-size: 2em;
+    margin: 0 0 8px 0;
+    color: #00ff41;
+    text-shadow: 0 0 20px #00ff41;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.timer-info {
+    font-size: 0.9em;
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 20px #00ff41; }
+    to { text-shadow: 0 0 30px #00ff41, 0 0 40px #00ff41; }
+}
+
+/* Grille principale 5 colonnes x 3 lignes pour 15 bières */
+.stock-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 12px;
+    padding: 15px;
+    max-width: 1920px;
+    height: calc(100vh - 120px);
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* Tuile individuelle pour chaque boisson - taille fixe */
+.stock-tile {
+    background: #111111;
+    border: 2px solid #333333;
+    border-radius: 8px;
+    padding: 10px;
+    position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.stock-tile:hover {
+    border-color: #00ff41;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    transform: scale(1.02);
+}
+
+/* Couleurs des tuiles selon les tendances */
+.stock-tile.trend-up {
+    border-color: #00ff41;
+    background: linear-gradient(135deg, #111111 0%, #001a00 100%);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.stock-tile.trend-down {
+    border-color: #ff4444;
+    background: linear-gradient(135deg, #111111 0%, #1a0000 100%);
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.2);
+}
+
+.stock-tile.trend-neutral {
+    border-color: #666666;
+    background: #111111;
+}
+
+/* Zone du graphique dans chaque tuile */
+.tile-chart {
+    flex: 1;
+    position: relative;
+    min-height: 120px;
+    margin-bottom: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 4px;
+}
+
+.tile-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 4px;
+}
+
+/* Informations de la boisson en bas de tuile */
+.tile-info {
+    text-align: center;
+    border-top: 1px solid #333333;
+    padding-top: 8px;
+    flex-shrink: 0;
+}
+
+.tile-name {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    line-height: 1.2;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    text-align: center;
+}
+
+.tile-price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.tile-price-exact {
+    font-size: 0.7em;
+    color: #888888;
+    opacity: 0.8;
+    margin: 0;
+}
+
+.tile-price {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+    margin: 0;
+}
+
+.tile-variation {
+    font-size: 0.8em;
+    margin-top: 2px;
+}
+
+.tile-variation.up {
+    color: #00ff41;
+}
+
+.tile-variation.down {
+    color: #ff4444;
+}
+
+.tile-variation.neutral {
+    color: #888888;
+}
+
+/* Styles pour la table des prix */
+.price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.price-exact {
+    font-size: 0.8em;
+    color: #888888;
+    opacity: 0.8;
+}
+
+.price-rounded {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+/* Styles pour les prix dans le tableau d'achat admin */
+.price-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+}
+
+.price-view .price-exact {
+    font-size: 0.8em;
+    color: #888888;
+    opacity: 0.8;
+}
+
+.price-view .price-rounded {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
+
+/* Indicateur de connexion style bourse - SUPPRIMÉ */
+/* Les styles connection-status ne sont plus utilisés */
+/*
+.stock-wall .connection-status {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.stock-wall .connected {
+    background: rgba(0, 255, 65, 0.2);
+    border: 1px solid #00ff41;
+    color: #00ff41;
+}
+
+.stock-wall .disconnected {
+    background: rgba(255, 68, 68, 0.2);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+}
+*/
+
+/* Lien admin dans l'en-tête */
+.stock-wall .admin-link {
+    color: #00ff41;
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 1px solid #00ff41;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.stock-wall .admin-link:hover {
+    background: rgba(0, 255, 65, 0.1);
+    text-decoration: none;
+    color: #00ff41;
+}
+
+/* Contrôles de thème dans l'en-tête */
+.theme-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    font-size: 0.9em;
+}
+
+.theme-controls label {
+    color: #ffffff;
+    font-weight: normal;
+}
+
+.theme-controls select {
+    background: #222222;
+    color: #ffffff;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 0.85em;
+}
+
+/* Toggle pour le type de graphique */
+.chart-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    font-size: 0.9em;
+}
+
+.chart-toggle label {
+    color: #ffffff;
+    font-weight: normal;
+}
+
+.toggle-btn {
+    background: #222222;
+    color: #ffffff;
+    border: 1px solid #00ff41;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.toggle-btn:hover {
+    background: rgba(0, 255, 65, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.toggle-btn[data-type="line"] {
+    border-color: #4499ff;
+}
+
+.toggle-btn[data-type="line"]:hover {
+    background: rgba(68, 153, 255, 0.1);
+    box-shadow: 0 0 10px rgba(68, 153, 255, 0.3);
+}
+
+/* Bouton de tri */
+.sort-toggle-btn {
+    background: #222222;
+    color: #ffffff;
+    border: 1px solid #ffaa00;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    position: relative;
+}
+
+.sort-toggle-btn:hover {
+    background: rgba(255, 170, 0, 0.1);
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+}
+
+.sort-toggle-btn[data-sort-mode="alphabetical"] {
+    border-color: #ff8800;
+    color: #ff8800;
+}
+
+.sort-toggle-btn[data-sort-mode="alphabetical"]:hover {
+    background: rgba(255, 136, 0, 0.1);
+    box-shadow: 0 0 10px rgba(255, 136, 0, 0.3);
+}
+
+/* ==============================
+   STYLES ADMIN CONTRÔLES
+   ============================== */
+
+.admin-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(var(--accent), 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(var(--accent), 0.3);
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-controls-left {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-controls-right {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-controls .theme-controls,
+.admin-controls .chart-toggle,
+.admin-controls .sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.admin-controls label {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.admin-controls select {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(var(--accent), 0.5);
+    background: rgba(var(--surface), 0.8);
+    color: rgb(var(--text));
+    font-size: 0.85em;
+}
+
+.admin-controls .toggle-btn {
+    font-size: 0.8em;
+    padding: 6px 10px;
+    min-width: auto;
+}
+
+.admin-back-btn {
+    text-decoration: none !important;
+    font-size: 0.85em;
+    padding: 6px 12px;
+}
+
+.admin-logout-btn {
+    font-size: 0.85em;
+    padding: 6px 12px;
+}
+
+/* Responsive pour écrans plus petits */
+@media (max-width: 1600px) {
+    .stock-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .tile-chart {
+        min-height: 100px;
+    }
+    
+    .tile-name {
+        font-size: 1.1em;
+    }
+    
+    .tile-price {
+        font-size: 1.1em;
+    }
+}
+
+@media (max-width: 1200px) {
+    .stock-grid {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 8px;
+    }
+    
+    .wall-header h1 {
+        font-size: 1.6em;
+    }
+    
+    .timer-info {
+        font-size: 0.8em;
+    }
+}
+
+@media (max-width: 900px) {
+    .stock-grid {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        gap: 6px;
+    }
+    
+    .wall-header {
+        padding: 8px 0;
+        justify-content: flex-end; /* Maintenir l'alignement des contrôles à droite */
+    }
+    
+    .wall-header h1 {
+        font-size: 1.4em;
+    }
+    
+    .header-center {
+        /* Maintenir le centrage absolu sur mobile */
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    /* Styles admin pour tablettes */
+    .admin-controls-left {
+        gap: 15px;
+    }
+    
+    .admin-controls .theme-controls,
+    .admin-controls .chart-toggle,
+    .admin-controls .sort-toggle {
+        gap: 6px;
+    }
+    
+    .admin-controls label {
+        font-size: 0.85em;
+    }
+    
+    .admin-controls .toggle-btn {
+        font-size: 0.75em;
+        padding: 5px 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .stock-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto;
+        height: auto;
+        min-height: calc(100vh - 120px);
+    }
+    
+    /* Styles admin responsive mobile */
+    .admin-controls {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .admin-controls-left {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .admin-controls-right {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+    
+    .admin-controls .theme-controls,
+    .admin-controls .chart-toggle,
+    .admin-controls .sort-toggle {
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: rgba(var(--accent), 0.05);
+        border-radius: 6px;
+        border: 1px solid rgba(var(--accent), 0.2);
+    }
+    
+    .admin-controls label {
+        font-weight: 600;
+    }
+    
+    .admin-controls select,
+    .admin-controls .toggle-btn {
+        flex-shrink: 0;
+        min-width: 100px;
+    }
+    
+    .admin-back-btn,
+    .admin-logout-btn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+    
+    #connection-text {
+        text-align: center;
+        font-size: 0.8em;
+    }
+}
+
+/* Effet de particules adapté */
+.stock-wall .particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.stock-wall .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(0, 255, 65, 0.3);
+    border-radius: 50%;
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(100vh) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) translateX(100px);
+        opacity: 0;
+    }
+}
+
+/* Animation pour changements de prix */
+.price-flash {
+    animation: priceFlash 0.5s ease-in-out;
+}
+
+@keyframes priceFlash {
+    0% { background: rgba(0, 255, 65, 0.3); }
+    50% { background: rgba(0, 255, 65, 0.6); }
+    100% { background: rgba(0, 255, 65, 0.1); }
+}
+
+/* Reste du CSS original pour compatibilité avec admin.html */
+
+/* CSS original pour l'interface admin et ancienne interface */
 .name-cell {
     color: rgb(var(--text));
     font-weight: 800;
     font-size: 1.2em;
     letter-spacing: 0.3px;
 }
-body {
+
+body:not(.stock-wall) {
     font-family: 'Courier New', monospace;
     background: linear-gradient(135deg, rgb(var(--bg-start)) 0%, rgb(var(--bg-mid)) 50%, rgb(var(--bg-end)) 100%);
     color: rgb(var(--text));
     text-align: center;
     margin: 0;
-    padding: 20px;
+    padding: 10px;
     min-height: 100vh;
     overflow-x: hidden;
 }
 
+h1:not(.stock-wall h1) {
+    font-size: 2.5em;
+    margin: 10px 0 15px 0;
+    color: rgb(var(--title));
+    text-shadow: 0 0 20px rgb(var(--accent));
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+table {
+    margin: auto;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 100%;
+    background: rgba(var(--surface), var(--surface-alpha));
+    border: 2px solid rgb(var(--accent));
+    box-shadow: 0 0 30px rgba(var(--accent), 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th {
+    background: linear-gradient(45deg, rgb(var(--accent)), rgba(var(--accent), 0.85));
+    color: rgb(var(--th-text));
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Styles pour tableau condensé */
+.table-condensed {
+    max-height: 650px;
+    overflow-y: auto;
+    font-size: 0.9em;
+}
+
+/* Layout principal: graphique à gauche (60%), tableau à droite (40%) */
+.main-layout {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 15px;
+    margin-top: 10px;
+    width: 100%;
+    height: calc(100vh - 120px);
+    padding: 0;
+}
+
+.chart-section {
+    background: rgba(var(--surface), var(--surface-alpha));
+    border-radius: 10px;
+    padding: 15px;
+    border: 2px solid rgb(var(--accent));
+    box-shadow: 0 0 30px rgba(var(--accent), 0.3);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-section {
+    background: rgba(var(--surface), var(--surface-alpha));
+    border-radius: 10px;
+    padding: 15px;
+    border: 2px solid rgb(var(--accent));
+    box-shadow: 0 0 30px rgba(var(--accent), 0.3);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Titres des sections */
+.chart-section h3,
+.table-section h3 {
+    margin: 0 0 15px 0;
+    text-align: center;
+    color: rgb(var(--accent));
+    font-size: 1.4em;
+    flex-shrink: 0;
+}
+
+/* Conteneur pour contraindre le canvas */
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.chart-section canvas {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 8px;
+}
+
+/* Styles pour les noms de boissons colorés */
+.drinks-table {
+    width: 100%;
+    margin: 0;
+    flex: 1;
+    display: table;
+}
+
+.drinks-table .name-cell {
+    text-align: left;
+    font-weight: 700;
+    font-size: 1.1em;
+    padding: 10px 12px;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    border-radius: 6px;
+    margin: 2px;
+}
+
+.drinks-table th {
+    padding: 12px 8px;
+    font-size: 1em;
+    text-align: center;
+    background: linear-gradient(45deg, rgb(var(--accent)), rgba(var(--accent), 0.85));
+    color: rgb(var(--th-text));
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.drinks-table td {
+    padding: 10px 8px;
+    font-size: 1em;
+    text-align: center;
+    border-bottom: 1px solid rgba(var(--grid), 0.3);
+}
+
+.drinks-table .price-cell {
+    font-weight: bold;
+    font-size: 1.2em;
+    text-shadow: 0 0 8px rgba(var(--accent), 0.35);
+}
+
+.drinks-table .trend-cell {
+    font-size: 1.3em;
+}
+
+.drinks-table .variation-cell {
+    font-size: 0.95em;
+    font-weight: 600;
+}
+
+.drinks-table tbody tr:hover {
+    background: rgba(var(--accent), 0.15);
+    transform: scale(1.01);
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 992px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 50% 50%;
+        gap: 10px;
+        height: calc(100vh - 140px);
+    }
+    
+    .chart-container {
+        min-height: 200px;
+    }
+    
+    .table-section {
+        min-height: 300px;
+    }
+    
+    body:not(.stock-wall) {
+        padding: 5px;
+    }
+    
+    h1:not(.stock-wall h1) {
+        font-size: 2em;
+    }
+}
+
+.table-condensed th {
+    padding: 8px 6px;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-condensed td {
+    padding: 6px 4px;
+    font-size: 0.85em;
+    text-align: center;
+    border: 1px solid rgba(var(--grid), 0.4);
+}
+
+.table-condensed .name-cell {
+    font-size: 0.8em;
+    font-weight: 700;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 8px;
+}
+
+.table-condensed .price-cell {
+    font-weight: bold;
+    font-size: 1em;
+    text-shadow: 0 0 8px rgba(var(--accent), 0.35);
+    min-width: 60px;
+}
+
+.table-condensed .trend-cell {
+    font-size: 1.2em;
+    padding: 4px;
+}
+
+.table-condensed .variation-cell {
+    font-size: 0.75em;
+    font-weight: 600;
+    min-width: 55px;
+}
+
+.table-condensed tbody tr {
+    height: 35px;
+}
+
+.table-condensed tbody tr:hover {
+    transform: scale(1.005);
+    background: rgba(var(--accent), 0.15);
+}
+
+td {
+    border: 1px solid rgba(var(--grid), 0.6);
+    padding: 15px;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+}
+
+tr:hover {
+    background: rgba(var(--accent), 0.12);
+    transform: scale(1.01);
+}
+
+tbody tr:nth-child(even) {
+    background: rgba(var(--grid), 0.08);
+}
+
+.price-cell {
+    font-weight: bold;
+    font-size: 1.4em;
+    text-shadow: 0 0 8px rgba(var(--accent), 0.35);
+}
+
+.trend-cell {
+    font-size: 1.5em;
+    animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.up { 
+    color: rgb(var(--up)); 
+    text-shadow: 0 0 8px rgba(var(--up), 0.6);
+}
+
+.down { 
+    color: rgb(var(--down)); 
+    text-shadow: 0 0 8px rgba(var(--down), 0.6);
+}
+
+.neutral {
+    color: #888;
+}
+
+/* Animation pour les changements de prix */
+.price-change {
+    animation: priceUpdate 0.5s ease-in-out;
+}
+
+@keyframes priceUpdate {
+    0% { background: rgba(var(--accent), 0.25); }
+}
+
+/* Styles pour les graphiques */
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* Ajouter/modifier ces règles */
+.chart-card {
+    background: rgba(var(--surface), 0.85);
+    border: 2px solid rgb(var(--accent));
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(var(--accent), 0.35);
+    min-height: 400px;
+}
+
+.chart-card h3 {
+    color: rgb(var(--title));
+    margin-top: 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(var(--grid), 0.6);
+    padding-bottom: 10px;
+}
+
+.chart-card canvas {
+    max-width: 100%;
+    max-height: 300px;
+}
+
+/* Mini-graphiques dans le tableau */
+.mini-chart {
+    display: inline-block;
+    width: 60px;
+    height: 20px;
+    vertical-align: middle;
+}
+
+.mini-chart svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mini-chart .line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.mini-chart .area {
+    opacity: 0.3;
+}
+
+/* ======= Responsive tweaks ======= */
+@media (max-width: 576px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-card {
+        padding: 15px;
+        min-height: 300px;
+    }
+}
+
+/* ===================== */
+/* Thèmes (2 variantes)  */
+/* ===================== */
+
+/* ===================== */
+/* Thèmes Interface Principale */
+/* ===================== */
+
+/* Thème par défaut : Sombre (comme actuellement) */
+:root {
+    --bg-start: 8, 16, 24;       /* Presque noir avec nuance bleue */
+    --bg-mid: 16, 20, 24;        /* Gris anthracite */
+    --bg-end: 24, 28, 32;        /* Gris foncé */
+    --surface: 32, 38, 45;       /* Gris pour surfaces */
+    --surface-alpha: 0.9;
+    --text: 248, 249, 250;       /* Blanc cassé */
+    --title: 0, 255, 65;         /* Vert néon */
+    --accent: 0, 255, 65;        /* Vert fluorescent CLC */
+    --th-text: 0, 0, 0;          /* Noir sur fond vert */
+    --grid: 108, 117, 125;       /* Gris moyen */
+    --grid-alpha: 0.3;
+    --up: 40, 255, 65;           /* Vert plus vif */
+    --down: 255, 69, 58;         /* Rouge iOS destructive */
+    --danger: 255, 69, 58;
+    --particle: 0, 255, 65;      /* Particules vertes */
+}
+
+/* Thème clair pour l'interface principale */
+body[data-theme="light"] {
+    --bg-start: 250, 250, 250;   /* Gris très clair */
+    --bg-mid: 245, 245, 245;     /* Gris clair */
+    --bg-end: 240, 240, 240;     /* Gris légèrement plus foncé */
+    --surface: 255, 255, 255;    /* Blanc pur pour les cartes */
+    --surface-alpha: 0.95;
+    --text: 33, 37, 41;          /* Noir doux */
+    --title: 0, 102, 51;         /* Vert foncé */
+    --accent: 0, 150, 40;        /* Vert moins fluorescent */
+    --th-text: 255, 255, 255;    /* Blanc sur fond vert */
+    --grid: 200, 200, 200;       /* Gris pour bordures */
+    --grid-alpha: 0.5;
+    --up: 40, 167, 69;           /* Vert bootstrap */
+    --down: 220, 53, 69;         /* Rouge bootstrap */
+    --danger: 220, 53, 69;
+    --particle: 0, 150, 40;      /* Particules vertes moins vives */
+}
+
+/* Thème sombre explicite pour l'interface principale */
+body[data-theme="dark"] {
+    --bg-start: 8, 16, 24;       /* Presque noir avec nuance bleue */
+    --bg-mid: 16, 20, 24;        /* Gris anthracite */
+    --bg-end: 24, 28, 32;        /* Gris foncé */
+    --surface: 32, 38, 45;       /* Gris pour surfaces */
+    --surface-alpha: 0.9;
+    --text: 248, 249, 250;       /* Blanc cassé */
+    --title: 0, 255, 65;         /* Vert néon */
+    --accent: 0, 255, 65;        /* Vert fluorescent CLC */
+    --th-text: 0, 0, 0;          /* Noir sur fond vert */
+    --grid: 108, 117, 125;       /* Gris moyen */
+    --grid-alpha: 0.3;
+    --up: 40, 255, 65;           /* Vert plus vif */
+    --down: 255, 69, 58;         /* Rouge iOS destructive */
+    --danger: 255, 69, 58;
+    --particle: 0, 255, 65;      /* Particules vertes */
+}
+
+/* ===================== */
+/* Thèmes Admin Panel */
+/* ===================== */
+
+/* Variables spécifiques au panel admin (optionnelles, pour futures extensions) */
+
 h1 {
-    font-size: 3em;
-    margin-bottom: 30px;
+    font-size: 2.5em;
+    margin: 10px 0 15px 0;
+    color: rgb(var(--title));
     text-shadow: 0 0 20px rgb(var(--accent));
     animation: glow 2s ease-in-out infinite alternate;
 }
@@ -49,16 +1124,228 @@ th {
     letter-spacing: 2px;
 }
 
+/* Styles pour tableau condensé */
+.table-condensed {
+    max-height: 650px;
+    overflow-y: auto;
+    font-size: 0.9em;
+}
+
+/* Layout principal: graphique à gauche (60%), tableau à droite (40%) */
+.main-layout {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 15px;
+    margin-top: 10px;
+    width: 100%;
+    height: calc(100vh - 120px);
+    padding: 0;
+}
+
+.chart-section {
+    background: rgba(var(--surface), var(--surface-alpha));
+    border-radius: 10px;
+    padding: 15px;
+    border: 2px solid rgb(var(--accent));
+    box-shadow: 0 0 30px rgba(var(--accent), 0.3);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-section {
+    background: rgba(var(--surface), var(--surface-alpha));
+    border-radius: 10px;
+    padding: 15px;
+    border: 2px solid rgb(var(--accent));
+    box-shadow: 0 0 30px rgba(var(--accent), 0.3);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Titres des sections */
+.chart-section h3,
+.table-section h3 {
+    margin: 0 0 15px 0;
+    text-align: center;
+    color: rgb(var(--accent));
+    font-size: 1.4em;
+    flex-shrink: 0;
+}
+
+/* Conteneur pour contraindre le canvas */
+.chart-container {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+}
+
+.chart-section canvas {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 8px;
+}
+
+/* Styles pour les noms de boissons colorés */
+.drinks-table {
+    width: 100%;
+    margin: 0;
+    flex: 1;
+    display: table;
+}
+
+.drinks-table .name-cell {
+    text-align: left;
+    font-weight: 700;
+    font-size: 1.1em;
+    padding: 10px 12px;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    border-radius: 6px;
+    margin: 2px;
+}
+
+.drinks-table th {
+    padding: 12px 8px;
+    font-size: 1em;
+    text-align: center;
+    background: linear-gradient(45deg, rgb(var(--accent)), rgba(var(--accent), 0.85));
+    color: rgb(var(--th-text));
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.drinks-table td {
+    padding: 10px 8px;
+    font-size: 1em;
+    text-align: center;
+    border-bottom: 1px solid rgba(var(--grid), 0.3);
+}
+
+.drinks-table .price-cell {
+    font-weight: bold;
+    font-size: 1.2em;
+    text-shadow: 0 0 8px rgba(var(--accent), 0.35);
+}
+
+.drinks-table .trend-cell {
+    font-size: 1.3em;
+}
+
+.drinks-table .variation-cell {
+    font-size: 0.95em;
+    font-weight: 600;
+}
+
+.drinks-table tbody tr:hover {
+    background: rgba(var(--accent), 0.15);
+    transform: scale(1.01);
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 992px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        height: auto;
+    }
+    
+    .chart-container {
+        height: 400px;
+    }
+    
+    .table-section {
+        overflow-y: visible;
+        max-height: 500px;
+    }
+    
+    body {
+        padding: 5px;
+    }
+    
+    h1 {
+        font-size: 2em;
+        margin: 5px 0 10px 0;
+    }
+}
+
+.table-condensed th {
+    padding: 8px 6px;
+    font-size: 0.9em;
+    letter-spacing: 1px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-condensed td {
+    padding: 6px 4px;
+    font-size: 0.85em;
+    text-align: center;
+    border: 1px solid rgba(var(--grid), 0.4);
+}
+
+.table-condensed .name-cell {
+    font-size: 0.8em;
+    font-weight: 700;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 8px;
+}
+
+.table-condensed .price-cell {
+    font-weight: bold;
+    font-size: 1em;
+    text-shadow: 0 0 8px rgba(var(--accent), 0.35);
+    min-width: 60px;
+}
+
+.table-condensed .trend-cell {
+    font-size: 1.2em;
+    padding: 4px;
+}
+
+.table-condensed .variation-cell {
+    font-size: 0.75em;
+    font-weight: 600;
+    min-width: 55px;
+}
+
+.table-condensed tbody tr {
+    height: 35px;
+}
+
+.table-condensed tbody tr:hover {
+    transform: scale(1.005);
+    background: rgba(var(--accent), 0.15);
+}
+
 td {
-    border: 1px solid #333;
+    border: 1px solid rgba(var(--grid), 0.6);
     padding: 15px;
     font-size: 1.1em;
     transition: all 0.3s ease;
 }
 
 tr:hover {
-    background: rgba(var(--accent), 0.1);
-    transform: scale(1.02);
+    background: rgba(var(--accent), 0.12);
+    transform: scale(1.01);
+}
+
+tbody tr:nth-child(even) {
+    background: rgba(var(--grid), 0.08);
 }
 
 .price-cell {
@@ -79,13 +1366,13 @@ tr:hover {
 }
 
 .up { 
-    color: rgb(var(--accent)); 
-    text-shadow: 0 0 10px rgb(var(--accent));
+    color: rgb(var(--up)); 
+    text-shadow: 0 0 8px rgba(var(--up), 0.6);
 }
 
 .down { 
-    color: rgb(var(--danger)); 
-    text-shadow: 0 0 10px rgb(var(--danger));
+    color: rgb(var(--down)); 
+    text-shadow: 0 0 8px rgba(var(--down), 0.6);
 }
 
 .neutral {
@@ -98,8 +1385,8 @@ tr:hover {
 }
 
 @keyframes priceUpdate {
-    0% { background: rgba(0, 255, 65, 0.3); }
-    50% { background: rgba(0, 255, 65, 0.6); }
+    0% { background: rgba(var(--accent), 0.25); }
+    50% { background: rgba(var(--accent), 0.45); }
     100% { background: transparent; }
 }
 
@@ -115,13 +1402,13 @@ tr:hover {
 }
 
 .connected {
-    background: rgba(var(--accent), 0.2);
+    background: rgba(var(--accent), 0.35);
     color: rgb(var(--accent));
     border: 1px solid rgb(var(--accent));
 }
 
 .disconnected {
-    background: rgba(var(--danger), 0.2);
+    background: rgba(var(--danger), 0.35);
     color: rgb(var(--danger));
     border: 1px solid rgb(var(--danger));
 }
@@ -260,106 +1547,119 @@ tr:hover {
 }
 
 /* ===================== */
-/* Thèmes (5 variantes)  */
+/* Thèmes (2 variantes)  */
 /* ===================== */
 
-/* Variables par défaut (Matrix) */
+/* Valeurs par défaut → thème clair CLC (fond blanc) */
 :root {
-    --accent: 0, 255, 65;
-    --text: 0, 255, 65;
-    --danger: 255, 0, 64;
-    --bg-start: 10, 10, 10;
-    --bg-mid: 26, 26, 46;
-    --bg-end: 22, 33, 62;
-    --surface: 0, 0, 0;
-    --surface-alpha: 0.8;
-    --grid: 0, 255, 65;
-    --particle: 0, 255, 65;
-    --th-text: 0, 0, 0;
-}
-
-/* Thème Matrix (vert) */
-body[data-theme="matrix"] {
-    --accent: 0, 255, 65;
-    --text: 0, 255, 65;
-    --danger: 255, 0, 64;
-    --bg-start: 10, 10, 10;
-    --bg-mid: 26, 26, 46;
-    --bg-end: 22, 33, 62;
-    --surface: 0, 0, 0;
-    --surface-alpha: 0.8;
-    --grid: 0, 255, 65;
-    --particle: 0, 255, 65;
-    --th-text: 0, 0, 0;
-}
-
-/* Thème Bleu sombre */
-body[data-theme="blue"] {
-    --accent: 80, 200, 255;
-    --text: 180, 220, 255;
-    --danger: 255, 80, 100;
-    --bg-start: 5, 10, 20;
-    --bg-mid: 10, 20, 40;
-    --bg-end: 15, 35, 60;
-    --surface: 0, 10, 25;
-    --surface-alpha: 0.7;
-    --grid: 80, 200, 255;
-    --particle: 80, 200, 255;
-    --th-text: 255, 255, 255;
-}
-
-/* Thème Ambre */
-body[data-theme="amber"] {
-    --accent: 255, 191, 0;
-    --text: 255, 191, 0;
-    --danger: 220, 40, 40;
-    --bg-start: 20, 12, 0;
-    --bg-mid: 40, 25, 0;
-    --bg-end: 60, 35, 0;
-    --surface: 10, 8, 0;
-    --surface-alpha: 0.75;
-    --grid: 255, 191, 0;
-    --particle: 255, 191, 0;
-    --th-text: 0, 0, 0;
-}
-
-/* Thème Clair */
-body[data-theme="light"] {
-    --accent: 20, 120, 255;
-    --text: 20, 20, 20;
-    --danger: 200, 0, 0;
-    --bg-start: 245, 245, 245;
-    --bg-mid: 250, 250, 250;
+    /* Couleurs CLC – Thème clair (rouge dominant) */
+    --title: 198, 40, 40;     /* #C62828 – Titres (rouge principal) */
+    --accent: 198, 40, 40;    /* #C62828 – Accent principal (boutons/liens/bordures) */
+    --text: 33, 33, 33;       /* #212121 – Texte */
+    --danger: 229, 57, 53;    /* #E53935 – Alerte/rouge secondaire */
+    /* Fond blanc pur */
+    --bg-start: 255, 255, 255; /* #FFFFFF */
+    --bg-mid: 255, 255, 255;
     --bg-end: 255, 255, 255;
-    --surface: 255, 255, 255;
-    --surface-alpha: 1;
-    --grid: 20, 20, 20;
-    --particle: 20, 120, 255;
-    --th-text: 0, 0, 0;
+    /* Surfaces/cartes */
+    --surface: 255, 255, 255;  /* #FFFFFF */
+    --surface-alpha: 0.95;
+    /* Détails neutres et grille */
+    --grid: 176, 190, 197;    /* #B0BEC5 – neutre doux */
+    --particle: 176, 190, 197; /* particules discrètes */
+    --th-text: 255, 255, 255;  /* en-têtes lisibles sur fond accent */
+    --grid-alpha: 0.25;        /* alpha de la grille pour les graphiques (plus visible en clair) */
+    /* Couleurs de tendance */
+    --up: 46, 125, 50;         /* #2E7D32 – vert lisible en clair */
+    --down: 198, 40, 40;       /* #C62828 – rouge cohérent avec le thème */
 }
 
-/* Thème Haut contraste */
-body[data-theme="contrast"] {
-    --accent: 255, 255, 0;
-    --text: 255, 255, 0;
-    --danger: 255, 80, 80;
-    --bg-start: 0, 0, 0;
-    --bg-mid: 0, 0, 0;
-    --bg-end: 0, 0, 0;
-    --surface: 0, 0, 0;
+/* Thème clair explicite (fond blanc pur) */
+body[data-theme="light"] {
+    --title: 198, 40, 40;     /* #C62828 */
+    --accent: 198, 40, 40;    /* #C62828 */
+    --text: 33, 33, 33;       /* #212121 */
+    --danger: 229, 57, 53;    /* #E53935 */
+    --bg-start: 255, 255, 255; /* #FFFFFF */
+    --bg-mid: 255, 255, 255;
+    --bg-end: 255, 255, 255;
+    --surface: 255, 255, 255;  /* cartes */
+    --surface-alpha: 0.95;
+    --grid: 176, 190, 197;    /* #B0BEC5 */
+    --particle: 176, 190, 197;
+    --th-text: 255, 255, 255;  /* texte des <th> */
+    --grid-alpha: 0.25;        /* rend la grille plus visible en thème clair */
+    --up: 46, 125, 50;         /* #2E7D32 */
+    --down: 198, 40, 40;       /* #C62828 */
+}
+
+/* Thème sombre CLC (plus de rouge) */
+body[data-theme="dark"] {
+    --title: 239, 83, 80;     /* #EF5350 – Titres (rouge principal) */
+    --accent: 239, 83, 80;    /* #EF5350 – Accent dominant */
+    --text: 224, 224, 224;    /* #E0E0E0 – Texte */
+    --danger: 198, 40, 40;    /* #C62828 – Rouge plus profond */
+    --bg-start: 18, 18, 18;   /* #121212 – Fond principal */
+    --bg-mid: 18, 18, 18;
+    --bg-end: 18, 18, 18;
+    --surface: 30, 30, 30;    /* #1E1E1E – Cartes */
     --surface-alpha: 1;
-    --grid: 255, 255, 0;
-    --particle: 255, 255, 0;
-    --th-text: 0, 0, 0;
+    --grid: 100, 181, 246;    /* #64B5F6 – Bleu d’accent pour détails/grille */
+    --particle: 100, 181, 246; /* particules en bleu doux */
+    --th-text: 255, 255, 255; /* texte des <th> */
+    --grid-alpha: 0.18;       /* grille plus discrète mais lisible en sombre */
+    --up: 102, 187, 106;      /* #66BB6A – vert plus lumineux en sombre */
+    --down: 239, 83, 80;      /* #EF5350 – rouge dominant en sombre */
 }
 
 /* Animations pour les graphiques */
-/* Désactivation de l'animation chartGlow */
-/* @keyframes chartGlow {
+/* Désactivation de l'animation chartGlow
+@keyframes chartGlow {
     0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.1); }
     50% { box-shadow: 0 0 30px rgba(0, 255, 65, 0.3); }
 }
+*/
 
-.chart-card:hover {
-    animation: chartGlow 2s ease-in-out infinite;
-} */
+/* Animation pour le bouton Ajouter */
+@keyframes buttonClick {
+    0% { 
+        transform: scale(1);
+        background-color: #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    50% { 
+        transform: scale(0.95);
+        background-color: #00ff41;
+        color: #000;
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+    }
+    100% { 
+        transform: scale(1);
+        background-color: #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+}
+
+.btn-click-animation {
+    animation: buttonClick 0.3s ease-in-out;
+}
+
+/* Styles pour les colonnes de prix séparées */
+.price-exact-display {
+    font-size: 0.9em;
+    color: #888888;
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.price-exact-display:hover {
+    color: #aaaaaa;
+    opacity: 1;
+}
+
+.price-rounded-display {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #00ff41;
+    text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+}
