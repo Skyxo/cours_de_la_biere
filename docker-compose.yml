@@ -1,0 +1,22 @@
+services:
+  wallstreet-bar-app:
+    build: .
+    container_name: wallstreet-bar-app
+    ports:
+      - "8002:8000"
+    volumes:
+      - /home/eclair/docker/data/wallstreet:/app/data
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - wallstreet_backend
+      - caddy_net
+
+networks:
+  wallstreet_backend:
+    name: wallstreet_backend
+  caddy_net:
+    name: $DOCKER_MY_NETWORK
+    external: true
