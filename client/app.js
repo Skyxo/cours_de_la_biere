@@ -71,6 +71,7 @@ let refreshIntervalId = null; // handle de setInterval pour le fetch auto
 let sortMode = localStorage.getItem('sort-mode') || 'price'; // Mode de tri: 'price' ou 'alphabetical'
 let chartColorBalance = 0; // Pour équilibrer rouge/vert : positif = plus de verts, négatif = plus de rouges
 let activeHappyHours = []; // Liste des Happy Hours actives
+let serverTimerSync = null; // Données de synchronisation du timer serveur
 
 // Fonction pour vérifier si on est en mode transaction immédiate (timer = 0)
 function isImmediateMode() {
@@ -156,6 +157,7 @@ let isInitialLoad = true; // Flag pour savoir si c'est le premier chargement
 let previousPrices = {}; // Pour stocker les prix précédents et détecter les vrais changements
 let lastDrinksData = []; // Pour stocker les dernières données des boissons pour le re-tri
 let previousHappyHours = []; // Pour détecter les nouveaux Happy Hours
+let timerSyncIntervalId = null; // ID pour synchroniser avec le serveur
 
 // Couleurs distinctes pour chaque boisson
 const drinkColors = [
@@ -305,16 +307,62 @@ function destroyAllCharts() {
 // Rendre l'intervalle d'actualisation dynamique
 refreshIntervalMs = parseInt(localStorage.getItem('refreshInterval'), 10) || REFRESH_INTERVAL;
 
-// Timer d'actualisation
-let countdown = Math.ceil(refreshIntervalMs / 1000);
+// Timer d'actualisation synchronisé avec le serveur
+let countdown = 10; // Valeur par défaut
+
+// Fonction pour synchroniser le timer avec le serveur
+async function syncWithServer() {
+    try {
+        const response = await fetchWithRetry(`${API_BASE}/sync/timer`);
+        const data = await response.json();
+        
+        serverTimerSync = data;
+        refreshIntervalMs = data.interval_ms;
+        
+        // Calculer le temps restant basé sur le serveur
+        countdown = Math.ceil(data.timer_remaining_ms / 1000);
+        
+        // S'assurer que le compteur reste dans les limites valides
+        if (countdown <= 0) {
+            countdown = Math.ceil(refreshIntervalMs / 1000);
+        }
+        
+        // Mettre à jour l'affichage immédiatement
+        if (timerElement) {
+            timerElement.textContent = countdown;
+        }
+        
+        return true;
+    } catch (error) {
+        console.warn('Erreur synchronisation timer serveur:', error);
+        return false;
+    }
+}
 
 function updateTimer() {
-    // Cycle propre: N, N-1, ..., 1, N, ...
-    if (countdown <= 1) {
-        countdown = Math.ceil(refreshIntervalMs / 1000);
+    // Si on a des données de synchronisation serveur, les utiliser
+    if (serverTimerSync) {
+        const now = new Date();
+        const serverTime = new Date(serverTimerSync.server_time);
+        const timeDiff = now - serverTime;
+        const adjustedRemaining = serverTimerSync.timer_remaining_ms - timeDiff;
+        
+        countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+        
+        // Si le timer est écoulé, déclencher une synchronisation
+        if (countdown <= 0) {
+            syncWithServer();
+            return;
+        }
     } else {
-        countdown = countdown - 1;
+        // Fallback sur l'ancien système si pas de sync serveur
+        if (countdown <= 1) {
+            countdown = Math.ceil(refreshIntervalMs / 1000);
+        } else {
+            countdown = countdown - 1;
+        }
     }
+    
     if (timerElement) {
         timerElement.textContent = countdown;
     }
@@ -323,14 +371,24 @@ function updateTimer() {
 // Démarrer/Arrêter le compteur 1s
 function startTimer() {
     stopTimer();
-    countdown = Math.ceil(refreshIntervalMs / 1000);
-    timerIntervalId = setInterval(updateTimer, 1000);
+    
+    // Synchroniser avec le serveur au démarrage
+    syncWithServer().then(() => {
+        timerIntervalId = setInterval(updateTimer, 1000);
+        
+        // Resynchroniser périodiquement avec le serveur
+        timerSyncIntervalId = setInterval(syncWithServer, 30000); // Toutes les 30 secondes
+    });
 }
 
 function stopTimer() {
     if (timerIntervalId) {
         clearInterval(timerIntervalId);
         timerIntervalId = null;
+    }
+    if (timerSyncIntervalId) {
+        clearInterval(timerSyncIntervalId);
+        timerSyncIntervalId = null;
     }
 }
 
@@ -446,6 +504,17 @@ async function fetchPrices() {
         
         const data = await pricesRes.json();
         
+        // Mettre à jour les données de synchronisation timer si disponibles
+        if (data.timer_remaining_ms !== undefined) {
+            serverTimerSync = {
+                server_time: data.server_time,
+                market_timer_start: data.market_timer_start,
+                interval_ms: data.interval_ms,
+                timer_remaining_ms: data.timer_remaining_ms
+            };
+            refreshIntervalMs = data.interval_ms;
+        }
+        
         // Récupérer les Happy Hours (même si la requête échoue, continuer)
         if (happyHoursRes.ok) {
             const happyHoursData = await happyHoursRes.json();
@@ -475,8 +544,22 @@ async function fetchPrices() {
             startHappyHourTimers();
         }
         
-        // Réinitialiser le compteur après une actualisation réussie
-        countdown = Math.ceil(refreshIntervalMs / 1000);
+        // Mettre à jour le timer avec les données du serveur
+        if (serverTimerSync) {
+            const now = new Date();
+            const serverTime = new Date(serverTimerSync.server_time);
+            const timeDiff = now - serverTime;
+            const adjustedRemaining = serverTimerSync.timer_remaining_ms - timeDiff;
+            
+            countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+            if (countdown <= 0) {
+                countdown = Math.ceil(refreshIntervalMs / 1000);
+            }
+        } else {
+            // Fallback
+            countdown = Math.ceil(refreshIntervalMs / 1000);
+        }
+        
         if (timerElement) {
             timerElement.textContent = countdown;
         }

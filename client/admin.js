@@ -1243,6 +1243,112 @@ if (refreshIntervalForm) {
     });
 }
 
+// ===========================================
+// SYNCHRONISATION MULTI-ÉCRANS
+// ===========================================
+
+// Fonction pour forcer la synchronisation de tous les clients
+async function forceSyncAllClients() {
+    const syncBtn = document.getElementById('force-sync-btn');
+    const syncMessage = document.getElementById('sync-message');
+    
+    if (syncBtn) syncBtn.disabled = true;
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/sync/refresh-all`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Basic ' + authToken
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showMessage('sync-message', '✅ Synchronisation forcée - Tous les écrans vont se mettre à jour', 'success');
+            
+            // Forcer la synchronisation locale aussi
+            localStorage.setItem('force-sync-signal', Date.now().toString());
+        } else {
+            throw new Error('Erreur serveur');
+        }
+    } catch (error) {
+        console.error('Erreur synchronisation:', error);
+        showMessage('sync-message', '❌ Erreur lors de la synchronisation', 'error');
+    } finally {
+        if (syncBtn) {
+            setTimeout(() => {
+                syncBtn.disabled = false;
+            }, 2000);
+        }
+    }
+}
+
+// Fonction pour redémarrer le timer global
+async function resetGlobalTimer() {
+    const resetBtn = document.getElementById('reset-timer-btn');
+    const syncMessage = document.getElementById('sync-message');
+    
+    if (resetBtn) resetBtn.disabled = true;
+    
+    try {
+        // Récupérer l'intervalle actuel et le redéfinir (cela redémarre le timer)
+        const intervalRes = await fetch(`${API_BASE}/config/interval`);
+        if (!intervalRes.ok) throw new Error('Erreur récupération intervalle');
+        
+        const intervalData = await intervalRes.json();
+        
+        const response = await fetch(`${API_BASE}/config/interval`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + authToken
+            },
+            body: JSON.stringify({ interval_ms: intervalData.interval_ms })
+        });
+        
+        if (response.ok) {
+            showMessage('sync-message', '⏰ Timer redémarré - Nouveau cycle démarré pour tous les écrans', 'success');
+            
+            // Redémarrer le timer local
+            startAdminTimer();
+        } else {
+            throw new Error('Erreur serveur');
+        }
+    } catch (error) {
+        console.error('Erreur redémarrage timer:', error);
+        showMessage('sync-message', '❌ Erreur lors du redémarrage du timer', 'error');
+    } finally {
+        if (resetBtn) {
+            setTimeout(() => {
+                resetBtn.disabled = false;
+            }, 2000);
+        }
+    }
+}
+
+// Fonction pour mettre à jour le statut de synchronisation
+async function updateSyncStatus() {
+    const statusElement = document.getElementById('server-sync-status');
+    if (!statusElement) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/sync/timer`);
+        if (response.ok) {
+            const data = await response.json();
+            const remainingMs = data.timer_remaining_ms;
+            const remainingSec = Math.ceil(remainingMs / 1000);
+            
+            statusElement.innerHTML = `🟢 Connecté - Prochain cycle: ${remainingSec}s`;
+            statusElement.style.color = '#4CAF50';
+        } else {
+            throw new Error('Erreur serveur');
+        }
+    } catch (error) {
+        statusElement.innerHTML = '🔴 Erreur connexion serveur';
+        statusElement.style.color = '#F44336';
+    }
+}
+
 // Charger les boissons dans le tableau d'achat (dynamique)
 async function loadPurchaseTable() {
     const tableBody = document.querySelector('#purchase-table tbody');
@@ -2043,6 +2149,22 @@ function initAdminTimer() {
     
     // Écouter les changements d'intervalle
     listenForIntervalChanges();
+    
+    // Connecter les boutons de synchronisation
+    const forceSyncBtn = document.getElementById('force-sync-btn');
+    const resetTimerBtn = document.getElementById('reset-timer-btn');
+    
+    if (forceSyncBtn) {
+        forceSyncBtn.addEventListener('click', forceSyncAllClients);
+    }
+    
+    if (resetTimerBtn) {
+        resetTimerBtn.addEventListener('click', resetGlobalTimer);
+    }
+    
+    // Mettre à jour le statut de synchronisation périodiquement
+    setInterval(updateSyncStatus, 10000); // Toutes les 10 secondes
+    updateSyncStatus(); // Première mise à jour immédiate
     
     // SUPPRIMÉ : Pas de mise à jour automatique des prédictions
     // setInterval(updatePricePredictions, syncRefreshInterval());

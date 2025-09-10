@@ -19,6 +19,7 @@ data_manager = CSVDataManager()
 current_refresh_interval = 10000
 active_drinks = set()
 timer_start_time = datetime.now()
+market_timer_start = datetime.now()  # Timer global du marché, indépendant des clients
 
 # Variables de session
 current_session = None
@@ -139,20 +140,35 @@ class SessionStats(BaseModel):
 async def get_prices():
     try:
         prices = data_manager.get_all_prices()
+        
+        # Calculer le temps écoulé depuis le début du cycle du timer
+        current_time = datetime.now()
+        elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
+        
+        # Calculer le temps restant jusqu'au prochain cycle
+        remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
+        
         return {
             "prices": prices,
             "active_drinks": list(active_drinks),
             "timer_start": timer_start_time.isoformat(),
-            "interval_ms": current_refresh_interval
+            "interval_ms": current_refresh_interval,
+            "server_time": current_time.isoformat(),
+            "timer_remaining_ms": remaining_ms,
+            "market_timer_start": market_timer_start.isoformat()
         }
     except Exception as e:
         print(f"Erreur dans get_prices: {e}")
-        # En cas d'erreur, retourner une liste vide mais structure valide
+        # En cas d'erreur, retourner une structure valide
+        current_time = datetime.now()
         return {
             "prices": [],
             "active_drinks": [],
-            "timer_start": datetime.now().isoformat(),
-            "interval_ms": current_refresh_interval
+            "timer_start": current_time.isoformat(),
+            "interval_ms": current_refresh_interval,
+            "server_time": current_time.isoformat(),
+            "timer_remaining_ms": current_refresh_interval,
+            "market_timer_start": market_timer_start.isoformat()
         }
 
 @app.get("/diagnostic")
@@ -196,13 +212,41 @@ async def get_diagnostic():
 async def get_refresh_interval():
     return {"interval_ms": current_refresh_interval}
 
+@app.get("/sync/timer")
+async def get_timer_sync():
+    """Endpoint pour synchroniser le timer entre tous les clients"""
+    current_time = datetime.now()
+    elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
+    remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
+    
+    return {
+        "server_time": current_time.isoformat(),
+        "market_timer_start": market_timer_start.isoformat(),
+        "interval_ms": current_refresh_interval,
+        "timer_remaining_ms": remaining_ms,
+        "elapsed_since_start_ms": elapsed_ms
+    }
+
+@app.post("/admin/sync/refresh-all")
+async def force_refresh_all_clients(admin: str = Depends(get_current_admin)):
+    """Force tous les clients à se synchroniser immédiatement"""
+    global market_timer_start
+    market_timer_start = datetime.now()
+    
+    return {
+        "status": "refresh_forced",
+        "message": "Tous les clients vont se synchroniser au prochain appel API",
+        "new_timer_start": market_timer_start.isoformat()
+    }
+
 @app.post("/config/interval")
 async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(get_current_admin)):
-    global current_refresh_interval, active_drinks, timer_start_time
+    global current_refresh_interval, active_drinks, timer_start_time, market_timer_start
     
     current_refresh_interval = max(0, request.interval_ms)
     active_drinks.clear()
     timer_start_time = datetime.now()
+    market_timer_start = datetime.now()  # Redémarrer le timer global du marché
     
     return {"status": "ok", "interval_ms": current_refresh_interval}
 

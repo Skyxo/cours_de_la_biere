@@ -10,19 +10,22 @@ Ce système révolutionne l'expérience du bar en appliquant les mécaniques de 
 - L'équilibrage automatique maintient l'attractivité du marché
 - Les événements de marché (crash, boom, Happy Hour) pimentent la soirée
 - Interface en temps réel avec graphiques financiers authentiques
+- **🔄 Synchronisation multi-écrans** : Projecteur + téléphones parfaitement synchronisés
 
 ## ✨ Fonctionnalités Principales
 
 ### 🎨 Interface Publique (Clients)
 - **Affichage en temps réel** des prix avec animations fluides
+- **Timer synchronisé serveur** : Plus de décalage entre les écrans
 - **Graphiques financiers** : Chandelier japonais, courbes, secteurs
 - **Mode sombre/clair** adaptatif pour tous les environnements
 - **Tri multi-critères** : Prix, alphabétique, degré d'alcool
 - **Happy Hour visuel** : Animations dorées et indicateurs spéciaux
-- **Responsive design** optimisé mobile/tablette/écran
+- **Responsive design** optimisé mobile/tablette/écran/projecteur
 
 ### 🛠️ Interface Administration (Barmans)
 - **Gestion de session** avec suivi de trésorerie en temps réel
+- **Contrôles de synchronisation** : Forcer sync, redémarrer timer
 - **Enregistrement d'achats** avec calcul automatique de profit/perte
 - **Contrôles de marché** : Crash, boom, reset des prix
 - **Happy Hour programmable** avec durée personnalisable
@@ -31,11 +34,13 @@ Ce système révolutionne l'expérience du bar en appliquant les mécaniques de 
 - **Indicateurs prix** : Min/Base/Max visibles pour les barmans
 
 ### 🚀 Fonctionnalités Avancées
+- **🔄 Synchronisation multi-écrans** : Timer unique côté serveur, tous les clients synchronisés
 - **Système de session crash-resistant** : Sauvegarde automatique et reprise de session
 - **Optimisations performance** : Retry automatique, throttling animations, nettoyage mémoire
 - **Export automatique** : Génération CSV de fin de service pour comptabilité
 - **Synchronisation multi-onglets** : Cohérence entre toutes les interfaces ouvertes
 - **API robuste** : Gestion d'erreurs, timeouts, retry automatique
+- **Récupération automatique** : Reconnexion en cas de perte réseau
 
 ## 🛠️ Architecture Technique
 
@@ -94,11 +99,50 @@ mkdir -p data
 # Démarrer le serveur
 python server.py
 
-# Interface publique : http://localhost:8000/client/index.html
-# Interface admin :    http://localhost:8000/client/admin.html
+# Interface publique : http://localhost:8000/
+# Interface admin :    http://localhost:8000/admin.html
 ```
 
-### Configuration
+### 🔄 Configuration Multi-Écrans
+
+Pour une utilisation optimale avec projecteur + téléphones :
+
+#### 1. Configuration réseau
+```bash
+# Obtenir l'IP du serveur
+ip addr show | grep "inet 192"
+
+# Démarrer le serveur accessible réseau
+python server.py
+# Le serveur écoute sur 0.0.0.0:8000
+```
+
+#### 2. Configuration des écrans
+
+**📺 Projecteur/Grand écran :**
+```
+http://[IP-SERVEUR]:8000/
+```
+- Interface publique pour les clients
+- Timer automatiquement synchronisé
+- Affichage des prix en temps réel
+
+**📱 Téléphones des barmans :**
+```
+http://[IP-SERVEUR]:8000/admin.html
+```
+- Interface d'administration
+- Contrôles de synchronisation
+- Gestion des achats et événements
+
+#### 3. Contrôles de synchronisation
+
+Dans l'interface admin > "Intervalle d'actualisation" :
+- **🔄 Forcer la synchronisation** : Remet tous les écrans en phase
+- **⏰ Redémarrer le timer** : Démarre un nouveau cycle synchronisé
+- **Statut serveur** : Vérification de l'état de synchronisation
+
+### Configuration classique
 - **Port** : Modifier dans `server.py` (défaut: 8000)
 - **Données** : Éditer `data/drinks.csv` pour vos boissons
 - **Authentification admin** : Username/password dans `server.py`

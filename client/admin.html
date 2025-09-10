@@ -1258,6 +1258,21 @@
           <button type="submit" class="btn">Mettre à jour l'intervalle</button>
           <div id="interval-message" class="message hidden"></div>
         </form>
+        
+        <!-- Contrôles de synchronisation -->
+        <div style="margin-top: 20px; padding: 15px; background: rgba(var(--warning), 0.1); border-radius: 8px; border: 1px solid rgba(var(--warning), 0.3);">
+          <h4 style="color: rgb(var(--warning)); margin-bottom: 15px;">🔄 Synchronisation Multi-Écrans</h4>
+          <p style="font-size: 0.9em; margin-bottom: 15px;">
+            Utilisez ces contrôles pour synchroniser tous les écrans (projecteur + téléphones).
+          </p>
+          <button id="force-sync-btn" class="btn" style="background: rgb(var(--warning)); margin-right: 10px;">
+            🔄 Forcer la synchronisation
+          </button>
+          <button id="reset-timer-btn" class="btn" style="background: rgb(var(--accent));">
+            ⏰ Redémarrer le timer
+          </button>
+          <div id="sync-message" class="message hidden" style="margin-top: 10px;"></div>
+        </div>
           
           <!-- Affichage de l'état actuel -->
           <div style="margin-top: 20px; padding: 15px; background: rgba(var(--surface), 0.5); border-radius: 8px;">
@@ -1265,6 +1280,7 @@
             <p>Intervalle : <span id="current-interval">--</span> secondes</p>
             <p>Prochaine actualisation : <span id="admin-timer">--</span></p>
             <p>Timer actif depuis : <span id="timer-start">--</span></p>
+            <p><strong>Statut serveur :</strong> <span id="server-sync-status">🔄 Synchronisation...</span></p>
           </div>
         </div>
       </div>
