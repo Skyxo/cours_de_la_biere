@@ -66,6 +66,7 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.maxRetries
 // État global
 let lastPrices = {};
 let isConnected = false;
+let isRefreshing = false; // Flag pour éviter les refreshs multiples simultanés
 let refreshIntervalMs = null; // durée en ms entre deux rafraîchissements
 let refreshIntervalId = null; // handle de setInterval pour le fetch auto
 let sortMode = localStorage.getItem('sort-mode') || 'price'; // Mode de tri: 'price' ou 'alphabetical'
@@ -331,8 +332,10 @@ async function syncWithServer() {
         if (countdown <= 0) {
             console.log('🔄 Timer écoulé côté serveur, nouveau cycle');
             countdown = Math.ceil(refreshIntervalMs / 1000);
-            // Déclencher un refresh immédiat des prix
-            fetchPrices();
+            // Déclencher un refresh immédiat des prix seulement si on n'est pas déjà en cours
+            if (!isRefreshing) {
+                fetchPrices();
+            }
         }
         
         // Mettre à jour l'affichage immédiatement
@@ -358,20 +361,19 @@ function updateTimer() {
         
         countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
         
-        // Si le timer est écoulé, déclencher refresh et resynchroniser
+        // Si le timer est écoulé, déclencher refresh SANS resynchroniser immédiatement
         if (countdown <= 0) {
-            fetchPrices().then(() => {
-                syncWithServer(); // Re-synchroniser après le refresh
-            });
+            fetchPrices();
+            // Laisser la synchronisation périodique gérer la suite
             return;
         }
     } else {
-        // Fallback: décrémenter seulement (ne pas remettre au maximum)
+        // Fallback: décrémenter seulement
         countdown = Math.max(0, countdown - 1);
         
-        // Si le countdown atteint 0 sans sync serveur, tenter une synchronisation
+        // Si le countdown atteint 0 sans sync serveur, déclencher un refresh
         if (countdown <= 0) {
-            syncWithServer();
+            fetchPrices();
             return;
         }
     }
@@ -506,6 +508,13 @@ function updateTimestamp() {
 
 // Récupération des prix depuis l'API
 async function fetchPrices() {
+    // Éviter les refreshs multiples simultanés
+    if (isRefreshing) {
+        console.log('🔄 Refresh déjà en cours, ignoré');
+        return;
+    }
+    
+    isRefreshing = true;
     try {
         // Récupérer les prix et les Happy Hours en parallèle avec retry
         const [pricesRes, happyHoursRes] = await Promise.all([
@@ -581,6 +590,8 @@ async function fetchPrices() {
         console.error('Erreur lors de la récupération des prix:', error);
         // Erreur de connexion
         handleConnectionError();
+    } finally {
+        isRefreshing = false;
     }
 }
 
