@@ -347,51 +347,57 @@ async function syncWithServer() {
             timerElement.textContent = countdown;
         }
         
-        console.log(`⏰ Timer synchronisé avec serveur: ${countdown}s restantes`);
+        console.log(`⏰ Timer synchronisé avec serveur: ${countdown}s restantes (intervalle: ${refreshIntervalMs}ms)`);
         return true;
     } catch (error) {
         console.warn('❌ Erreur synchronisation timer serveur:', error);
-        // En cas d'erreur, NE PAS créer un timer local - attendre la prochaine sync
+        // En cas d'erreur, garder les valeurs existantes plutôt que d'échouer complètement
+        if (!refreshIntervalMs) {
+            refreshIntervalMs = 10000; // Valeur par défaut seulement si on n'en a pas
+        }
         return false;
     }
 }
 
 function updateTimer() {
-    // Utiliser UNIQUEMENT les données du serveur - pas de mode local
+    // Utiliser les données du serveur quand elles sont disponibles
     if (serverTimerSync) {
         const now = new Date();
         const serverTime = new Date(serverTimerSync.server_time);
         const timeDiff = now - serverTime;
         const adjustedRemaining = serverTimerSync.timer_remaining_ms - timeDiff;
         
-        // Vérifier si les données du serveur sont trop anciennes (> 60 secondes)
+        // Vérifier si les données du serveur sont trop anciennes (> 120 secondes pour être moins strict)
         const dataAge = Math.abs(timeDiff);
-        if (dataAge > 60000) {
-            console.warn('⚠️ Données serveur trop anciennes, en attente de nouvelle synchronisation...');
-            // Ne pas changer le countdown, attendre la prochaine sync
-            if (timerElement) {
-                timerElement.textContent = '⏳'; // Indiquer l'attente
-            }
-            return;
+        if (dataAge > 120000) {
+            console.warn('⚠️ Données serveur très anciennes, décompte en mode dégradé...');
+            // En mode dégradé, décrémenter le countdown existant
+            countdown = Math.max(0, countdown - 1);
+        } else {
+            countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
         }
-        
-        countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
         
         // Si le timer est écoulé, déclencher refresh
         if (countdown <= 0) {
             fetchPrices();
-            // La nouvelle valeur de countdown sera mise à jour par la prochaine sync
+            // Remettre un countdown par défaut en attendant la prochaine sync
+            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
             return;
         }
     } else {
-        // Pas de données serveur, indiquer l'attente de synchronisation
-        console.log('⏳ En attente de synchronisation avec le serveur...');
-        if (timerElement) {
-            timerElement.textContent = '⏳';
+        // Pas de données serveur, utiliser un décompte local temporaire
+        console.log('⏳ En attente de synchronisation avec le serveur, décompte local...');
+        countdown = Math.max(0, countdown - 1);
+        
+        // Si le countdown local atteint 0, déclencher un refresh et remettre le compteur
+        if (countdown <= 0) {
+            fetchPrices();
+            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            return;
         }
-        return;
     }
     
+    // Toujours afficher un nombre, jamais le sablier
     if (timerElement) {
         timerElement.textContent = countdown;
     }
@@ -412,21 +418,36 @@ function startTimer() {
     syncWithServer().then((success) => {
         if (success) {
             isTimerRunning = true;
-            // Démarrer le timer seulement si la synchronisation réussit
+            // Démarrer le timer avec synchronisation réussie
             timerIntervalId = setInterval(updateTimer, 1000);
             
             // Resynchroniser périodiquement avec le serveur
-            timerSyncIntervalId = setInterval(syncWithServer, 15000); // Toutes les 15 secondes pour plus de fréquence
+            timerSyncIntervalId = setInterval(syncWithServer, 15000); // Toutes les 15 secondes
             
-            console.log('✅ Timer universél démarré et synchronisé avec le serveur');
+            console.log('✅ Timer universel démarré et synchronisé avec le serveur');
         } else {
-            console.log('❌ Impossible de se synchroniser avec le timer universel, retry dans 5 secondes...');
-            setTimeout(startTimer, 5000); // Réessayer dans 5 secondes
+            console.log('⚠️ Synchronisation échouée, démarrage avec countdown par défaut...');
+            
+            // Même si la sync échoue, démarrer quand même le timer avec des valeurs par défaut
+            isTimerRunning = true;
+            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            
+            timerIntervalId = setInterval(updateTimer, 1000);
+            timerSyncIntervalId = setInterval(syncWithServer, 10000); // Retry plus fréquent (10s)
+            
+            console.log('🔄 Timer démarré en mode dégradé, retry de sync dans 10 secondes...');
         }
     }).catch((error) => {
         console.error('❌ Erreur critique lors du démarrage du timer:', error);
-        // Réessayer dans 5 secondes
-        setTimeout(startTimer, 5000);
+        
+        // En cas d'erreur, démarrer quand même avec un timer de base
+        isTimerRunning = true;
+        countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+        
+        timerIntervalId = setInterval(updateTimer, 1000);
+        timerSyncIntervalId = setInterval(syncWithServer, 10000);
+        
+        console.log('🔄 Timer démarré en mode secours après erreur');
     });
 }
 
