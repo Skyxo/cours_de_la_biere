@@ -317,7 +317,10 @@ async function syncWithServer() {
         const response = await fetchWithRetry(`${API_BASE}/sync/timer`);
         const data = await response.json();
         
-        serverTimerSync = data;
+        serverTimerSync = {
+            ...data,
+            sync_timestamp: new Date() // Ajouter timestamp de synchronisation
+        };
         refreshIntervalMs = data.interval_ms;
         
         // Calculer le temps restant basé sur le serveur
@@ -347,24 +350,38 @@ async function syncWithServer() {
         return true;
     } catch (error) {
         console.warn('Erreur synchronisation timer serveur:', error);
+        // En cas d'erreur, ne pas bloquer le timer - continuer en mode local
+        if (!refreshIntervalMs) {
+            refreshIntervalMs = 10000; // 10 secondes par défaut
+        }
+        console.log('🔄 Passage en mode timer local');
         return false;
     }
 }
 
 function updateTimer() {
-    // Si on a des données de synchronisation serveur, les utiliser
+    // Si on a des données de synchronisation serveur récentes, les utiliser
     if (serverTimerSync) {
         const now = new Date();
         const serverTime = new Date(serverTimerSync.server_time);
         const timeDiff = now - serverTime;
         const adjustedRemaining = serverTimerSync.timer_remaining_ms - timeDiff;
         
-        countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+        // Vérifier si les données du serveur sont trop anciennes (> 60 secondes)
+        const dataAge = Math.abs(timeDiff);
+        if (dataAge > 60000) {
+            console.warn('⚠️ Données serveur trop anciennes, passage en mode local');
+            serverTimerSync = null; // Forcer le passage en mode fallback
+            countdown = Math.max(0, countdown - 1);
+        } else {
+            countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+        }
         
-        // Si le timer est écoulé, déclencher refresh SANS resynchroniser immédiatement
+        // Si le timer est écoulé, déclencher refresh
         if (countdown <= 0) {
             fetchPrices();
-            // Laisser la synchronisation périodique gérer la suite
+            // Remettre le timer pour le prochain cycle
+            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
             return;
         }
     } else {
@@ -374,6 +391,8 @@ function updateTimer() {
         // Si le countdown atteint 0 sans sync serveur, déclencher un refresh
         if (countdown <= 0) {
             fetchPrices();
+            // Remettre le timer pour le prochain cycle
+            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
             return;
         }
     }
@@ -387,12 +406,23 @@ function updateTimer() {
 function startTimer() {
     stopTimer();
     
-    // Synchroniser avec le serveur au démarrage
-    syncWithServer().then(() => {
+    // Essayer de synchroniser avec le serveur au démarrage
+    syncWithServer().then((success) => {
+        // Démarrer le timer même si la synchronisation échoue
         timerIntervalId = setInterval(updateTimer, 1000);
         
         // Resynchroniser périodiquement avec le serveur
         timerSyncIntervalId = setInterval(syncWithServer, 30000); // Toutes les 30 secondes
+        
+        if (!success) {
+            console.log('🔄 Timer démarré en mode local (synchronisation serveur échouée)');
+        }
+    }).catch((error) => {
+        console.error('Erreur lors du démarrage du timer:', error);
+        // Démarrer quand même le timer en mode local
+        timerIntervalId = setInterval(updateTimer, 1000);
+        timerSyncIntervalId = setInterval(syncWithServer, 30000);
+        console.log('🔄 Timer démarré en mode local de secours');
     });
 }
 
