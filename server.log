@@ -1,85 +1,118 @@
 nohup: ignoring input
 INFO:     Will watch for changes in these directories: ['/home/charl/cours_de_la_biere']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [14522] using WatchFiles
-INFO:     Started server process [14525]
+INFO:     Started reloader process [59544] using WatchFiles
+⏰ Timer universel chargé: démarré le 2025-09-10 15:41:26.214726, intervalle 30000ms
+🔄 Sauvegarde périodique du timer universel démarrée (30s)
+INFO:     Started server process [59548]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:57974 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57968 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52284 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52278 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57972 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57956 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43046 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43032 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50032 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50034 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47028 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47014 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60978 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60972 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45446 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45436 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43008 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43004 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36614 - "GET /prices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36618 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36618 - "GET /admin/drinks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48484 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48468 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50024 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50018 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59322 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59318 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41768 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41762 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51666 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51674 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34984 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34988 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54886 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54892 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49714 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49710 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50176 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50188 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37884 - "GET /prices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37902 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37886 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37902 - "GET /admin/drinks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39514 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39526 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37132 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37126 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47130 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47126 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50408 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50392 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60122 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60134 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46708 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46720 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41528 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41538 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39904 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39900 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57514 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57510 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49484 - "GET /prices HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49510 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49496 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49510 - "GET /admin/drinks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37946 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37936 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43598 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43608 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45078 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45070 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37682 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37684 - "GET /sync/timer HTTP/1.1" 200 OK
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [14525]
-INFO:     Stopping reloader process [14522]
+⏰ Timer universel chargé: démarré le 2025-09-10 15:41:26.214726, intervalle 30000ms
+🔄 Sauvegarde périodique du timer universel démarrée (30s)
+⏰ Timer universel chargé: démarré le 2025-09-10 15:41:26.214726, intervalle 30000ms
+🔄 Sauvegarde périodique du timer universel démarrée (30s)
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47822 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47822 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47822 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47834 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47834 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47770 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47756 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47848 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47848 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47740 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47774 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47790 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47774 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44852 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47848 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47774 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39466 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47848 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44836 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47806 - "GET /sync/timer HTTP/1.1" 200 OK
+💾 État du timer universel sauvegardé: 2025-09-10T15:41:26.214726
+💾 État du timer universel sauvegardé: 2025-09-10T15:41:26.214726
+INFO:     127.0.0.1:48328 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48344 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48346 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47806 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48370 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47806 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48356 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48356 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45702 - "GET /prices HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45716 - "GET /happy-hour/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45716 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48356 - "GET /sync/timer HTTP/1.1" 200 OK
