@@ -70,6 +70,16 @@ def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
             headers={"WWW-Authenticate": "Basic"},
         )
     return credentials.username
+
+def check_session_active():
+    """Vérifier si une session est actuellement active"""
+    global current_session
+    if not current_session or not current_session.get('is_active'):
+        raise HTTPException(
+            status_code=423,  # Locked
+            detail="Impossible d'ajouter des boissons sans session active. Veuillez d'abord démarrer une session."
+        )
+    return True
 class BuyRequest(BaseModel):
     drink_id: int
     quantity: int = 1
@@ -387,6 +397,9 @@ async def admin_get_drinks(admin: str = Depends(get_current_admin)):
 
 @app.post('/admin/drinks')
 async def admin_create_drink(payload: CreateDrinkRequest, admin: str = Depends(get_current_admin)):
+    # Vérifier qu'une session est active avant d'ajouter une boisson
+    check_session_active()
+    
     try:
         drink = data_manager.add_drink(payload.name, payload.base_price, payload.min_price, payload.max_price)
         return {'status': 'created', 'drink': drink}

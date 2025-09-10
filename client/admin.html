@@ -975,6 +975,17 @@
       <h1>🔧 Interface Administrateur</h1>
       <p>Gestion du marché des boissons en temps réel</p>
       
+      <!-- Message d'avertissement sans session -->
+      <div id="global-session-warning" class="message warning hidden" style="margin: 20px 0; border: 2px solid #FF9800; background: linear-gradient(45deg, #FFF8DC, #FFFACD);">
+        <h4 style="margin: 0 0 10px 0; color: #E65100; display: flex; align-items: center; gap: 8px;">
+          🚫 Session Requise
+        </h4>
+        <p style="margin: 0; color: #BF360C;">
+          <strong>La plupart des fonctions admin nécessitent une session active.</strong><br>
+          Veuillez démarrer une session ci-dessous pour accéder aux contrôles du marché, achats, historique et gestion des boissons.
+        </p>
+      </div>
+      
       <!-- Section Gestion Session -->
       <div id="session-section" style="margin: 20px 0; padding: 15px; border: 2px solid rgb(var(--accent)); border-radius: 8px; background: rgba(var(--surface), 0.9);">
         <h3 style="margin: 0 0 15px 0; color: rgb(var(--accent)); display: flex; align-items: center; gap: 8px;">
@@ -1041,7 +1052,7 @@
       </div>
       
       <!-- Boutons d'événements marché -->
-      <div style="margin: 20px 0; text-align: center;">
+      <div class="require-session" style="margin: 20px 0; text-align: center; position: relative;">
         <h3 style="margin-bottom: 15px;">📉 CRASH du Marché</h3>
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
           <button onclick="triggerMarketCrash('small')" class="btn btn-warning" style="background: linear-gradient(45deg, #FF9800, #F57C00);">
@@ -1113,7 +1124,7 @@
     <div class="accordion-container">
       
       <!-- Section 1: Enregistrer un achat -->
-      <div class="admin-section">
+      <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('purchase-section')">
           <h3>🛒 Enregistrer un achat</h3>
           <span class="toggle-icon" id="purchase-toggle">▼</span>
@@ -1140,7 +1151,7 @@
       </div>
 
       <!-- Section 2: Historique des transactions -->
-      <div class="admin-section">
+      <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('history-section')">
           <h3>📈 Historique des transactions</h3>
           <span class="toggle-icon" id="history-toggle">▼</span>
@@ -1173,7 +1184,7 @@
       </div>
 
       <!-- Section 3: Gestion des boissons -->
-      <div class="admin-section">
+      <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('drinks-section')">
           <h3>🍺 Gestion des boissons</h3>
           <span class="toggle-icon" id="drinks-toggle">▼</span>
@@ -1181,7 +1192,10 @@
         <div class="section-content" id="drinks-section">
           <!-- Formulaire d'ajout -->
           <div class="drinks-form-container">
-            <div class="drinks-form-grid">
+            <div id="session-warning" class="message warning hidden" style="margin-bottom: 15px;">
+              ⚠️ Une session doit être active pour ajouter des boissons. Veuillez démarrer une session dans l'onglet "Session".
+            </div>
+            <div class="drinks-form-grid" id="add-drink-form">
               <div class="form-group">
                 <label for="new-drink-name">Nom de la boisson</label>
                 <input type="text" id="new-drink-name" placeholder="Ex: Bière Stella">
@@ -1199,7 +1213,7 @@
                 <input type="number" id="new-drink-max" step="0.01" min="0" placeholder="10.00">
               </div>
               <div style="display: flex; gap: 10px;">
-                <button onclick="addDrink()" class="btn">Ajouter</button>
+                <button onclick="addDrink()" class="btn" id="add-drink-btn">Ajouter</button>
               </div>
             </div>
             <div id="add-drink-message" class="message hidden"></div>
@@ -1227,7 +1241,7 @@
       </div>
 
       <!-- Section 4: Intervalle d'actualisation -->
-      <div class="admin-section">
+      <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('interval-section')">
           <h3>⏱️ Intervalle d'actualisation</h3>
           <span class="toggle-icon" id="interval-toggle">▼</span>

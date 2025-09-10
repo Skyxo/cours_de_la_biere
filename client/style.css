@@ -2113,8 +2113,51 @@ body[data-theme="dark"] {
     border: 1px solid #f5c6cb;
 }
 
+.message.warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
 .message.hidden {
     display: none;
+}
+
+/* Styles pour les éléments désactivés */
+button:disabled,
+input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+#add-drink-form.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Éléments à cacher sans session active */
+.require-session {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.require-session.hidden-no-session {
+    opacity: 0.3;
+    pointer-events: none;
+    user-select: none;
+}
+
+.require-session.hidden-no-session::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(128, 128, 128, 0.1);
+    border-radius: 6px;
+    z-index: 10;
+    pointer-events: none;
 }
 
 /* Couleurs des prix min/base/max */
@@ -2184,6 +2227,12 @@ body.dark-theme .message.error {
     background: #4a1a1a;
     color: #f44336;
     border-color: #d32f2f;
+}
+
+body.dark-theme .message.warning {
+    background: #4a3d1a;
+    color: #FF9800;
+    border-color: #f57c00;
 }
 
 body.dark-theme table, 

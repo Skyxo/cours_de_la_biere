@@ -168,6 +168,9 @@ function showActiveSession() {
     
     // Mettre à jour les stats immédiatement
     updateSessionStats();
+    
+    // Activer le formulaire d'ajout de boissons
+    updateDrinkFormState();
 }
 
 function showNoSession() {
@@ -177,6 +180,47 @@ function showNoSession() {
     // Réinitialiser les champs
     document.getElementById('barmanName').value = '';
     document.getElementById('startingCash').value = '0';
+    
+    // Désactiver le formulaire d'ajout de boissons
+    updateDrinkFormState();
+}
+
+function updateDrinkFormState() {
+    const sessionWarning = document.getElementById('session-warning');
+    const globalSessionWarning = document.getElementById('global-session-warning');
+    const addDrinkForm = document.getElementById('add-drink-form');
+    const addDrinkBtn = document.getElementById('add-drink-btn');
+    const formInputs = document.querySelectorAll('#add-drink-form input');
+    
+    // Éléments qui nécessitent une session active
+    const requireSessionElements = document.querySelectorAll('.require-session');
+    
+    if (currentSession && currentSession.is_active) {
+        // Session active - activer tous les éléments
+        if (sessionWarning) sessionWarning.classList.add('hidden');
+        if (globalSessionWarning) globalSessionWarning.classList.add('hidden');
+        if (addDrinkForm) addDrinkForm.style.opacity = '1';
+        if (addDrinkBtn) addDrinkBtn.disabled = false;
+        formInputs.forEach(input => input.disabled = false);
+        
+        // Réactiver tous les éléments nécessitant une session
+        requireSessionElements.forEach(element => {
+            element.classList.remove('hidden-no-session');
+        });
+        
+    } else {
+        // Pas de session - désactiver tous les éléments
+        if (sessionWarning) sessionWarning.classList.remove('hidden');
+        if (globalSessionWarning) globalSessionWarning.classList.remove('hidden');
+        if (addDrinkForm) addDrinkForm.style.opacity = '0.5';
+        if (addDrinkBtn) addDrinkBtn.disabled = true;
+        formInputs.forEach(input => input.disabled = true);
+        
+        // Cacher/désactiver tous les éléments nécessitant une session
+        requireSessionElements.forEach(element => {
+            element.classList.add('hidden-no-session');
+        });
+    }
 }
 
 function startSessionTimer() {
@@ -315,7 +359,12 @@ async function addDrink() {
             await loadAdminDrinksList(); // Nécessaire pour la nouvelle boisson
         } else {
             const err = await res.json();
-            showMessage('history-message', 'Erreur ajout: ' + err.detail, 'error');
+            // Gestion spéciale pour l'erreur de session inactive
+            if (res.status === 423) {
+                showMessage('history-message', '⚠️ ' + err.detail, 'error');
+            } else {
+                showMessage('history-message', 'Erreur ajout: ' + err.detail, 'error');
+            }
         }
     } catch (e) {
         showMessage('history-message', 'Erreur réseau ajout boisson', 'error');
@@ -602,6 +651,9 @@ function showAdminInterface() {
 // Fonction pour initialiser les contrôles admin après authentification
 function initializeAdminControls() {
     console.log('🔧 Initialisation des contrôles admin...');
+    
+    // Initialiser l'état du formulaire d'ajout de boissons
+    updateDrinkFormState();
     
     // Initialiser les boutons de graphique et de tri
     const adminChartToggle = document.getElementById('admin-chart-toggle');

@@ -1,0 +1,3 @@
+drink_id,drink_name,quantity,unit_price,base_price,total_price,profit_loss,timestamp
+SESSION_SUMMARY,Barman: Test Barman,0,Start: 2025-09-09T20:07:39.234650,End: 2025-09-09T20:13:09.312223,0,0,Starting Cash: 100.0
+,,,,,,,

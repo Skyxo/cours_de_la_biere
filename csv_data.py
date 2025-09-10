@@ -69,7 +69,7 @@ class CSVDataManager:
                     'base_price': float(row['base_price']),
                     'min_price': min_price,
                     'max_price': float(row['max_price']),
-                    'alcohol_degree': float(row.get('alcohol_degree', 0)),  # Degré d'alcool
+                    'alcohol_degree': float(row.get('alcohol_degree') or 0),  # Degré d'alcool avec gestion des valeurs vides
                     'is_happy_hour': is_happy_hour
                 })
         return prices
@@ -104,7 +104,7 @@ class CSVDataManager:
                         'base_price': exact_base_price,
                         'min_price': exact_min_price,
                         'max_price': exact_max_price,
-                        'alcohol_degree': float(row.get('alcohol_degree', 0)),  # Degré d'alcool
+                        'alcohol_degree': float(row.get('alcohol_degree') or 0),  # Degré d'alcool avec gestion des valeurs vides
                         'is_happy_hour': is_happy_hour
                     }
         return None
