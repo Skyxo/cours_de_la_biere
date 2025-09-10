@@ -31,10 +31,15 @@ def load_timer_state():
                 timer_data = json.load(f)
                 market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
                 current_refresh_interval = timer_data.get('refresh_interval', 10000)
-                print(f"⏰ Timer chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+                print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+        else:
+            print(f"⏰ Aucun état de timer sauvegardé trouvé, démarrage nouveau timer universel")
+            # Créer immédiatement un état initial
+            save_timer_state()
     except Exception as e:
-        print(f"Erreur lors du chargement du timer: {e}")
+        print(f"❌ Erreur lors du chargement du timer: {e}")
         market_timer_start = datetime.now()
+        save_timer_state()
 
 def save_timer_state():
     """Sauvegarder l'état du timer dans un fichier"""
@@ -48,8 +53,9 @@ def save_timer_state():
         }
         with open('data/timer_state.json', 'w') as f:
             json.dump(timer_data, f, indent=2)
+        print(f"💾 État du timer universel sauvegardé: {market_timer_start.isoformat()}")
     except Exception as e:
-        print(f"Erreur lors de la sauvegarde du timer: {e}")
+        print(f"❌ Erreur lors de la sauvegarde du timer: {e}")
 
 # Variables de session
 current_session = None
@@ -83,6 +89,21 @@ def save_session():
 
 # Charger l'état du timer au démarrage du serveur
 load_timer_state()
+
+# Sauvegarder périodiquement l'état du timer (toutes les 30 secondes)
+import threading
+import time
+
+def periodic_timer_save():
+    """Sauvegarde périodique de l'état du timer"""
+    while True:
+        time.sleep(30)  # Attendre 30 secondes
+        save_timer_state()
+
+# Démarrer le thread de sauvegarde périodique
+timer_save_thread = threading.Thread(target=periodic_timer_save, daemon=True)
+timer_save_thread.start()
+print("🔄 Sauvegarde périodique du timer universel démarrée (30s)")
 
 # Charger la session au démarrage
 load_session_if_exists()
@@ -252,12 +273,18 @@ async def get_timer_sync():
     elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
     remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
     
+    # Debug info pour diagnostiquer les problèmes de synchronisation
+    timer_age_minutes = (current_time - market_timer_start).total_seconds() / 60
+    
     return {
         "server_time": current_time.isoformat(),
         "market_timer_start": market_timer_start.isoformat(),
         "interval_ms": current_refresh_interval,
         "timer_remaining_ms": remaining_ms,
-        "elapsed_since_start_ms": elapsed_ms
+        "elapsed_since_start_ms": elapsed_ms,
+        "timer_age_minutes": round(timer_age_minutes, 2),
+        "timer_state_file_exists": os.path.exists('data/timer_state.json'),
+        "debug_info": f"Timer actif depuis {timer_age_minutes:.1f}min, reste {remaining_ms/1000:.1f}s"
     }
 
 @app.post("/admin/sync/refresh-all")

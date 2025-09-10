@@ -342,15 +342,49 @@ async function syncWithServer() {
             }
         }
         
+        // Sauvegarder l'état de synchronisation pour persistance
+        const syncState = {
+            countdown: countdown,
+            serverTimerStart: data.market_timer_start,
+            intervalMs: data.interval_ms,
+            lastSync: now.getTime()
+        };
+        localStorage.setItem('timer-sync-state', JSON.stringify(syncState));
+        
         // Mettre à jour l'affichage immédiatement
         if (timerElement) {
             timerElement.textContent = countdown;
         }
         
         console.log(`⏰ Timer synchronisé avec serveur: ${countdown}s restantes (intervalle: ${refreshIntervalMs}ms)`);
+        console.log(`📊 Debug serveur: ${data.debug_info || 'N/A'}`);
         return true;
     } catch (error) {
         console.warn('❌ Erreur synchronisation timer serveur:', error);
+        
+        // Tenter de charger l'état depuis localStorage en cas d'échec
+        try {
+            const savedState = localStorage.getItem('timer-sync-state');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                const timeSinceLastSync = Date.now() - state.lastSync;
+                
+                // Si la dernière sync est récente (< 2 minutes), utiliser l'état sauvegardé
+                if (timeSinceLastSync < 120000) {
+                    const estimatedCountdown = state.countdown - Math.floor(timeSinceLastSync / 1000);
+                    countdown = Math.max(0, estimatedCountdown);
+                    refreshIntervalMs = state.intervalMs;
+                    
+                    console.log(`🔄 Utilisation état timer sauvegardé: ${countdown}s (estimé)`);
+                    if (timerElement) {
+                        timerElement.textContent = countdown;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Erreur lecture état timer sauvegardé:', e);
+        }
+        
         // En cas d'erreur, garder les valeurs existantes plutôt que d'échouer complètement
         if (!refreshIntervalMs) {
             refreshIntervalMs = 10000; // Valeur par défaut seulement si on n'en a pas
