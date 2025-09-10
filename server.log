@@ -72,3 +72,14 @@ INFO:     127.0.0.1:49496 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
 INFO:     127.0.0.1:49510 - "GET /admin/drinks HTTP/1.1" 200 OK
 INFO:     127.0.0.1:37946 - "GET /sync/timer HTTP/1.1" 200 OK
 INFO:     127.0.0.1:37936 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43598 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43608 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45078 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45070 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37682 - "GET /admin/history?limit=50 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37684 - "GET /sync/timer HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14525]
+INFO:     Stopping reloader process [14522]
