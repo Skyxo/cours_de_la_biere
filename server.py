@@ -21,6 +21,36 @@ active_drinks = set()
 timer_start_time = datetime.now()
 market_timer_start = datetime.now()  # Timer global du marché, indépendant des clients
 
+# Fonction pour charger/sauvegarder l'état du timer persistant
+def load_timer_state():
+    """Charger l'état du timer depuis le fichier de sauvegarde"""
+    global market_timer_start, current_refresh_interval
+    try:
+        if os.path.exists('data/timer_state.json'):
+            with open('data/timer_state.json', 'r') as f:
+                timer_data = json.load(f)
+                market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
+                current_refresh_interval = timer_data.get('refresh_interval', 10000)
+                print(f"⏰ Timer chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+    except Exception as e:
+        print(f"Erreur lors du chargement du timer: {e}")
+        market_timer_start = datetime.now()
+
+def save_timer_state():
+    """Sauvegarder l'état du timer dans un fichier"""
+    global market_timer_start, current_refresh_interval
+    try:
+        os.makedirs('data', exist_ok=True)
+        timer_data = {
+            'market_timer_start': market_timer_start.isoformat(),
+            'refresh_interval': current_refresh_interval,
+            'last_saved': datetime.now().isoformat()
+        }
+        with open('data/timer_state.json', 'w') as f:
+            json.dump(timer_data, f, indent=2)
+    except Exception as e:
+        print(f"Erreur lors de la sauvegarde du timer: {e}")
+
 # Variables de session
 current_session = None
 session_sales = []  # Liste des ventes de la session en cours
@@ -50,6 +80,9 @@ def save_session():
                 json.dump(session_data, f, indent=2)
         except Exception as e:
             print(f"Erreur lors de la sauvegarde de la session: {e}")
+
+# Charger l'état du timer au démarrage du serveur
+load_timer_state()
 
 # Charger la session au démarrage
 load_session_if_exists()
@@ -232,11 +265,26 @@ async def force_refresh_all_clients(admin: str = Depends(get_current_admin)):
     """Force tous les clients à se synchroniser immédiatement"""
     global market_timer_start
     market_timer_start = datetime.now()
+    save_timer_state()  # Sauvegarder immédiatement
     
     return {
         "status": "refresh_forced",
         "message": "Tous les clients vont se synchroniser au prochain appel API",
         "new_timer_start": market_timer_start.isoformat()
+    }
+
+@app.post("/admin/timer/restart")
+async def restart_universal_timer(admin: str = Depends(get_current_admin)):
+    """Redémarre uniquement le timer universel sans changer l'intervalle"""
+    global market_timer_start
+    market_timer_start = datetime.now()
+    save_timer_state()  # Sauvegarder immédiatement
+    
+    return {
+        "status": "timer_restarted",
+        "message": f"Timer universel redémarré avec intervalle de {current_refresh_interval}ms",
+        "new_timer_start": market_timer_start.isoformat(),
+        "interval_ms": current_refresh_interval
     }
 
 @app.post("/config/interval")
@@ -247,6 +295,7 @@ async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(ge
     active_drinks.clear()
     timer_start_time = datetime.now()
     market_timer_start = datetime.now()  # Redémarrer le timer global du marché
+    save_timer_state()  # Sauvegarder immédiatement
     
     return {"status": "ok", "interval_ms": current_refresh_interval}
 

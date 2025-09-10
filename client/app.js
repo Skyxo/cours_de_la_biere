@@ -310,6 +310,7 @@ refreshIntervalMs = parseInt(localStorage.getItem('refreshInterval'), 10) || REF
 
 // Timer d'actualisation synchronisé avec le serveur
 let countdown = 10; // Valeur par défaut
+let isTimerRunning = false; // Flag pour éviter les démarrages multiples
 
 // Fonction pour synchroniser le timer avec le serveur
 async function syncWithServer() {
@@ -346,21 +347,17 @@ async function syncWithServer() {
             timerElement.textContent = countdown;
         }
         
-        console.log(`⏰ Timer synchronisé: ${countdown}s restantes`);
+        console.log(`⏰ Timer synchronisé avec serveur: ${countdown}s restantes`);
         return true;
     } catch (error) {
-        console.warn('Erreur synchronisation timer serveur:', error);
-        // En cas d'erreur, ne pas bloquer le timer - continuer en mode local
-        if (!refreshIntervalMs) {
-            refreshIntervalMs = 10000; // 10 secondes par défaut
-        }
-        console.log('🔄 Passage en mode timer local');
+        console.warn('❌ Erreur synchronisation timer serveur:', error);
+        // En cas d'erreur, NE PAS créer un timer local - attendre la prochaine sync
         return false;
     }
 }
 
 function updateTimer() {
-    // Si on a des données de synchronisation serveur récentes, les utiliser
+    // Utiliser UNIQUEMENT les données du serveur - pas de mode local
     if (serverTimerSync) {
         const now = new Date();
         const serverTime = new Date(serverTimerSync.server_time);
@@ -370,31 +367,29 @@ function updateTimer() {
         // Vérifier si les données du serveur sont trop anciennes (> 60 secondes)
         const dataAge = Math.abs(timeDiff);
         if (dataAge > 60000) {
-            console.warn('⚠️ Données serveur trop anciennes, passage en mode local');
-            serverTimerSync = null; // Forcer le passage en mode fallback
-            countdown = Math.max(0, countdown - 1);
-        } else {
-            countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+            console.warn('⚠️ Données serveur trop anciennes, en attente de nouvelle synchronisation...');
+            // Ne pas changer le countdown, attendre la prochaine sync
+            if (timerElement) {
+                timerElement.textContent = '⏳'; // Indiquer l'attente
+            }
+            return;
         }
+        
+        countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
         
         // Si le timer est écoulé, déclencher refresh
         if (countdown <= 0) {
             fetchPrices();
-            // Remettre le timer pour le prochain cycle
-            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            // La nouvelle valeur de countdown sera mise à jour par la prochaine sync
             return;
         }
     } else {
-        // Fallback: décrémenter seulement
-        countdown = Math.max(0, countdown - 1);
-        
-        // Si le countdown atteint 0 sans sync serveur, déclencher un refresh
-        if (countdown <= 0) {
-            fetchPrices();
-            // Remettre le timer pour le prochain cycle
-            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
-            return;
+        // Pas de données serveur, indiquer l'attente de synchronisation
+        console.log('⏳ En attente de synchronisation avec le serveur...');
+        if (timerElement) {
+            timerElement.textContent = '⏳';
         }
+        return;
     }
     
     if (timerElement) {
@@ -404,29 +399,39 @@ function updateTimer() {
 
 // Démarrer/Arrêter le compteur 1s
 function startTimer() {
+    if (isTimerRunning) {
+        console.log('⏰ Timer déjà en cours');
+        return;
+    }
+    
     stopTimer();
+    
+    console.log('🔄 Synchronisation avec le timer universel du serveur...');
     
     // Essayer de synchroniser avec le serveur au démarrage
     syncWithServer().then((success) => {
-        // Démarrer le timer même si la synchronisation échoue
-        timerIntervalId = setInterval(updateTimer, 1000);
-        
-        // Resynchroniser périodiquement avec le serveur
-        timerSyncIntervalId = setInterval(syncWithServer, 30000); // Toutes les 30 secondes
-        
-        if (!success) {
-            console.log('🔄 Timer démarré en mode local (synchronisation serveur échouée)');
+        if (success) {
+            isTimerRunning = true;
+            // Démarrer le timer seulement si la synchronisation réussit
+            timerIntervalId = setInterval(updateTimer, 1000);
+            
+            // Resynchroniser périodiquement avec le serveur
+            timerSyncIntervalId = setInterval(syncWithServer, 15000); // Toutes les 15 secondes pour plus de fréquence
+            
+            console.log('✅ Timer universél démarré et synchronisé avec le serveur');
+        } else {
+            console.log('❌ Impossible de se synchroniser avec le timer universel, retry dans 5 secondes...');
+            setTimeout(startTimer, 5000); // Réessayer dans 5 secondes
         }
     }).catch((error) => {
-        console.error('Erreur lors du démarrage du timer:', error);
-        // Démarrer quand même le timer en mode local
-        timerIntervalId = setInterval(updateTimer, 1000);
-        timerSyncIntervalId = setInterval(syncWithServer, 30000);
-        console.log('🔄 Timer démarré en mode local de secours');
+        console.error('❌ Erreur critique lors du démarrage du timer:', error);
+        // Réessayer dans 5 secondes
+        setTimeout(startTimer, 5000);
     });
 }
 
 function stopTimer() {
+    isTimerRunning = false;
     if (timerIntervalId) {
         clearInterval(timerIntervalId);
         timerIntervalId = null;
@@ -435,6 +440,7 @@ function stopTimer() {
         clearInterval(timerSyncIntervalId);
         timerSyncIntervalId = null;
     }
+    console.log('⏹️ Timer universel arrêté');
 }
 
 // Fonctions pour gérer les timers Happy Hour
@@ -2069,6 +2075,18 @@ function initMarketEventListener() {
                 // Redémarrer le timer pour synchroniser
                 startTimer();
             }
+        }
+        
+        if (event.key === 'timer-restart-signal') {
+            console.log('🔄 Signal de redémarrage du timer universel reçu');
+            
+            // Arrêter le timer actuel et se resynchroniser avec le serveur
+            stopTimer();
+            
+            // Attendre un peu puis redémarrer pour éviter les conflits
+            setTimeout(() => {
+                startTimer();
+            }, 1000);
         }
         
         if (event.key === 'market-event-signal') {

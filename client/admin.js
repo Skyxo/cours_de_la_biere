@@ -1179,7 +1179,7 @@ async function forceSyncAllClients() {
     }
 }
 
-// Fonction pour redémarrer le timer global
+// Fonction pour redémarrer le timer universel
 async function resetGlobalTimer() {
     const resetBtn = document.getElementById('reset-timer-btn');
     const syncMessage = document.getElementById('sync-message');
@@ -1187,26 +1187,24 @@ async function resetGlobalTimer() {
     if (resetBtn) resetBtn.disabled = true;
     
     try {
-        // Récupérer l'intervalle actuel et le redéfinir (cela redémarre le timer)
-        const intervalRes = await fetch(`${API_BASE}/config/interval`);
-        if (!intervalRes.ok) throw new Error('Erreur récupération intervalle');
-        
-        const intervalData = await intervalRes.json();
-        
-        const response = await fetch(`${API_BASE}/config/interval`, {
+        // Utiliser le nouvel endpoint pour redémarrer uniquement le timer
+        const response = await fetch(`${API_BASE}/admin/timer/restart`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Basic ' + authToken
-            },
-            body: JSON.stringify({ interval_ms: intervalData.interval_ms })
+            }
         });
         
         if (response.ok) {
-            showMessage('sync-message', '⏰ Timer redémarré - Nouveau cycle démarré pour tous les écrans', 'success');
+            const data = await response.json();
+            showMessage('sync-message', `⏰ Timer universel redémarré - Tous les clients se synchroniseront automatiquement (intervalle: ${Math.round(data.interval_ms/1000)}s)`, 'success');
             
-            // Redémarrer le timer local
+            // Redémarrer le timer admin local
             startAdminTimer();
+            
+            // Signaler aux autres onglets qu'ils doivent se resynchroniser
+            localStorage.setItem('timer-restart-signal', Date.now().toString());
         } else {
             throw new Error('Erreur serveur');
         }
