@@ -22,7 +22,7 @@ body.stock-wall {
 .wall-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Aligner les contrôles à droite */
+    justify-content: space-between; /* Répartir les zones gauche et droite */
     padding: 15px 20px;
     background: linear-gradient(90deg, #001122 0%, #002244 100%);
     border-bottom: 2px solid #00ff41;
@@ -41,6 +41,16 @@ body.stock-wall {
     transform: translate(-50%, -50%);
     text-align: center;
     width: auto; /* Prendre seulement la largeur nécessaire */
+}
+
+/* Zone gauche - Bouton graphique */
+.header-left {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 15px;
+    min-width: 150px;
 }
 
 /* Zone droite - Admin */
