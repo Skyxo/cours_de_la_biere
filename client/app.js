@@ -406,13 +406,14 @@ function updateTimer() {
 // Démarrer/Arrêter le compteur 1s
 function startTimer() {
     if (isTimerRunning) {
-        console.log('⏰ Timer déjà en cours');
+        console.log('⏰ Timer déjà en cours, resynchronisation...');
+        // Si le timer tourne déjà, juste resynchroniser
+        syncWithServer();
         return;
     }
     
-    stopTimer();
-    
-    console.log('🔄 Synchronisation avec le timer universel du serveur...');
+    console.log('🔄 Démarrage du timer universel...');
+    stopTimer(); // S'assurer que tout est propre
     
     // Essayer de synchroniser avec le serveur au démarrage
     syncWithServer().then((success) => {
@@ -456,12 +457,13 @@ function stopTimer() {
     if (timerIntervalId) {
         clearInterval(timerIntervalId);
         timerIntervalId = null;
+        console.log('⏹️ Timer local arrêté (le timer universel continue côté serveur)');
     }
     if (timerSyncIntervalId) {
         clearInterval(timerSyncIntervalId);
         timerSyncIntervalId = null;
+        console.log('⏹️ Synchronisation timer arrêtée');
     }
-    console.log('⏹️ Timer universel arrêté');
 }
 
 // Fonctions pour gérer les timers Happy Hour
@@ -1594,13 +1596,19 @@ function handleReconnection() {
 // Détection de la visibilité de la page
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-        stopAutoRefresh();
-        stopTimer();
-        stopHappyHourTimers();
+        // NE PAS arrêter le timer universel quand on quitte la page
+        // Le timer continue de tourner côté serveur
+        console.log('📱 Page cachée - timer universel continue côté serveur');
     } else {
-        startAutoRefresh();
-        startTimer();
-        startHappyHourTimers();
+        // Quand on revient, se resynchroniser sans redémarrer
+        console.log('📱 Page visible - resynchronisation avec timer universel');
+        if (!isTimerRunning) {
+            // Seulement démarrer si le timer n'est pas déjà en cours
+            startTimer();
+        } else {
+            // Resynchroniser immédiatement avec le serveur
+            syncWithServer();
+        }
     }
 });
 
@@ -1740,7 +1748,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else {
         startAutoRefresh();
-        startTimer();
+        // Démarrer le timer seulement s'il n'est pas déjà en cours
+        if (!isTimerRunning) {
+            startTimer();
+        }
     }
     
     // Afficher un message de bienvenue
@@ -1821,7 +1832,13 @@ window.addEventListener('storage', (e) => {
                 // Mode timer normal : redémarrer les intervalles
                 stopAutoRefresh();
                 startAutoRefresh();
-                startTimer();
+                // Démarrer le timer seulement s'il n'est pas déjà en cours
+                if (!isTimerRunning) {
+                    startTimer();
+                } else {
+                    // Juste resynchroniser si le timer tourne déjà
+                    syncWithServer();
+                }
                 
                 // Restaurer le timer visuel
                 const timerElement = document.getElementById('timer-countdown');
@@ -1850,7 +1867,13 @@ window.addEventListener('storage', (e) => {
             } else {
                 stopAutoRefresh();
                 startAutoRefresh();
-                startTimer();
+                // Démarrer le timer seulement s'il n'est pas déjà en cours
+                if (!isTimerRunning) {
+                    startTimer();
+                } else {
+                    // Juste resynchroniser si le timer tourne déjà
+                    syncWithServer();
+                }
                 
                 const timerElement = document.getElementById('timer-countdown');
                 if (timerElement) {
@@ -2088,13 +2111,12 @@ function initMarketEventListener() {
             
             // Réinitialiser le compteur à zéro
             if (refreshIntervalMs > 0) {
-                countdown = Math.ceil(refreshIntervalMs / 1000);
-                if (timerElement) {
-                    timerElement.textContent = countdown;
+                // Ne pas redémarrer le timer, juste resynchroniser
+                if (!isTimerRunning) {
+                    startTimer();
+                } else {
+                    syncWithServer();
                 }
-                
-                // Redémarrer le timer pour synchroniser
-                startTimer();
             }
         }
         
