@@ -678,23 +678,24 @@
       
       /* Optimisation spéciale pour le tableau d'achat (#purchase-table) */
       #purchase-table tr {
-        margin-bottom: 10px;
-        padding: 12px;
-        border-radius: 8px;
-        display: block; /* Changé de grid à block pour plus de flexibilité */
-        background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
-        min-height: auto;
+        margin-bottom: 15px !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        display: block !important; /* Changé de grid à block pour plus de flexibilité */
+        background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5)) !important;
+        min-height: auto !important;
+        border: 2px solid rgba(var(--accent), 0.3) !important;
       }
       
       #purchase-table td {
-        display: block;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(var(--accent), 0.2);
+        display: block !important;
+        padding: 10px 5px !important;
+        border-bottom: 1px solid rgba(var(--accent), 0.2) !important;
       }
       
       #purchase-table td:last-child {
-        border-bottom: none;
-        padding-top: 12px;
+        border-bottom: none !important;
+        padding-top: 15px !important;
       }
       
       #purchase-table td[data-label="Boisson"] {
@@ -759,71 +760,64 @@
       }
       
       #purchase-table td[data-label="Actions"] {
-        padding: 16px 0 0 0;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
+        padding: 20px 10px 10px 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(76, 175, 80, 0.1) !important; /* Fond vert léger pour visibilité */
+        border-radius: 8px !important;
+        margin: 8px 0 !important;
+        min-height: 80px !important; /* Hauteur garantie */
       }
       
       #purchase-table td[data-label="Actions"]::before {
-        content: "Actions:";
+        content: "👆 CLIQUEZ ICI:";
         font-weight: bold;
-        color: #00ff41;
+        color: #4CAF50 !important;
         margin-bottom: 8px;
         display: block;
         text-align: center;
+        font-size: 1.1em !important;
+        text-transform: uppercase;
       }
       
-      #purchase-table .btn {
-        padding: 12px 20px;
-        font-size: 1em;
-        margin: 0;
-        width: 90%;
-        max-width: 250px;
-        border-radius: 8px;
-        text-align: center;
-        white-space: nowrap;
-        min-height: 44px; /* Améliore l'accessibilité tactile */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      /* Boutons spécifiques */
-      #purchase-table .btn:nth-child(1) {
-        background: linear-gradient(45deg, #4CAF50, #388E3C);
-        color: white;
-      }
-      
-      #purchase-table .btn:nth-child(2) {
-        background: linear-gradient(45deg, #2196F3, #1976D2);
-        color: white;
-      }
-      
-      #purchase-table .btn:nth-child(3) {
-        background: linear-gradient(45deg, #FF9800, #F57C00);
-        color: white;
-      }
-      
-      /* Style pour le bouton Ajouter qui est le seul dans la colonne Actions */
-      #purchase-table [data-action="buy"] {
+      /* Style spécifique et prioritaire pour le bouton Ajouter */
+      #purchase-table [data-action="buy"],
+      #purchase-table button[data-action="buy"],
+      #purchase-table .btn[data-action="buy"] {
         background: linear-gradient(45deg, #4CAF50, #45a049) !important;
         color: white !important;
-        padding: 12px 20px !important;
-        font-size: 1em !important;
-        margin: 5px auto !important;
-        width: 90% !important;
-        max-width: 250px !important;
-        border-radius: 8px !important;
+        padding: 16px 24px !important;
+        font-size: 1.2em !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+        width: 95% !important;
+        max-width: 280px !important;
+        border-radius: 12px !important;
         text-align: center !important;
         white-space: nowrap !important;
-        min-height: 50px !important; /* Taille tactile optimale */
+        min-height: 60px !important; /* Taille tactile très généreuse */
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        border: none !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        border: 3px solid #388E3C !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        cursor: pointer !important;
+        z-index: 999 !important;
+        position: relative !important;
+      }
+      
+      /* Effet hover pour le bouton */
+      #purchase-table [data-action="buy"]:hover,
+      #purchase-table button[data-action="buy"]:hover,
+      #purchase-table .btn[data-action="buy"]:hover {
+        background: linear-gradient(45deg, #45a049, #4CAF50) !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.4) !important;
       }
       
       /* Réduire l'espacement pour les inputs de prix */
