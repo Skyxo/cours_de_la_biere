@@ -486,7 +486,7 @@ const loginForm = document.getElementById('login-form');
 const authMessage = document.getElementById('auth-message');
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Appliquer le thème CLC (light/dark) depuis localStorage - par défaut sombre
     try {
         const saved = localStorage.getItem('theme');
@@ -503,7 +503,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const auth = JSON.parse(savedAuth);
             if (auth.username === ADMIN_USERNAME && auth.password === ADMIN_PASSWORD) {
-                authenticate(auth.username, auth.password);
+                // Authentifier directement sans popup
+                await authenticate(auth.username, auth.password);
                 return; // Important: sortir ici pour éviter d'afficher le formulaire
             }
         } catch (e) {
