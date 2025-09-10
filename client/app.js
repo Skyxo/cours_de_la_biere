@@ -320,11 +320,19 @@ async function syncWithServer() {
         refreshIntervalMs = data.interval_ms;
         
         // Calculer le temps restant basé sur le serveur
-        countdown = Math.ceil(data.timer_remaining_ms / 1000);
+        const now = new Date();
+        const serverTime = new Date(data.server_time);
+        const timeDiff = now - serverTime;
+        const adjustedRemaining = data.timer_remaining_ms - timeDiff;
         
-        // S'assurer que le compteur reste dans les limites valides
+        countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+        
+        // Si le timer est écoulé côté serveur, on démarre un nouveau cycle
         if (countdown <= 0) {
+            console.log('🔄 Timer écoulé côté serveur, nouveau cycle');
             countdown = Math.ceil(refreshIntervalMs / 1000);
+            // Déclencher un refresh immédiat des prix
+            fetchPrices();
         }
         
         // Mettre à jour l'affichage immédiatement
@@ -332,6 +340,7 @@ async function syncWithServer() {
             timerElement.textContent = countdown;
         }
         
+        console.log(`⏰ Timer synchronisé: ${countdown}s restantes`);
         return true;
     } catch (error) {
         console.warn('Erreur synchronisation timer serveur:', error);
@@ -349,17 +358,21 @@ function updateTimer() {
         
         countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
         
-        // Si le timer est écoulé, déclencher une synchronisation
+        // Si le timer est écoulé, déclencher refresh et resynchroniser
         if (countdown <= 0) {
-            syncWithServer();
+            fetchPrices().then(() => {
+                syncWithServer(); // Re-synchroniser après le refresh
+            });
             return;
         }
     } else {
-        // Fallback sur l'ancien système si pas de sync serveur
-        if (countdown <= 1) {
-            countdown = Math.ceil(refreshIntervalMs / 1000);
-        } else {
-            countdown = countdown - 1;
+        // Fallback: décrémenter seulement (ne pas remettre au maximum)
+        countdown = Math.max(0, countdown - 1);
+        
+        // Si le countdown atteint 0 sans sync serveur, tenter une synchronisation
+        if (countdown <= 0) {
+            syncWithServer();
+            return;
         }
     }
     
