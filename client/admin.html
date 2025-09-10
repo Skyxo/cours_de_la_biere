@@ -562,6 +562,95 @@
     
     .hidden { display: none; }
 
+    /* Styles pour les contrôles admin en haut */
+    .admin-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(90deg, rgba(var(--accent), 0.1), rgba(var(--accent), 0.05));
+      border-bottom: 2px solid rgb(var(--accent));
+      margin-bottom: 30px;
+      border-radius: 12px;
+    }
+    
+    .admin-controls-left,
+    .admin-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .admin-controls-center {
+      text-align: center;
+      flex: 1;
+    }
+    
+    .admin-title h1 {
+      margin: 0;
+      color: rgb(var(--accent));
+      font-size: 1.8em;
+      text-shadow: 0 0 10px rgba(var(--accent), 0.3);
+    }
+    
+    .admin-subtitle {
+      margin: 5px 0 0 0;
+      color: rgba(var(--text), 0.7);
+      font-size: 0.9em;
+    }
+    
+    .theme-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .theme-controls label {
+      color: rgb(var(--accent));
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .theme-controls select {
+      padding: 8px 12px;
+      border: 2px solid rgba(var(--accent), 0.3);
+      border-radius: 6px;
+      background: rgba(var(--surface), 0.8);
+      color: rgb(var(--text));
+      font-size: 0.9em;
+    }
+    
+    .admin-back-btn,
+    .admin-logout-btn {
+      padding: 10px 15px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .admin-back-btn {
+      background: rgba(var(--accent), 0.2);
+      color: rgb(var(--accent));
+      border: 1px solid rgba(var(--accent), 0.4);
+    }
+    
+    .admin-back-btn:hover {
+      background: rgba(var(--accent), 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .admin-logout-btn {
+      background: rgba(var(--danger), 0.2);
+      color: rgb(var(--danger));
+      border: 1px solid rgba(var(--danger), 0.4);
+    }
+    
+    .admin-logout-btn:hover {
+      background: rgba(var(--danger), 0.3);
+      transform: translateY(-2px);
+    }
+
     /* Responsive tables for mobile */
     @media (max-width: 768px) {
       .admin-container { padding: 5px; }
@@ -569,35 +658,41 @@
       /* Style des contrôles admin en haut sur mobile */
       .admin-controls {
         flex-direction: column !important;
-        gap: 15px;
-      }
-      
-      .admin-controls-left,
-      .admin-controls-right {
-        flex-direction: column;
-        width: 100%;
-        gap: 10px;
-      }
-      
-      .theme-controls,
-      .chart-toggle,
-      .sort-toggle {
-        width: 100%;
+        gap: 20px;
         text-align: center;
       }
       
-      .theme-controls label,
-      .chart-toggle label,
-      .sort-toggle label {
+      .admin-controls-left,
+      .admin-controls-center,
+      .admin-controls-right {
+        flex-direction: column;
+        width: 100%;
+        gap: 15px;
+      }
+      
+      .admin-title h1 {
+        font-size: 1.5em;
+      }
+      
+      .admin-subtitle {
+        font-size: 0.85em;
+      }
+      
+      .theme-controls {
+        flex-direction: column;
+        width: 100%;
+        text-align: center;
+        gap: 10px;
+      }
+      
+      .theme-controls label {
         display: block;
         margin-bottom: 8px;
         font-weight: bold;
         color: rgb(var(--accent));
       }
       
-      .theme-controls select,
-      .chart-toggle .toggle-btn,
-      .sort-toggle .toggle-btn {
+      .theme-controls select {
         width: 100% !important;
         max-width: none !important;
         padding: 12px 16px;
@@ -607,7 +702,8 @@
         text-align: center;
       }
       
-      .admin-back-btn {
+      .admin-back-btn,
+      .admin-logout-btn {
         width: 100% !important;
         margin-top: 10px;
         padding: 14px;
@@ -1039,23 +1135,19 @@
         <!-- Contrôles gauche -->
         <div class="admin-controls-left">
           <div class="theme-controls">
-            <label for="admin-theme-select">Thème Interface Principale:</label>
+            <label for="admin-theme-select">🎨 Thème Interface Principale:</label>
             <select id="admin-theme-select">
-              <option value="light">Clair</option>
-              <option value="dark">Sombre</option>
+              <option value="light">☀️ Clair</option>
+              <option value="dark">🌙 Sombre</option>
             </select>
           </div>
-          <div class="chart-toggle">
-            <label for="admin-chart-toggle">Graphique:</label>
-            <button id="admin-chart-toggle" class="toggle-btn" data-type="candlestick">
-              📊 Candlestick
-            </button>
-          </div>
-          <div class="sort-toggle">
-            <label for="admin-sort-toggle">Tri:</label>
-            <button id="admin-sort-toggle" class="toggle-btn" data-sort="price">
-              💰 Prix
-            </button>
+        </div>
+        
+        <!-- Contrôles centre -->
+        <div class="admin-controls-center">
+          <div class="admin-title">
+            <h1>🍺 Panel Administration</h1>
+            <p class="admin-subtitle">Contrôles avancés du bar</p>
           </div>
         </div>
         
@@ -1063,8 +1155,8 @@
         <div class="admin-controls-right">
           <span class="status-indicator" id="connection-status"></span>
           <span id="connection-text">Connexion...</span>
-          <a href="index.html" class="btn btn-secondary admin-back-btn">← Retour au mur</a>
-          <button onclick="logout()" class="btn btn-danger admin-logout-btn">Déconnexion</button>
+          <a href="index.html" class="btn btn-secondary admin-back-btn">🏠 Retour au mur</a>
+          <button onclick="logout()" class="btn btn-danger admin-logout-btn">🚪 Déconnexion</button>
         </div>
       </div>
       
@@ -1095,11 +1187,11 @@
             <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: end;">
               <div style="flex: 1; min-width: 150px;">
                 <label for="barmanName" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Nom du barman :</label>
-                <input type="text" id="barmanName" placeholder="Nom du barman" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8);">
+                <input type="text" id="barmanName" placeholder="Nom du barman" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
               </div>
               <div style="min-width: 120px;">
                 <label for="startingCash" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Caisse départ (€) :</label>
-                <input type="number" id="startingCash" value="0" min="0" step="0.01" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8);">
+                <input type="number" id="startingCash" value="0" min="0" step="0.01" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
               </div>
               <button onclick="startSession()" class="btn" style="background: linear-gradient(45deg, #4CAF50, #45a049);">
                 🚀 Démarrer Session
@@ -1188,14 +1280,14 @@
           </h4>
           <div class="market-controls" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap; margin-bottom: 15px;">
             <div style="flex: 1; min-width: 200px;">
-              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Boisson :</label>
-              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: white; font-size: 14px;">
+              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--text));">Boisson :</label>
+              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: rgba(var(--surface), 0.9); color: rgb(var(--text)); font-size: 14px;">
                 <option value="">🍺 Sélectionner une boisson...</option>
               </select>
             </div>
             <div style="min-width: 120px;">
-              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: #333;">Durée (sec) :</label>
-              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; font-size: 14px;">
+              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--text));">Durée (sec) :</label>
+              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: rgba(var(--surface), 0.9); color: rgb(var(--text)); font-size: 14px;">
             </div>
             <button onclick="startHappyHour()" class="btn" style="background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: 600; border: 2px solid #FF8C00; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);">
               🌟 Lancer Happy Hour
@@ -1206,10 +1298,10 @@
           </div>
           
           <!-- Liste des Happy Hours actives -->
-          <div id="active-happy-hours" style="border: 1px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(255, 255, 255, 0.5);">
+          <div id="active-happy-hours" style="border: 1px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(var(--surface), 0.5);">
             <h5 style="margin: 0 0 8px 0; color: #B8860B;">🌟 Happy Hours Actives :</h5>
             <div id="happy-hours-list">
-              <p style="color: #666; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
+              <p style="color: rgba(var(--text), 0.6); font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
             </div>
           </div>
         </div>

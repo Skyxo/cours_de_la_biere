@@ -487,12 +487,15 @@ const authMessage = document.getElementById('auth-message');
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    // Appliquer le thème CLC (light/dark) depuis localStorage
+    // Appliquer le thème CLC (light/dark) depuis localStorage - par défaut sombre
     try {
         const saved = localStorage.getItem('theme');
-        const theme = saved === 'dark' ? 'dark' : 'light';
+        const theme = saved === 'light' ? 'light' : 'dark'; // Par défaut: dark
         document.body.setAttribute('data-theme', theme);
-    } catch (e) { /* no-op */ }
+    } catch (e) { 
+        // En cas d'erreur, appliquer le thème sombre par défaut
+        document.body.setAttribute('data-theme', 'dark');
+    }
 
     // Vérifier si on est déjà authentifié
     const savedAuth = localStorage.getItem('admin_auth');
@@ -501,13 +504,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const auth = JSON.parse(savedAuth);
             if (auth.username === ADMIN_USERNAME && auth.password === ADMIN_PASSWORD) {
                 authenticate(auth.username, auth.password);
-                return;
+                return; // Important: sortir ici pour éviter d'afficher le formulaire
             }
         } catch (e) {
             localStorage.removeItem('admin_auth');
         }
     }
     
+    // Ne montrer le formulaire que si pas authentifié
     showAuthForm();
 
     // Initialiser les sélecteurs de thème séparés
@@ -516,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Thème de l'admin (local)
     if (themeSelect) {
-        const currentAdminTheme = (localStorage.getItem('admin-theme') === 'dark') ? 'dark' : 'light';
+        const currentAdminTheme = localStorage.getItem('admin-theme') || 'dark'; // Par défaut dark
         themeSelect.value = currentAdminTheme;
         document.body.setAttribute('data-theme', currentAdminTheme);
         
@@ -530,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Thème de l'interface principale (contrôlé depuis l'admin)
     if (adminThemeSelect) {
-        const currentMainTheme = (localStorage.getItem('main-theme') === 'dark') ? 'dark' : 'light';
+        const currentMainTheme = localStorage.getItem('main-theme') || 'dark'; // Par défaut dark
         adminThemeSelect.value = currentMainTheme;
         
         adminThemeSelect.addEventListener('change', (e) => {
@@ -559,33 +563,8 @@ window.addEventListener('storage', (e) => {
         if (adminThemeSelect) adminThemeSelect.value = theme;
     }
     
-    // Synchroniser le bouton de graphique depuis l'interface principale
-    if (e.key === 'chart-toggle-signal') {
-        // Mettre à jour currentChartType depuis localStorage
-        currentChartType = localStorage.getItem('chart-type') || 'candlestick';
-        
-        const adminChartToggle = document.getElementById('admin-chart-toggle');
-        if (adminChartToggle && !adminChartToggle.dataset.adminTriggered) {
-            // Synchroniser l'état du bouton admin avec currentChartType
-            adminChartToggle.setAttribute('data-type', currentChartType);
-            adminChartToggle.textContent = currentChartType === 'candlestick' ? '📊 Candlestick' : '📈 Linéaire';
-            console.log('🔄 Bouton graphique admin synchronisé depuis interface principale:', currentChartType);
-        }
-    }
-    
-    // Synchroniser le bouton de tri depuis l'interface principale
-    if (e.key === 'sort-toggle-signal') {
-        // Mettre à jour sortMode depuis localStorage
-        sortMode = localStorage.getItem('sort-mode') || 'price';
-        
-        const adminSortToggle = document.getElementById('admin-sort-toggle');
-        if (adminSortToggle && !adminSortToggle.dataset.adminTriggered) {
-            // Synchroniser l'état du bouton admin avec sortMode
-            adminSortToggle.setAttribute('data-sort', sortMode);
-            adminSortToggle.textContent = sortMode === 'price' ? '💰 Prix' : '🔤 A-Z';
-            console.log('🔄 Bouton tri admin synchronisé depuis interface principale:', sortMode);
-        }
-    }
+    // Les boutons de graphique et tri sont maintenant dans l'interface principale
+    // Plus besoin de synchronisation admin pour ces contrôles
 });
 
 // Personnalisation détaillée supprimée: seules les palettes Light/Dark sont disponibles.
@@ -655,20 +634,16 @@ function initializeAdminControls() {
     // Initialiser l'état du formulaire d'ajout de boissons
     updateDrinkFormState();
     
-    // Initialiser les boutons de graphique et de tri
-    const adminChartToggle = document.getElementById('admin-chart-toggle');
-    const adminSortToggle = document.getElementById('admin-sort-toggle');
+    // Initialiser le sélecteur de thème
     const adminThemeSelect = document.getElementById('admin-theme-select');
     
     console.log('📋 Éléments trouvés:', {
-        adminChartToggle: !!adminChartToggle,
-        adminSortToggle: !!adminSortToggle,
         adminThemeSelect: !!adminThemeSelect
     });
     
     // Initialiser le sélecteur de thème admin
     if (adminThemeSelect) {
-        const currentTheme = (localStorage.getItem('main-theme') === 'dark') ? 'dark' : 'light';
+        const currentTheme = localStorage.getItem('main-theme') || 'dark'; // Par défaut dark
         adminThemeSelect.value = currentTheme;
         adminThemeSelect.addEventListener('change', (e) => {
             const theme = e.target.value === 'dark' ? 'dark' : 'light';
@@ -682,84 +657,6 @@ function initializeAdminControls() {
         console.log('✅ Sélecteur de thème admin initialisé');
     } else {
         console.warn('⚠️ Sélecteur de thème admin non trouvé');
-    }
-    
-    // Initialiser le bouton de graphique admin
-    if (adminChartToggle) {
-        // Synchroniser l'état initial avec currentChartType depuis localStorage
-        adminChartToggle.setAttribute('data-type', currentChartType);
-        adminChartToggle.textContent = currentChartType === 'candlestick' ? '📊 Candlestick' : '📈 Linéaire';
-        console.log('🔄 État initial du graphique admin synchronisé:', currentChartType);
-        
-        adminChartToggle.addEventListener('click', () => {
-            // Marquer que le changement vient de l'admin pour éviter la boucle
-            adminChartToggle.dataset.adminTriggered = 'true';
-            
-            // Changer le type de graphique
-            if (currentChartType === 'candlestick') {
-                currentChartType = 'line';
-                adminChartToggle.setAttribute('data-type', 'line');
-                adminChartToggle.textContent = '📈 Linéaire';
-            } else {
-                currentChartType = 'candlestick';
-                adminChartToggle.setAttribute('data-type', 'candlestick');
-                adminChartToggle.textContent = '📊 Candlestick';
-            }
-            
-            // Sauvegarder dans localStorage
-            localStorage.setItem('chart-type', currentChartType);
-            
-            // Synchroniser avec l'interface principale
-            localStorage.setItem('chart-toggle-signal', Date.now().toString());
-            console.log(`🔄 Bouton graphique admin cliqué: ${currentChartType}, signal envoyé`);
-            
-            // Nettoyer le marqueur après un délai
-            setTimeout(() => {
-                delete adminChartToggle.dataset.adminTriggered;
-            }, 100);
-        });
-        console.log('✅ Bouton graphique admin initialisé');
-    } else {
-        console.warn('⚠️ Bouton admin-chart-toggle non trouvé');
-    }
-    
-    // Initialiser le bouton de tri admin
-    if (adminSortToggle) {
-        // Synchroniser l'état initial avec sortMode depuis localStorage
-        adminSortToggle.setAttribute('data-sort', sortMode);
-        adminSortToggle.textContent = sortMode === 'price' ? '💰 Prix' : '🔤 A-Z';
-        console.log('🔄 État initial du tri admin synchronisé:', sortMode);
-        
-        adminSortToggle.addEventListener('click', () => {
-            // Marquer que le changement vient de l'admin pour éviter la boucle
-            adminSortToggle.dataset.adminTriggered = 'true';
-            
-            // Changer le mode de tri
-            if (sortMode === 'price') {
-                sortMode = 'alphabetical';
-                adminSortToggle.setAttribute('data-sort', 'alphabetical');
-                adminSortToggle.textContent = '🔤 A-Z';
-            } else {
-                sortMode = 'price';
-                adminSortToggle.setAttribute('data-sort', 'price');
-                adminSortToggle.textContent = '💰 Prix';
-            }
-            
-            // Sauvegarder dans localStorage
-            localStorage.setItem('sort-mode', sortMode);
-            
-            // Synchroniser avec l'interface principale
-            localStorage.setItem('sort-toggle-signal', Date.now().toString());
-            console.log(`🔄 Bouton tri admin cliqué: ${sortMode}, signal envoyé`);
-            
-            // Nettoyer le marqueur après un délai
-            setTimeout(() => {
-                delete adminSortToggle.dataset.adminTriggered;
-            }, 100);
-        });
-        console.log('✅ Bouton tri admin initialisé');
-    } else {
-        console.warn('⚠️ Bouton admin-sort-toggle non trouvé');
     }
 }
 

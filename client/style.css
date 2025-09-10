@@ -566,37 +566,62 @@ body.stock-wall {
     }
     
     .wall-header {
-        padding: 8px 0;
-        justify-content: flex-end; /* Maintenir l'alignement des contrôles à droite */
+        padding: 8px 10px;
+        min-height: 70px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
     }
     
     .wall-header h1 {
-        font-size: 1.4em;
+        font-size: 1.2em;
+        margin: 0;
     }
     
     .header-center {
-        /* Maintenir le centrage absolu sur mobile */
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
+        position: static;
+        transform: none;
+        order: 1;
+        text-align: center;
+        width: 100%;
     }
     
+    .header-left {
+        order: 2;
+        justify-content: center;
+        min-width: auto;
+        gap: 10px;
+    }
+    
+    .header-right {
+        order: 3;
+        justify-content: center;
+        min-width: auto;
+        gap: 10px;
+    }
+    
+    .timer-info {
+        font-size: 0.8em;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+
     /* Styles admin pour tablettes */
     .admin-controls-left {
         gap: 15px;
     }
-    
+
     .admin-controls .theme-controls,
     .admin-controls .chart-toggle,
     .admin-controls .sort-toggle {
         gap: 6px;
     }
-    
+
     .admin-controls label {
         font-size: 0.85em;
     }
-    
+
     .admin-controls .toggle-btn {
         font-size: 0.75em;
         padding: 5px 8px;
@@ -611,6 +636,33 @@ body.stock-wall {
         min-height: calc(100vh - 120px);
     }
     
+    .wall-header {
+        padding: 6px 8px;
+        min-height: 60px;
+        gap: 6px;
+    }
+    
+    .wall-header h1 {
+        font-size: 1em;
+        margin: 0;
+    }
+    
+    .timer-info {
+        font-size: 0.7em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    
+    .header-left .toggle-btn,
+    .header-right .toggle-btn,
+    .header-right .admin-link {
+        font-size: 0.7em;
+        padding: 4px 8px;
+        white-space: nowrap;
+    }
+
     /* Styles admin responsive mobile */
     .admin-controls {
         flex-direction: column;
@@ -618,19 +670,19 @@ body.stock-wall {
         padding: 10px;
         gap: 10px;
     }
-    
+
     .admin-controls-left {
         flex-direction: column;
         gap: 10px;
         align-items: stretch;
     }
-    
+
     .admin-controls-right {
         flex-direction: column;
         gap: 8px;
         align-items: stretch;
     }
-    
+
     .admin-controls .theme-controls,
     .admin-controls .chart-toggle,
     .admin-controls .sort-toggle {
@@ -640,11 +692,11 @@ body.stock-wall {
         border-radius: 6px;
         border: 1px solid rgba(var(--accent), 0.2);
     }
-    
+
     .admin-controls label {
         font-weight: 600;
     }
-    
+
     .admin-controls select,
     .admin-controls .toggle-btn {
         flex-shrink: 0;
