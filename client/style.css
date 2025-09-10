@@ -772,15 +772,15 @@ body.stock-wall {
 
 /* Animation pour changements de prix */
 .price-flash-up {
-    animation: priceFlashUp 0.5s ease-in-out;
+    animation: priceFlashUp 2s ease-in-out;
 }
 
 .price-flash-down {
-    animation: priceFlashDown 0.5s ease-in-out;
+    animation: priceFlashDown 2s ease-in-out;
 }
 
 .price-flash-neutral {
-    animation: priceFlashNeutral 0.5s ease-in-out;
+    animation: priceFlashNeutral 2s ease-in-out;
 }
 
 @keyframes priceFlashUp {
