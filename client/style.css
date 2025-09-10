@@ -82,13 +82,13 @@ body.stock-wall {
     to { text-shadow: 0 0 30px #00ff41, 0 0 40px #00ff41; }
 }
 
-/* Grille principale 5 colonnes x 3 lignes pour 15 bières */
+/* Grille principale 4 colonnes x 3 lignes pour 12 bières */
 .stock-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 12px;
-    padding: 15px;
+    gap: 15px;
+    padding: 20px;
     max-width: 1920px;
     height: calc(100vh - 120px);
     margin: 0 auto;
@@ -519,9 +519,9 @@ body.stock-wall {
 /* Responsive pour écrans plus petits */
 @media (max-width: 1600px) {
     .stock-grid {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
-        padding: 10px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        padding: 15px;
     }
     
     .tile-chart {
@@ -544,9 +544,9 @@ body.stock-wall {
 
 @media (max-width: 1200px) {
     .stock-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(4, 1fr);
-        gap: 8px;
+        gap: 10px;
     }
     
     .wall-header h1 {
@@ -560,9 +560,9 @@ body.stock-wall {
 
 @media (max-width: 900px) {
     .stock-grid {
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(5, 1fr);
-        gap: 6px;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(6, 1fr);
+        gap: 8px;
     }
     
     .wall-header {
@@ -630,7 +630,7 @@ body.stock-wall {
 
 @media (max-width: 600px) {
     .stock-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(1, 1fr);
         grid-template-rows: auto;
         height: auto;
         min-height: calc(100vh - 120px);

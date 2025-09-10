@@ -6,5 +6,116 @@
     "starting_cash": 0.0,
     "is_active": true
   },
-  "sales": []
+  "sales": [
+    {
+      "drink_id": 14,
+      "drink_name": "1664 Blanche",
+      "quantity": 1,
+      "unit_price": 1.9,
+      "base_price": 1.9,
+      "total_price": 1.9,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T18:37:05.806328"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:39.946686"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:40.125350"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:40.429614"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:40.582246"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:40.733416"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:40.868776"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:41.024821"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:41.152149"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:41.288602"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Despe tropical",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 2.3,
+      "total_price": 2.3,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-10T19:00:41.425315"
+    }
+  ]
 }

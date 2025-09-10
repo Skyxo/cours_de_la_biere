@@ -435,7 +435,7 @@ class CSVDataManager:
 
         with open(self.drinks_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow([new_id, name, base_price, base_price, min_price, max_price])
+            writer.writerow([new_id, name, base_price, base_price, min_price, max_price, 5.0])  # 5.0 par défaut pour alcohol_degree
         return {
             'id': new_id,
             'name': name,
@@ -480,7 +480,7 @@ class CSVDataManager:
             return None
 
         with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price'])
+            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
             writer.writeheader()
             writer.writerows(rows)
 
@@ -500,7 +500,7 @@ class CSVDataManager:
         if len(new_rows) == len(rows):
             return False
         with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price'])
+            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
             writer.writeheader()
             writer.writerows(new_rows)
         return True
