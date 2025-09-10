@@ -137,13 +137,60 @@ class SessionStats(BaseModel):
     sales: List[SessionSale]
 @app.get("/prices")
 async def get_prices():
-    prices = data_manager.get_all_prices()
-    return {
-        "prices": prices,
-        "active_drinks": list(active_drinks),
-        "timer_start": timer_start_time.isoformat(),
-        "interval_ms": current_refresh_interval
-    }
+    try:
+        prices = data_manager.get_all_prices()
+        return {
+            "prices": prices,
+            "active_drinks": list(active_drinks),
+            "timer_start": timer_start_time.isoformat(),
+            "interval_ms": current_refresh_interval
+        }
+    except Exception as e:
+        print(f"Erreur dans get_prices: {e}")
+        # En cas d'erreur, retourner une liste vide mais structure valide
+        return {
+            "prices": [],
+            "active_drinks": [],
+            "timer_start": datetime.now().isoformat(),
+            "interval_ms": current_refresh_interval
+        }
+
+@app.get("/diagnostic")
+async def get_diagnostic():
+    """Endpoint de diagnostic pour troubleshooting production"""
+    import sys
+    import os
+    from pathlib import Path
+    
+    try:
+        # Test basique de lecture CSV
+        csv_status = "OK"
+        csv_count = 0
+        try:
+            prices = data_manager.get_all_prices()
+            csv_count = len(prices)
+        except Exception as e:
+            csv_status = f"ERROR: {e}"
+        
+        return {
+            "status": "OK",
+            "python_version": sys.version,
+            "working_directory": os.getcwd(),
+            "csv_status": csv_status,
+            "csv_drinks_count": csv_count,
+            "drinks_file_exists": os.path.exists("data/drinks.csv"),
+            "history_file_exists": os.path.exists("data/history.csv"),
+            "active_drinks": list(active_drinks),
+            "current_session": current_session is not None,
+            "timer_start": timer_start_time.isoformat(),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 @app.get("/config/interval")
 async def get_refresh_interval():

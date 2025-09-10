@@ -42,36 +42,45 @@ class CSVDataManager:
     
     def get_all_prices(self) -> List[Dict]:
         prices = []
-        # Nettoyer les Happy Hours expirées avant de calculer les prix
-        self._clean_expired_happy_hours()
-        
-        with open(self.drinks_file, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                drink_id = int(row['id'])
-                exact_price = float(row['price'])
-                min_price = float(row['min_price'])
-                
-                # Vérifier si cette boisson est en Happy Hour
-                display_price = exact_price
-                is_happy_hour = drink_id in self.active_happy_hours
-                
-                if is_happy_hour:
-                    # Pendant une Happy Hour, le prix affiché est le prix minimum
-                    display_price = min_price
-                
-                prices.append({
-                    'id': drink_id,
-                    'name': row['name'],
-                    'price': exact_price,  # Prix réel (pour les calculs internes)
-                    'display_price': display_price,  # Prix affiché (réduit pendant Happy Hour)
-                    'price_rounded': self.round_to_ten_cents(display_price),
-                    'base_price': float(row['base_price']),
-                    'min_price': min_price,
-                    'max_price': float(row['max_price']),
-                    'alcohol_degree': float(row.get('alcohol_degree') or 0),  # Degré d'alcool avec gestion des valeurs vides
-                    'is_happy_hour': is_happy_hour
-                })
+        try:
+            # Nettoyer les Happy Hours expirées avant de calculer les prix
+            self._clean_expired_happy_hours()
+            
+            with open(self.drinks_file, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    try:
+                        drink_id = int(row['id'])
+                        exact_price = float(row['price'])
+                        min_price = float(row['min_price'])
+                        
+                        # Vérifier si cette boisson est en Happy Hour
+                        display_price = exact_price
+                        is_happy_hour = drink_id in self.active_happy_hours
+                        
+                        if is_happy_hour:
+                            # Pendant une Happy Hour, le prix affiché est le prix minimum
+                            display_price = min_price
+                        
+                        prices.append({
+                            'id': drink_id,
+                            'name': row['name'],
+                            'price': exact_price,  # Prix réel (pour les calculs internes)
+                            'display_price': display_price,  # Prix affiché (réduit pendant Happy Hour)
+                            'price_rounded': self.round_to_ten_cents(display_price),
+                            'base_price': float(row['base_price']),
+                            'min_price': min_price,
+                            'max_price': float(row['max_price']),
+                            'alcohol_degree': float(row.get('alcohol_degree') or 0),  # Degré d'alcool avec gestion des valeurs vides
+                            'is_happy_hour': is_happy_hour
+                        })
+                    except (ValueError, KeyError) as e:
+                        print(f"Erreur parsing ligne CSV drink {row.get('id', 'unknown')}: {e}")
+                        continue
+        except FileNotFoundError:
+            print(f"Fichier {self.drinks_file} introuvable")
+        except Exception as e:
+            print(f"Erreur dans get_all_prices: {e}")
         return prices
     
     def get_drink_by_id(self, drink_id: int) -> Optional[Dict]:
