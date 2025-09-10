@@ -566,6 +566,55 @@
     @media (max-width: 768px) {
       .admin-container { padding: 5px; }
       
+      /* Style des contrôles admin en haut sur mobile */
+      .admin-controls {
+        flex-direction: column !important;
+        gap: 15px;
+      }
+      
+      .admin-controls-left,
+      .admin-controls-right {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+      }
+      
+      .theme-controls,
+      .chart-toggle,
+      .sort-toggle {
+        width: 100%;
+        text-align: center;
+      }
+      
+      .theme-controls label,
+      .chart-toggle label,
+      .sort-toggle label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: rgb(var(--accent));
+      }
+      
+      .theme-controls select,
+      .chart-toggle .toggle-btn,
+      .sort-toggle .toggle-btn {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 12px 16px;
+        font-size: 1em;
+        border-radius: 8px;
+        min-height: 44px;
+        text-align: center;
+      }
+      
+      .admin-back-btn {
+        width: 100% !important;
+        margin-top: 10px;
+        padding: 14px;
+        font-size: 1.1em;
+        text-align: center;
+      }
+      
       /* Forcer les colonnes Bootstrap à prendre toute la largeur sur mobile */
       .row .col-12.col-lg-6,
       .row .col-12.col-lg-8,
@@ -629,36 +678,47 @@
       
       /* Optimisation spéciale pour le tableau d'achat (#purchase-table) */
       #purchase-table tr {
-        margin-bottom: 6px;
-        padding: 8px 10px;
-        border-radius: 6px;
-        display: grid;
-        grid-template-columns: 2fr 1fr auto;
-        gap: 10px;
-        align-items: center;
+        margin-bottom: 10px;
+        padding: 12px;
+        border-radius: 8px;
+        display: block; /* Changé de grid à block pour plus de flexibilité */
         background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
-        min-height: 50px;
+        min-height: auto;
+      }
+      
+      #purchase-table td {
+        display: block;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(var(--accent), 0.2);
+      }
+      
+      #purchase-table td:last-child {
+        border-bottom: none;
+        padding-top: 12px;
       }
       
       #purchase-table td[data-label="Boisson"] {
         font-weight: bold;
         color: #00ff41;
-        font-size: 1.1em;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        grid-column: 1;
+        font-size: 1.2em;
+        padding: 0 0 8px 0;
+        text-align: center;
       }
       
       #purchase-table td[data-label="Boisson"]::before {
-        display: none;
+        content: "🍺 ";
+        display: inline;
       }
       
-      #purchase-table td[data-label="Prix Min/Base/Max (€)"] {
-        grid-column: 2;
-        padding: 4px;
+      #purchase-table td[data-label="Prix Min/Base/Max (€)"],
+      #purchase-table td[data-label="Prix Exact (€)"],
+      #purchase-table td[data-label="Prix Affiché (€)"] {
+        padding: 6px 4px;
         text-align: center;
-        font-size: 0.8em;
+        font-size: 0.95em;
+        background: rgba(0,0,0,0.2);
+        margin: 4px 0;
+        border-radius: 4px;
       }
       
       #purchase-table td[data-label="Prix Min/Base/Max (€)"]::before {
@@ -666,62 +726,84 @@
         font-weight: bold;
         color: #888;
         display: block;
-        margin-bottom: 2px;
-      }
-      
-      #purchase-table td[data-label="Prix Exact (€)"] {
-        padding: 8px 4px;
-        text-align: center;
+        margin-bottom: 4px;
       }
       
       #purchase-table td[data-label="Prix Exact (€)"]::before {
         content: "Prix Exact: ";
         font-weight: bold;
         color: #888;
-      }
-      
-      #purchase-table td[data-label="Prix Affiché (€)"] {
-        padding: 8px 4px;
-        text-align: center;
+        display: block;
+        margin-bottom: 4px;
       }
       
       #purchase-table td[data-label="Prix Affiché (€)"]::before {
         content: "Prix Affiché: ";
         font-weight: bold;
         color: #00ff41;
+        display: block;
+        margin-bottom: 4px;
       }
       
       #purchase-table .current-price {
         color: #00ff41;
         font-weight: bold;
-        font-size: 1em;
+        font-size: 1.1em;
       }
       
       #purchase-table .next-price {
         color: #888;
-        font-size: 0.8em;
-        margin-top: 2px;
+        font-size: 0.9em;
+        margin-top: 4px;
+        display: block;
       }
       
       #purchase-table td[data-label="Actions"] {
-        grid-column: 3;
-        padding: 0;
+        padding: 16px 0 0 0;
         display: flex;
-        justify-content: flex-end;
+        flex-direction: column;
+        gap: 8px;
         align-items: center;
       }
       
       #purchase-table td[data-label="Actions"]::before {
-        display: none;
+        content: "Actions:";
+        font-weight: bold;
+        color: #00ff41;
+        margin-bottom: 8px;
+        display: block;
+        text-align: center;
       }
       
       #purchase-table .btn {
-        padding: 8px 16px;
-        font-size: 0.9em;
+        padding: 12px 20px;
+        font-size: 1em;
         margin: 0;
-        min-width: 80px;
-        border-radius: 6px;
+        width: 90%;
+        max-width: 250px;
+        border-radius: 8px;
+        text-align: center;
         white-space: nowrap;
+        min-height: 44px; /* Améliore l'accessibilité tactile */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* Boutons spécifiques */
+      #purchase-table .btn:nth-child(1) {
+        background: linear-gradient(45deg, #4CAF50, #388E3C);
+        color: white;
+      }
+      
+      #purchase-table .btn:nth-child(2) {
+        background: linear-gradient(45deg, #2196F3, #1976D2);
+        color: white;
+      }
+      
+      #purchase-table .btn:nth-child(3) {
+        background: linear-gradient(45deg, #FF9800, #F57C00);
+        color: white;
       }
       
       /* Réduire l'espacement pour les inputs de prix */

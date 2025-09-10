@@ -668,18 +668,16 @@ function initializeAdminControls() {
     
     // Initialiser le sélecteur de thème admin
     if (adminThemeSelect) {
-        const currentTheme = (localStorage.getItem('theme') === 'dark') ? 'dark' : 'light';
+        const currentTheme = (localStorage.getItem('main-theme') === 'dark') ? 'dark' : 'light';
         adminThemeSelect.value = currentTheme;
         adminThemeSelect.addEventListener('change', (e) => {
-            const t = e.target.value === 'dark' ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', t);
-            localStorage.setItem('theme', t);
-            // Synchroniser avec l'autre sélecteur
-            const themeSelect = document.getElementById('theme-select');
-            if (themeSelect) themeSelect.value = t;
-            // Envoyer signal à l'interface principale
-            localStorage.setItem('theme-sync-signal', Date.now().toString());
-            console.log('🎨 Thème admin changé:', t);
+            const theme = e.target.value === 'dark' ? 'dark' : 'light';
+            
+            // Sauvegarder pour l'interface principale
+            localStorage.setItem('main-theme', theme);
+            localStorage.setItem('main-theme-signal', Date.now().toString());
+            
+            console.log('🎨 Thème interface principale changé depuis admin:', theme);
         });
         console.log('✅ Sélecteur de thème admin initialisé');
     } else {
