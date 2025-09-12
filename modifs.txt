@@ -1,2 +1,0 @@
-éccriture en mode téléphone en dessous du titre pas bien sur le bandeau
-retirer le formulaire automatique qui s'ouvre 

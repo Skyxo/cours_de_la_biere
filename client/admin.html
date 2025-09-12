@@ -150,9 +150,12 @@
     /* Styles pour la colonne prix min/max */
     .price-range {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       font-size: 0.85em;
       line-height: 1.2;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
     
     .min-price {
@@ -259,7 +262,7 @@
     
     .drinks-table-header {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+      grid-template-columns: 2fr 80px 1fr 1fr 1fr 1fr auto;
       gap: 10px;
       background: rgba(var(--accent), 0.15);
       backdrop-filter: blur(10px); /* Effet de flou derrière */
@@ -277,7 +280,7 @@
     
     .drinks-table-row {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+      grid-template-columns: 2fr 80px 1fr 1fr 1fr 1fr auto;
       gap: 10px;
       padding: 10px;
       border-bottom: 1px solid rgba(var(--accent), 0.1);
@@ -807,7 +810,11 @@
         display: inline;
       }
       
-      #purchase-table td[data-label="Prix Min/Base/Max (€)"],
+      .drink-name {
+        font-weight: bold;
+        font-size: 1em;
+      }
+      
       #purchase-table td[data-label="Prix Exact (€)"],
       #purchase-table td[data-label="Prix Affiché (€)"] {
         padding: 6px 4px;
@@ -818,12 +825,47 @@
         border-radius: 4px;
       }
       
-      #purchase-table td[data-label="Prix Min/Base/Max (€)"]::before {
-        content: "Min/Base/Max: ";
-        font-weight: bold;
-        color: #888;
-        display: block;
-        margin-bottom: 4px;
+      
+      /* S'assurer que les prix restent en ligne même en mode responsive */
+      #purchase-table .price-range {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+      }
+      
+      /* Style pour les prix cliquables */
+      .clickable-price {
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        border: 2px dashed transparent;
+        background: linear-gradient(45deg, rgba(0, 255, 65, 0.1), rgba(0, 255, 65, 0.05));
+        position: relative;
+      }
+      
+      .clickable-price:hover {
+        background: linear-gradient(45deg, rgba(0, 255, 65, 0.2), rgba(0, 255, 65, 0.1));
+        border-color: rgba(0, 255, 65, 0.5);
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0, 255, 65, 0.3);
+      }
+      
+      .clickable-price::after {
+        content: "✏️";
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 10px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      
+      .clickable-price:hover::after {
+        opacity: 1;
       }
       
       #purchase-table td[data-label="Prix Exact (€)"]::before {
@@ -1273,21 +1315,28 @@
           </button>
         </div>
         
+        <!-- Bouton de reset des prix -->
+        <div style="margin-top: 25px; text-align: center;">
+          <button onclick="resetAllPrices()" class="btn" style="background: linear-gradient(45deg, #2196F3, #1976D2); color: white; font-weight: 600; border: 2px solid #0D47A1; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3); font-size: 16px; padding: 12px 20px;">
+            🔄 Remettre tous les prix de base
+          </button>
+        </div>
+
         <!-- Happy Hour intégré dans les contrôles marché -->
-        <div style="margin-top: 25px; padding: 15px; border: 2px solid #FFD700; border-radius: 8px; background: linear-gradient(45deg, #FFF8DC, #FFFACD);">
-          <h4 style="margin: 0 0 15px 0; color: #B8860B; display: flex; align-items: center; gap: 8px;">
+        <div style="margin-top: 25px; padding: 15px; border: 2px solid #FFD700; border-radius: 8px; background: linear-gradient(45deg, #2C1810, #3D2317); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);">
+          <h4 style="margin: 0 0 15px 0; color: #FFD700; display: flex; align-items: center; gap: 8px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
             🍺 Happy Hour !
           </h4>
           <div class="market-controls" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap; margin-bottom: 15px;">
             <div style="flex: 1; min-width: 200px;">
-              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--text));">Boisson :</label>
-              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: rgba(var(--surface), 0.9); color: rgb(var(--text)); font-size: 14px;">
+              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: #FFD700;">Boisson :</label>
+              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: #1a1a1a; color: #FFD700; font-size: 14px;">
                 <option value="">🍺 Sélectionner une boisson...</option>
               </select>
             </div>
             <div style="min-width: 120px;">
-              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--text));">Durée (sec) :</label>
-              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: rgba(var(--surface), 0.9); color: rgb(var(--text)); font-size: 14px;">
+              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: #FFD700;">Durée (sec) :</label>
+              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: #1a1a1a; color: #FFD700; font-size: 14px;">
             </div>
             <button onclick="startHappyHour()" class="btn" style="background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: 600; border: 2px solid #FF8C00; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);">
               🌟 Lancer Happy Hour
@@ -1298,10 +1347,10 @@
           </div>
           
           <!-- Liste des Happy Hours actives -->
-          <div id="active-happy-hours" style="border: 1px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(var(--surface), 0.5);">
-            <h5 style="margin: 0 0 8px 0; color: #B8860B;">🌟 Happy Hours Actives :</h5>
+          <div id="active-happy-hours" style="border: 2px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(26, 26, 26, 0.9);">
+            <h5 style="margin: 0 0 8px 0; color: #FFD700; font-weight: bold;">🌟 Happy Hours Actives :</h5>
             <div id="happy-hours-list">
-              <p style="color: rgba(var(--text), 0.6); font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
+              <p style="color: #B8860B; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
             </div>
           </div>
         </div>
@@ -1318,12 +1367,14 @@
           <span class="toggle-icon" id="purchase-toggle">▼</span>
         </div>
         <div class="section-content" id="purchase-section">
+          <div class="help-message" style="background: linear-gradient(45deg, rgba(0, 255, 65, 0.1), rgba(0, 255, 65, 0.05)); border: 1px solid rgba(0, 255, 65, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 14px;">
+            💡 <strong>Astuce :</strong> Cliquez sur les prix dans la colonne "Prix Exact" pour les modifier en direct !
+          </div>
           <div class="table-responsive">
             <table id="purchase-table" class="responsive-table" style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr>
                   <th>Boisson</th>
-                  <th>Prix Min/Base/Max (€)</th>
                   <th>Prix Exact (€)</th>
                   <th>Prix Affiché (€)</th>
                   <th>Actions</th>
@@ -1400,6 +1451,10 @@
                 <label for="new-drink-max">Prix max (€)</label>
                 <input type="number" id="new-drink-max" step="0.01" min="0" placeholder="10.00">
               </div>
+              <div class="form-group">
+                <label for="new-drink-alcohol">Degré d'alcool (°)</label>
+                <input type="number" id="new-drink-alcohol" step="0.1" min="0" max="100" placeholder="5.0">
+              </div>
               <div style="display: flex; gap: 10px;">
                 <button onclick="addDrink()" class="btn" id="add-drink-btn">Ajouter</button>
               </div>
@@ -1416,6 +1471,7 @@
             <div id="drinks-table-content" class="collapse show" style="display: none;">
               <div class="drinks-table-header">
                 <div>Nom</div>
+                <div>Degré (°)</div>
                 <div>Prix min</div>
                 <div>Prix base</div>
                 <div>Prix max</div>

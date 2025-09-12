@@ -423,11 +423,12 @@ class CSVDataManager:
             return 1
         return max(d['id'] for d in drinks) + 1
 
-    def add_drink(self, name: str, base_price: float, min_price: float, max_price: float) -> Dict:
+    def add_drink(self, name: str, base_price: float, min_price: float, max_price: float, alcohol_degree: float = 0.0) -> Dict:
         new_id = self._next_drink_id()
         base_price = float(base_price)
         min_price = float(min_price)
         max_price = float(max_price)
+        alcohol_degree = float(alcohol_degree)
         if not name or min_price <= 0 or max_price <= 0 or base_price <= 0:
             raise ValueError('Paramètres invalides pour la boisson')
         if not (min_price <= base_price <= max_price):
@@ -435,7 +436,7 @@ class CSVDataManager:
 
         with open(self.drinks_file, 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writerow([new_id, name, base_price, base_price, min_price, max_price, 5.0])  # 5.0 par défaut pour alcohol_degree
+            writer.writerow([new_id, name, base_price, base_price, min_price, max_price, alcohol_degree])
         return {
             'id': new_id,
             'name': name,
@@ -443,13 +444,15 @@ class CSVDataManager:
             'base_price': base_price,
             'min_price': min_price,
             'max_price': max_price,
+            'alcohol_degree': alcohol_degree,
         }
 
     def update_drink_fields(self, drink_id: int, name: Optional[str] = None,
                              base_price: Optional[float] = None,
                              min_price: Optional[float] = None,
                              max_price: Optional[float] = None,
-                             price: Optional[float] = None) -> Optional[Dict]:
+                             price: Optional[float] = None,
+                             alcohol_degree: Optional[float] = None) -> Optional[Dict]:
         updated = None
         with open(self.drinks_file, 'r', encoding='utf-8') as f:
             rows = list(csv.DictReader(f))
@@ -461,6 +464,7 @@ class CSVDataManager:
                 new_min = float(min_price) if min_price is not None else float(row['min_price'])
                 new_max = float(max_price) if max_price is not None else float(row['max_price'])
                 new_price = float(price) if price is not None else float(row['price'])
+                new_alcohol = float(alcohol_degree) if alcohol_degree is not None else float(row.get('alcohol_degree', 0))
 
                 if not (new_min <= new_base <= new_max):
                     raise ValueError('base_price doit être entre min_price et max_price')
@@ -472,6 +476,7 @@ class CSVDataManager:
                 row['min_price'] = str(new_min)
                 row['max_price'] = str(new_max)
                 row['price'] = str(new_price)
+                row['alcohol_degree'] = str(new_alcohol)
 
                 updated = row
                 break

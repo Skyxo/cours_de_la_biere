@@ -31,9 +31,14 @@ def load_timer_state():
                 timer_data = json.load(f)
                 market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
                 current_refresh_interval = timer_data.get('refresh_interval', 10000)
-                print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+                # Réduire les logs au démarrage
+                if not hasattr(load_timer_state, '_logged'):
+                    print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+                    load_timer_state._logged = True
         else:
-            print(f"⏰ Aucun état de timer sauvegardé trouvé, démarrage nouveau timer universel")
+            if not hasattr(load_timer_state, '_logged'):
+                print(f"⏰ Aucun état de timer sauvegardé trouvé, démarrage nouveau timer universel")
+                load_timer_state._logged = True
             # Créer immédiatement un état initial
             save_timer_state()
     except Exception as e:
@@ -53,7 +58,10 @@ def save_timer_state():
         }
         with open('data/timer_state.json', 'w') as f:
             json.dump(timer_data, f, indent=2)
-        print(f"💾 État du timer universel sauvegardé: {market_timer_start.isoformat()}")
+        # Réduire les logs : seulement afficher de temps en temps
+        if not hasattr(save_timer_state, '_last_log') or (datetime.now() - save_timer_state._last_log).seconds > 300:
+            print(f"💾 État du timer universel sauvegardé: {market_timer_start.isoformat()}")
+            save_timer_state._last_log = datetime.now()
     except Exception as e:
         print(f"❌ Erreur lors de la sauvegarde du timer: {e}")
 
@@ -87,8 +95,10 @@ def save_session():
         except Exception as e:
             print(f"Erreur lors de la sauvegarde de la session: {e}")
 
-# Charger l'état du timer au démarrage du serveur
-load_timer_state()
+# Charger l'état du timer au démarrage du serveur (seulement si c'est le processus principal)
+if __name__ == "__main__" or not hasattr(load_timer_state, '_loaded'):
+    load_timer_state()
+    load_timer_state._loaded = True
 
 # Sauvegarder périodiquement l'état du timer (toutes les 30 secondes)
 import threading
@@ -100,13 +110,19 @@ def periodic_timer_save():
         time.sleep(30)  # Attendre 30 secondes
         save_timer_state()
 
-# Démarrer le thread de sauvegarde périodique
-timer_save_thread = threading.Thread(target=periodic_timer_save, daemon=True)
-timer_save_thread.start()
-print("🔄 Sauvegarde périodique du timer universel démarrée (30s)")
+# Démarrer le thread de sauvegarde périodique seulement si c'est le processus principal
+if __name__ == "__main__" or not hasattr(periodic_timer_save, '_started'):
+    timer_save_thread = threading.Thread(target=periodic_timer_save, daemon=True)
+    timer_save_thread.start()
+    if not hasattr(periodic_timer_save, '_logged'):
+        print("🔄 Sauvegarde périodique du timer universel démarrée (30s)")
+        periodic_timer_save._logged = True
+    periodic_timer_save._started = True
 
 # Charger la session au démarrage
-load_session_if_exists()
+if __name__ == "__main__" or not hasattr(load_session_if_exists, '_loaded'):
+    load_session_if_exists()
+    load_session_if_exists._loaded = True
 
 app = FastAPI(title="Wall Street Bar")
 security = HTTPBasic()
@@ -165,6 +181,7 @@ class CreateDrinkRequest(BaseModel):
     base_price: float
     min_price: float
     max_price: float
+    alcohol_degree: Optional[float] = 0.0
 
 class SessionStartRequest(BaseModel):
     barman_name: str
@@ -343,7 +360,8 @@ async def buy(request: Request):
         if not current_drink:
             raise ValueError(f"Boisson avec ID {drink_id} non trouvée")
         
-        unit_price = current_drink['price']
+        unit_price = current_drink['price']  # Prix exact pour les calculs internes
+        displayed_price = current_drink['price_rounded']  # Prix affiché arrondi aux 10 centimes
         base_price = current_drink['base_price']
         
         if current_refresh_interval == 0:
@@ -353,14 +371,15 @@ async def buy(request: Request):
         
         # Enregistrer la vente dans la session si une session est active
         if current_session:
-            total_price = unit_price * quantity
-            profit_loss = (unit_price - base_price) * quantity
+            # Utiliser le prix affiché (arrondi) pour le calcul du profit/loss et du total
+            total_price = displayed_price * quantity
+            profit_loss = (displayed_price - base_price) * quantity
             
             sale = {
                 "drink_id": drink_id,
                 "drink_name": current_drink['name'],
                 "quantity": quantity,
-                "unit_price": unit_price,
+                "unit_price": displayed_price,  # Utiliser le prix affiché arrondi
                 "base_price": base_price,
                 "total_price": total_price,
                 "profit_loss": profit_loss,
@@ -568,7 +587,13 @@ async def admin_create_drink(payload: CreateDrinkRequest, admin: str = Depends(g
     check_session_active()
     
     try:
-        drink = data_manager.add_drink(payload.name, payload.base_price, payload.min_price, payload.max_price)
+        drink = data_manager.add_drink(
+            payload.name, 
+            payload.base_price, 
+            payload.min_price, 
+            payload.max_price, 
+            payload.alcohol_degree
+        )
         return {'status': 'created', 'drink': drink}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -754,7 +779,10 @@ async def admin_get_stats(admin: str = Depends(get_current_admin)):
 
 client_path = os.path.join(os.path.dirname(__file__), 'client')
 if os.path.isdir(client_path):
+    # Monter les fichiers client sur /client
+    app.mount("/client", StaticFiles(directory=client_path, html=True), name="client")
+    # Monter aussi à la racine pour compatibilité
     app.mount("/", StaticFiles(directory=client_path, html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)

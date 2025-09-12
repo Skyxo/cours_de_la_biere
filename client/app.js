@@ -73,6 +73,7 @@ let sortMode = localStorage.getItem('sort-mode') || 'price'; // Mode de tri: 'pr
 let chartColorBalance = 0; // Pour équilibrer rouge/vert : positif = plus de verts, négatif = plus de rouges
 let activeHappyHours = []; // Liste des Happy Hours actives
 let serverTimerSync = null; // Données de synchronisation du timer serveur
+let pendingNewDrinks = []; // Nouvelles boissons en attente de création de graphique au prochain cycle
 
 // Fonction pour vérifier si on est en mode transaction immédiate (timer = 0)
 function isImmediateMode() {
@@ -281,6 +282,29 @@ function generateMiniChart(drinkId, currentPrice) {
         <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         <circle cx="${5 + (50 * (history.length - 1)) / (history.length - 1)}" cy="${15 - ((lastPrice - minPrice) / priceRange) * 10}" r="2" fill="${color}" />
     </svg>`;
+}
+
+// Fonction pour adapter la grille au nombre de boissons
+function adaptGridLayout(drinkCount) {
+    if (!stockGrid) return;
+    
+    // Supprimer toutes les classes de layout précédentes
+    stockGrid.className = stockGrid.className.replace(/\bgrid-layout-\d+\b/g, '').replace(/\s+/g, ' ').trim();
+    
+    // Ajouter la classe appropriée selon le nombre de boissons
+    if (drinkCount <= 4) {
+        stockGrid.classList.add('grid-layout-1-4');
+    } else if (drinkCount <= 8) {
+        stockGrid.classList.add('grid-layout-5-8');
+    } else if (drinkCount <= 12) {
+        stockGrid.classList.add('grid-layout-9-12');
+    } else if (drinkCount <= 16) {
+        stockGrid.classList.add('grid-layout-13-16');
+    } else {
+        stockGrid.classList.add('grid-layout-many');
+    }
+    
+    console.log(`🎯 Grille adaptée pour ${drinkCount} boissons`);
 }
 
 // Éléments DOM pour le mur de bourse
@@ -609,6 +633,20 @@ async function fetchPrices() {
     
     isRefreshing = true;
     try {
+        // Créer les graphiques des nouvelles boissons ajoutées au cycle précédent
+        if (pendingNewDrinks.length > 0) {
+            console.log(`📊 Création des graphiques pour ${pendingNewDrinks.length} nouvelle(s) boisson(s)`);
+            pendingNewDrinks.forEach(drinkId => {
+                // Trouver la boisson dans les données précédentes pour créer son graphique
+                const drink = lastDrinksData.find(d => d.id === drinkId);
+                if (drink) {
+                    createOrUpdateStockChart(drink);
+                }
+            });
+            // Vider la liste des boissons en attente
+            pendingNewDrinks = [];
+        }
+        
         // Récupérer les prix et les Happy Hours en parallèle avec retry
         const [pricesRes, happyHoursRes] = await Promise.all([
             fetchWithRetry(`${API_BASE}/prices`),
@@ -820,8 +858,11 @@ function renderStockWall(drinks, activeDrinksList = null) {
     // Sauvegarder les données pour le re-tri
     lastDrinksData = drinks || [];
     
-    // Nettoyer les animations précédentes en mode immédiat
-    clearPreviousAnimations();
+    // Nettoyer les animations précédentes seulement au premier chargement
+    // Pas lors des cycles de timer pour garder les indicateurs de changement
+    if (isInitialLoad) {
+        clearPreviousAnimations();
+    }
     
     if (!stockGrid) {
         console.error('Debug: stockGrid element not found!');
@@ -834,6 +875,9 @@ function renderStockWall(drinks, activeDrinksList = null) {
         stockGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #fff; padding: 50px;">Aucune donnée disponible</div>';
         return;
     }
+    
+    // Adapter la grille au nombre de boissons
+    adaptGridLayout(drinks.length);
     
     // Si c'est le premier chargement, créer toute l'interface
     if (isInitialLoad) {
@@ -866,33 +910,54 @@ function renderStockWall(drinks, activeDrinksList = null) {
         isInitialLoad = false; // Marquer que le premier chargement est terminé
         
     } else {
-        // Mise à jour : détecter les vrais changements de prix
+        // Mise à jour : détecter les vrais changements de prix ET les nouvelles boissons
         
         const drinksWithPriceChanges = [];
+        const newDrinks = [];
         
         drinks.forEach((drink) => {
             const previousPrice = previousPrices[drink.id];
             const hasPriceChanged = previousPrice !== undefined && Math.abs(previousPrice - drink.price) > 0.001;
             
+            // Vérifier si c'est une nouvelle boisson (pas de tuile existante)
+            const existingTile = document.getElementById(`tile-${drink.id}`);
+            const isNewDrink = !existingTile;
+            
             if (hasPriceChanged) {
                 drinksWithPriceChanges.push(drink);
-            } else {
             }
             
-            // Mettre à jour les prix dans les tuiles existantes (toujours)
-            updateStockTilePrice(drink);
-            
-            // Mettre à jour lastPrices APRÈS updateStockTilePrice pour la prochaine détection
-            lastPrices[drink.id] = drink.price;
-            
-            // Sauvegarder le nouveau prix pour la prochaine comparaison
-            previousPrices[drink.id] = drink.price;
+            if (isNewDrink) {
+                newDrinks.push(drink);
+                // Créer la tuile pour la nouvelle boisson
+                const tile = createStockTile(drink);
+                stockGrid.appendChild(tile);
+                // Initialiser les prix précédents
+                previousPrices[drink.id] = drink.price;
+                lastPrices[drink.id] = drink.price;
+                // Ajouter à la liste des boissons en attente de graphique
+                pendingNewDrinks.push(drink.id);
+            } else {
+                // Mettre à jour les prix dans les tuiles existantes (toujours)
+                updateStockTilePrice(drink);
+                
+                // Mettre à jour lastPrices APRÈS updateStockTilePrice pour la prochaine détection
+                lastPrices[drink.id] = drink.price;
+                
+                // Sauvegarder le nouveau prix pour la prochaine comparaison
+                previousPrices[drink.id] = drink.price;
+            }
         });
         
-        // Mettre à jour SEULEMENT les graphiques des boissons dont le prix a changé
+        // Mettre à jour SEULEMENT les graphiques des boissons dont le prix a changé (pas les nouvelles)
         drinksWithPriceChanges.forEach((drink) => {
             createOrUpdateStockChart(drink);
         });
+        
+        // Les nouvelles boissons n'auront leur graphique créé qu'au prochain cycle du timer
+        if (newDrinks.length > 0) {
+            console.log(`🆕 ${newDrinks.length} nouvelle(s) boisson(s) ajoutée(s), graphiques créés au prochain cycle`);
+        }
         
         // Re-trier les tuiles selon le mode choisi
         const sortedDrinks = getSortedDrinks(drinks);
@@ -1051,8 +1116,14 @@ function updateStockTilePrice(drink) {
         variationElement.className = `tile-variation ${trend.class}`;
     }
     
-    // Mettre à jour la classe de tendance de la tuile
-    tile.className = `stock-tile trend-${trend.class}`;
+    // Mettre à jour la classe de tendance de la tuile en préservant les autres classes importantes
+    const existingClasses = tile.className.split(' ').filter(cls => 
+        cls.startsWith('price-flash-') || 
+        cls === 'happy-hour-active' || 
+        cls.startsWith('grid-layout-') ||
+        cls.startsWith('special-')
+    );
+    tile.className = `stock-tile trend-${trend.class} ${existingClasses.join(' ')}`.trim();
     
     // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
@@ -1929,10 +2000,13 @@ window.addEventListener('storage', (e) => {
     
     // Synchronisation du thème principal depuis l'admin
     if (e.key === 'main-theme-signal') {
+        console.log('🎨 Signal de changement de thème reçu');
         const currentTheme = localStorage.getItem('main-theme') || 'dark';
+        console.log(`🎨 Thème à appliquer: ${currentTheme}`);
         const allowed = new Set(['light', 'dark']);
         const val = allowed.has(currentTheme) ? currentTheme : 'dark';
         applyTheme(val);
+        console.log('🎨 Thème appliqué');
     }
     
     // Synchronisation du toggle de graphique depuis l'admin
@@ -2072,6 +2146,9 @@ function applyTheme(themeName) {
     // Appliquer les couleurs personnalisées (si présentes) du thème actif
     try { applyCustomThemeFromStorage(); } catch {}
 }
+
+// Exposer la fonction globalement pour permettre l'accès depuis l'admin
+window.applyTheme = applyTheme;
 
 // ==============================
 // Application des couleurs custom

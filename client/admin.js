@@ -337,6 +337,7 @@ async function addDrink() {
     const base = parseFloat(document.getElementById('new-drink-base')?.value);
     const minp = parseFloat(document.getElementById('new-drink-min')?.value);
     const maxp = parseFloat(document.getElementById('new-drink-max')?.value);
+    const alcohol = parseFloat(document.getElementById('new-drink-alcohol')?.value) || 0;
     if (!name || isNaN(base) || isNaN(minp) || isNaN(maxp)) {
         showMessage('history-message', 'Champs boisson invalides', 'error');
         return;
@@ -345,7 +346,7 @@ async function addDrink() {
         const res = await fetch(`${API_BASE}/admin/drinks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken },
-            body: JSON.stringify({ name, base_price: base, min_price: minp, max_price: maxp })
+            body: JSON.stringify({ name, base_price: base, min_price: minp, max_price: maxp, alcohol_degree: alcohol })
         });
         if (res.ok) {
             showMessage('history-message', '🍺 Boisson ajoutée', 'success');
@@ -353,6 +354,7 @@ async function addDrink() {
             document.getElementById('new-drink-base').value = '';
             document.getElementById('new-drink-min').value = '';
             document.getElementById('new-drink-max').value = '';
+            document.getElementById('new-drink-alcohol').value = '';
             
             // Après ajout d'une nouvelle boisson, recharger les tableaux nécessaires
             await loadPurchaseTable(); // Nécessaire car nouvelle boisson
@@ -401,6 +403,7 @@ async function loadAdminDrinksList() {
             div.className = 'drinks-table-row';
             div.innerHTML = `
                 <input type="text" value="${d.name}" data-field="name">
+                <input type="number" step="0.1" min="0" max="100" value="${d.alcohol_degree || 0}" data-field="alcohol_degree">
                 <input type="number" step="0.01" value="${d.min_price}" data-field="min_price">
                 <input type="number" step="0.01" value="${d.base_price}" data-field="base_price">
                 <input type="number" step="0.01" value="${d.max_price}" data-field="max_price">
@@ -539,9 +542,32 @@ document.addEventListener('DOMContentLoaded', () => {
         
         adminThemeSelect.addEventListener('change', (e) => {
             const theme = e.target.value === 'dark' ? 'dark' : 'light';
+            console.log(`🎨 Admin: Changement de thème vers ${theme}`);
             localStorage.setItem('main-theme', theme);
+            console.log(`🎨 Admin: Thème sauvegardé dans localStorage`);
             localStorage.setItem('main-theme-signal', Date.now().toString());
-            console.log(`🎨 Thème interface principale changé: ${theme}`);
+            console.log(`🎨 Admin: Signal envoyé pour thème interface principale: ${theme}`);
+            
+            // Si nous sommes dans un iframe ou un onglet qui contient l'interface principale,
+            // appliquer le changement immédiatement aussi
+            try {
+                if (window.parent && window.parent !== window) {
+                    // Nous sommes dans un iframe
+                    if (window.parent.applyTheme) {
+                        window.parent.applyTheme(theme);
+                    }
+                } else {
+                    // Nous sommes dans un onglet séparé, le storage event devrait fonctionner
+                    // Mais on peut aussi essayer de trigger manuellement
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'main-theme-signal',
+                        newValue: Date.now().toString(),
+                        storageArea: localStorage
+                    }));
+                }
+            } catch (error) {
+                console.log('🎨 Pas possible de trigger direct, storage event utilisé');
+            }
         });
     }
 });
@@ -1271,16 +1297,16 @@ async function loadPurchaseTable() {
             const adminInfo_drink = adminInfo[drink.id] || { min_price: 0, max_price: 100 };
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td data-label="Boisson">${drink.name} <span class="alcohol-degree">${drink.alcohol_degree || 0}°</span></td>
-                <td data-label="Prix Min/Base/Max (€)">
-                  <span class="price-range">
+                <td data-label="Boisson">
+                  <div class="drink-name">${drink.name} <span class="alcohol-degree">${drink.alcohol_degree || 0}°</span></div>
+                  <div class="price-range" style="font-size: 0.85em; margin-top: 4px;">
                     <span class="min-price">${adminInfo_drink.min_price}€</span> / 
                     <span class="base-price">${adminInfo_drink.base_price || drink.price.toFixed(2)}€</span> / 
                     <span class="max-price">${adminInfo_drink.max_price}€</span>
-                  </span>
+                  </div>
                 </td>
                 <td data-label="Prix Exact (€)">
-                  <span class="price-exact-display" data-id="${drink.id}">${drink.price.toFixed(2)}€</span>
+                  <span class="price-exact-display clickable-price" data-id="${drink.id}" title="💡 Cliquez pour modifier le prix">${drink.price.toFixed(2)}€</span>
                   <input class="price-edit hidden" data-id="${drink.id}" type="number" step="0.01" min="${adminInfo_drink.min_price}" max="${adminInfo_drink.max_price}" value="${drink.price.toFixed(2)}">
                 </td>
                 <td data-label="Prix Affiché (€)">
@@ -1606,6 +1632,44 @@ async function triggerMarketBoom(level = 'medium') {
     } catch (error) {
         console.error('Erreur lors du déclenchement du boom:', error);
         showMessage('history-message', '❌ Erreur de connexion lors du boom', 'error');
+    }
+}
+
+// Fonction pour remettre tous les prix à leur valeur de base
+async function resetAllPrices() {
+    if (!confirm('🔄 Remettre tous les prix à leur valeur de base ? Cette action annulera tous les changements de prix.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/admin/market/reset`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': 'Basic ' + authToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showMessage('history-message', '🔄 PRIX REMIS À ZÉRO ! Tous les prix sont revenus à leur valeur de base', 'success');
+            
+            // Rafraîchir toutes les données admin
+            await loadPurchaseTable();
+            await loadHistory();
+            await loadAdminDrinksList();
+            
+            // Déclencher actualisation immédiate côté client + reset compteur
+            await triggerImmediateRefresh();
+            
+        } else {
+            const error = await response.json();
+            showMessage('history-message', `❌ Erreur reset: ${error.detail || 'Erreur inconnue'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('Erreur lors du reset des prix:', error);
+        showMessage('history-message', '❌ Erreur de connexion lors du reset', 'error');
     }
 }
 

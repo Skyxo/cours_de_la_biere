@@ -1,279 +1,203 @@
-# 🍺 Cours de la Bière - Simulation de Marché Boursier de Bar
+# 🍺 Cours de la Bière - Simulateur de Marché Boursier
 
-Une application web immersive qui transforme le service de bar en expérience de trading interactif, où les prix des boissons fluctuent en temps réel selon les achats des clients, créant une atmosphère de marché boursier dynamique et engageante.
+Un simulateur interactif de marché boursier pour les bières, développé en Python/FastAPI avec une interface web dynamique. Les prix fluctuent en temps réel selon l'offre et la demande, créant une expérience immersive de trading de bières !
 
-## 🎯 Concept
+![Bourse des Bières](https://img.shields.io/badge/Status-Production-brightgreen)
+![Python](https://img.shields.io/badge/Python-3.8+-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-yellow)
 
-Ce système révolutionne l'expérience du bar en appliquant les mécaniques de marché financier aux boissons :
-- Les prix fluctuent selon l'offre et la demande
-- Les achats font monter les prix (forte demande)
-- L'équilibrage automatique maintient l'attractivité du marché
-- Les événements de marché (crash, boom, Happy Hour) pimentent la soirée
-- Interface en temps réel avec graphiques financiers authentiques
-- **🔄 Synchronisation multi-écrans** : Projecteur + téléphones parfaitement synchronisés
+## 🚀 Fonctionnalités Principales
 
-## ✨ Fonctionnalités Principales
+### 📈 Marché en Temps Réel
+- **Prix dynamiques** : Les prix fluctuent selon les achats/ventes
+- **Timer universel** : Synchronisation automatique entre tous les clients
+- **Graphiques interactifs** : Visualisation en temps réel avec Chart.js
+- **Grille adaptive** : Interface responsive qui s'adapte au nombre de bières
 
-### 🎨 Interface Publique (Clients)
-- **Affichage en temps réel** des prix avec animations fluides
-- **Timer synchronisé serveur** : Plus de décalage entre les écrans
-- **Graphiques financiers** : Chandelier japonais, courbes, secteurs
-- **Mode sombre/clair** adaptatif pour tous les environnements
-- **Tri multi-critères** : Prix, alphabétique, degré d'alcool
-- **Happy Hour visuel** : Animations dorées et indicateurs spéciaux
-- **Responsive design** optimisé mobile/tablette/écran/projecteur
+### 🎯 Interface Utilisateur
+- **Affichage client** : Grille des bières avec prix en temps réel
+- **Interface admin** : Gestion complète du marché
+- **Thèmes multiples** : Mode sombre/clair et thèmes colorés
+- **Design responsive** : Optimisé pour tous les écrans (mobile, tablette, desktop)
 
-### 🛠️ Interface Administration (Barmans)
-- **Gestion de session** avec suivi de trésorerie en temps réel
-- **Contrôles de synchronisation** : Forcer sync, redémarrer timer
-- **Enregistrement d'achats** avec calcul automatique de profit/perte
-- **Contrôles de marché** : Crash, boom, reset des prix
-- **Happy Hour programmable** avec durée personnalisable
-- **Historique complet** de toutes les transactions
-- **Gestion des boissons** : CRUD complet avec prix min/base/max
-- **Indicateurs prix** : Min/Base/Max visibles pour les barmans
+### ⚡ Fonctionnalités Avancées
+- **Happy Hours** : Promotions temporaires avec effets visuels
+- **Événements de marché** : Crash et boom automatiques
+- **Sessions de trading** : Suivi des bénéfices/pertes
+- **Gestion des alcools** : Degrés d'alcool configurables
+- **Prix arrondis** : Affichage aux 10 centimes près
 
-### 🚀 Fonctionnalités Avancées
-- **🔄 Synchronisation multi-écrans** : Timer unique côté serveur, tous les clients synchronisés
-- **Système de session crash-resistant** : Sauvegarde automatique et reprise de session
-- **Optimisations performance** : Retry automatique, throttling animations, nettoyage mémoire
-- **Export automatique** : Génération CSV de fin de service pour comptabilité
-- **Synchronisation multi-onglets** : Cohérence entre toutes les interfaces ouvertes
-- **API robuste** : Gestion d'erreurs, timeouts, retry automatique
-- **Récupération automatique** : Reconnexion en cas de perte réseau
+### 🎮 Événements Spéciaux
+- **Market Crash** : Chute brutale des prix (4 niveaux d'intensité)
+- **Market Boom** : Explosion des prix (4 niveaux d'intensité)
+- **Happy Hours** : Prix réduits temporaires avec animations
+- **Reset Global** : Remise à zéro de tous les prix
 
-## 🛠️ Architecture Technique
+## 🛠️ Technologies Utilisées
 
-### Backend (FastAPI)
-```
-server.py          # API REST principale
-csv_data.py        # Gestionnaire de données CSV
-data/
-├── drinks.csv     # Base de données des boissons
-└── history.csv    # Historique des transactions
-```
+### Backend
+- **Python 3.8+** avec FastAPI
+- **Uvicorn** pour le serveur ASGI
+- **CSV** pour la persistance des données
+- **Threading** pour les timers asynchrones
 
-### Frontend (Vanilla JS)
-```
-client/
-├── index.html     # Interface publique (clients)
-├── admin.html     # Interface administration (barmans)
-├── app.js         # Logic interface publique
-├── admin.js       # Logic interface administration
-├── charts.js      # Moteur de graphiques Chart.js
-└── style.css      # Styles unifiés responsive
-```
+### Frontend  
+- **HTML5/CSS3** avec design moderne
+- **JavaScript ES6+** (Vanilla, pas de framework)
+- **Chart.js** pour les graphiques
+- **CSS Grid/Flexbox** pour la responsivité
 
-### APIs Principales
-- `GET /prices` - Prix actuels et données publiques
-- `POST /buy` - Enregistrer un achat (fluctuation automatique)
-- `POST /admin/market/{action}` - Contrôles de marché (crash/boom/reset)
-- `POST /admin/happy-hour/start` - Démarrer Happy Hour
-- `GET /admin/session/current` - État session active
-- `POST /admin/session/{action}` - Gestion sessions (start/end/resume)
+### Architecture
+- **API RESTful** avec documentation automatique
+- **WebSocket-like polling** pour la synchronisation
+- **État partagé** entre tous les clients
+- **Sauvegarde automatique** des données
 
-## 🚀 Installation et Déploiement
+## 📦 Installation
 
 ### Prérequis
-- Python 3.8+
-- pip (gestionnaire de paquets Python)
+- Python 3.8 ou supérieur
+- pip (gestionnaire de packages Python)
 
-### Installation
+### Installation rapide
 ```bash
 # Cloner le projet
-git clone [url-du-repo]
+git clone https://github.com/votre-username/cours_de_la_biere.git
 cd cours_de_la_biere
 
 # Installer les dépendances
 pip install -r requirements.txt
 
-# Créer le répertoire de données
-mkdir -p data
-
-# Initialiser les données (optionnel - sera créé automatiquement)
-# Créer drinks.csv avec vos boissons
+# Lancer le serveur
+python server.py
 ```
 
-### Lancement
+### Accès à l'application
+- **Interface client** : http://localhost:8000/
+- **Interface admin** : http://localhost:8000/client/admin.html
+- **Documentation API** : http://localhost:8000/docs
+
+## 🎮 Utilisation
+
+### Interface Client
+1. Ouvrir http://localhost:8000/ dans votre navigateur
+2. Observer les prix qui fluctuent en temps réel
+3. Voir les graphiques de prix s'animer
+4. Profiter des Happy Hours et événements spéciaux !
+
+### Interface Admin
+1. Ouvrir http://localhost:8000/client/admin.html
+2. **Mot de passe par défaut** : `admin123`
+3. Gérer les bières, déclencher des événements, suivre les statistiques
+
+### Fonctionnalités Admin
+- ✅ Ajouter/Modifier/Supprimer des bières
+- ✅ Déclencher des événements de marché
+- ✅ Lancer des Happy Hours ciblées
+- ✅ Consulter l'historique des transactions
+- ✅ Gérer les sessions de trading
+- ✅ Modifier les prix en direct
+
+## 🌐 Déploiement
+
+### Hébergement Cloud
+Ce projet a été testé et déployé avec succès sur **[Zomro.com](https://zomro.com)**. 
+
+⚠️ **Note importante** : Le serveur Zomro avait tendance à crasher toutes les 20 minutes si l'ordinateur de développement était éteint, car le processus `server.py` doit rester actif en permanence pour maintenir les timers et la synchronisation.
+
+### Déploiement Local/Production
 ```bash
-# Démarrer le serveur
+# Lancer en mode production (sans reload)
 python server.py
 
-# Interface publique : http://localhost:8000/
-# Interface admin :    http://localhost:8000/admin.html
+# Ou avec Uvicorn directement
+uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
-### 🔄 Configuration Multi-Écrans
+## 📊 Structure du Projet
 
-Pour une utilisation optimale avec projecteur + téléphones :
-
-#### 1. Configuration réseau
-```bash
-# Obtenir l'IP du serveur
-ip addr show | grep "inet 192"
-
-# Démarrer le serveur accessible réseau
-python server.py
-# Le serveur écoute sur 0.0.0.0:8000
+```
+cours_de_la_biere/
+├── server.py              # Serveur FastAPI principal
+├── csv_data.py             # Gestion des données CSV
+├── requirements.txt        # Dépendances Python
+├── client/                 # Interface web
+│   ├── index.html         # Page client principale  
+│   ├── admin.html         # Interface d'administration
+│   ├── app.js             # Logique client
+│   ├── admin.js           # Logique admin
+│   ├── charts.js          # Gestion des graphiques
+│   └── style.css          # Styles CSS
+└── data/                  # Données persistantes
+    ├── drinks.csv         # Base de données des bières
+    ├── history.csv        # Historique des transactions
+    └── .gitkeep          # Préservation du dossier
 ```
 
-#### 2. Configuration des écrans
+## 🔧 Configuration
 
-**📺 Projecteur/Grand écran :**
-```
-http://[IP-SERVEUR]:8000/
-```
-- Interface publique pour les clients
-- Timer automatiquement synchronisé
-- Affichage des prix en temps réel
+### Paramètres Serveur
+- **Port** : 8000 (modifiable dans `server.py`)
+- **Host** : 0.0.0.0 (accessible depuis le réseau)
+- **Mot de passe admin** : `admin123` (à changer en production)
 
-**📱 Téléphones des barmans :**
-```
-http://[IP-SERVEUR]:8000/admin.html
-```
-- Interface d'administration
-- Contrôles de synchronisation
-- Gestion des achats et événements
+### Paramètres du Marché
+- **Intervalle de mise à jour** : 10 secondes (configurable)
+- **Persistance** : Sauvegarde automatique toutes les 30 secondes
+- **Happy Hours** : Durée de 1 seconde à 2 heures maximum
 
-#### 3. Contrôles de synchronisation
+## 🎨 Personnalisation
 
-Dans l'interface admin > "Intervalle d'actualisation" :
-- **🔄 Forcer la synchronisation** : Remet tous les écrans en phase
-- **⏰ Redémarrer le timer** : Démarre un nouveau cycle synchronisé
-- **Statut serveur** : Vérification de l'état de synchronisation
+### Ajouter des Bières
+1. Via l'interface admin : http://localhost:8000/client/admin.html
+2. Ou directement dans `data/drinks.csv`
 
-### Configuration classique
-- **Port** : Modifier dans `server.py` (défaut: 8000)
-- **Données** : Éditer `data/drinks.csv` pour vos boissons
-- **Authentification admin** : Username/password dans `server.py`
+### Modifier les Thèmes
+- Éditer `client/style.css`
+- Ajouter de nouveaux thèmes dans la section "Thèmes"
+- Utiliser les boutons de thème dans l'interface
 
-## 📊 Données et Configuration
+### Configurer les Événements
+- Modifier les paramètres dans `server.py` 
+- Ajuster les pourcentages de crash/boom
+- Personnaliser les durées des Happy Hours
 
-### Structure des Boissons (drinks.csv)
-```csv
-id,name,price,base_price,min_price,max_price,alcohol_degree
-1,Leffe Blonde,1.50,1.50,1.00,2.50,6.6
-2,Paix Dieu,3.30,3.30,2.80,4.50,10.0
-```
+## 🐛 Dépannage
 
-### Paramètres Clés
-- **Fluctuation d'achat** : +5% du prix actuel par achat
-- **Équilibrage automatique** : -5% sur les autres boissons
-- **Limites prix** : Respect strict des min/max configurés
-- **Happy Hour** : Prix fixe à (min + 0.20€) avec animation dorée
-- **Nettoyage auto** : Historique limité à 5000 entrées pour performance
+### Problèmes Courants
+- **Port 8000 déjà utilisé** : Modifier le port dans `server.py`
+- **Erreur de permissions** : Vérifier les droits d'écriture dans `/data`
+- **Synchronisation manquée** : Redémarrer le serveur
 
-## 🎮 Guide d'Utilisation
+### Logs de Debug
+Les logs détaillés sont affichés dans la console du serveur pour diagnostiquer les problèmes.
 
-### Pour les Clients
-1. **Consulter les prix** sur l'écran public en temps réel
-2. **Choisir le type d'affichage** : graphiques, liste, secteurs
-3. **Profiter des Happy Hours** : boissons dorées à prix spécial
-4. **Observer les fluctuations** causées par les autres clients
+## 📈 Roadmap
 
-### Pour les Barmans
-1. **Démarrer une session** avec nom du barman et caisse de départ
-2. **Enregistrer chaque vente** via l'interface d'achat
-3. **Utiliser les événements** (crash/boom) pour dynamiser la soirée
-4. **Programmer des Happy Hours** pour booster certaines boissons
-5. **Suivre les stats en temps réel** : CA, profit/perte, nombre de ventes
-6. **Terminer la session** pour export CSV automatique
+- [ ] Authentification utilisateur avancée
+- [ ] Base de données SQL (PostgreSQL/SQLite)
+- [ ] WebSockets pour synchronisation temps réel
+- [ ] API mobile (React Native/Flutter)
+- [ ] Système de notifications push
+- [ ] Analytics avancées
 
-### Événements de Marché
-- **💥 Crash** : -10% à -30% sur toutes les boissons (3 niveaux)
-- **📈 Boom** : +10% à +30% sur toutes les boissons (3 niveaux)
-- **🔄 Reset** : Retour aux prix de base
-- **🍯 Happy Hour** : Prix spécial avec animations dorées
+## 👨‍💻 Développeur
 
-## 🔧 Personnalisation
-
-### Ajout de Boissons
-Éditer `data/drinks.csv` avec les colonnes requises :
-- **id** : Identifiant unique
-- **name** : Nom de la boisson
-- **price** : Prix actuel
-- **base_price** : Prix de référence
-- **min_price** : Prix minimum possible
-- **max_price** : Prix maximum possible
-- **alcohol_degree** : Degré d'alcool
-
-### Modification des Paramètres
-Dans `csv_data.py` :
-- Fluctuation d'achat : `price_increase_percent`
-- Équilibrage : `balance_decrease_percent`
-- Dans `client/app.js` : Intervalles de rafraîchissement
-
-### Thèmes et Styles
-Dans `client/style.css` :
-- Variables CSS pour couleurs personnalisées
-- Mode sombre/clair automatique
-- Animations et transitions configurables
-
-## 🛡️ Sécurité et Robustesse
-
-### Sécurité
-- **Authentification HTTP Basic** pour l'interface admin
-- **Validation des données** côté serveur
-- **Sanitisation des entrées** utilisateur
-- **Séparation interfaces** publique/privée
-
-### Robustesse
-- **Retry automatique** des requêtes critiques
-- **Gestion des timeouts** et erreurs réseau
-- **Sauvegarde automatique** des sessions
-- **Nettoyage mémoire** automatique
-- **Historique limité** pour éviter la surcharge
-
-### Performance
-- **Throttling des animations** pour fluidité
-- **Compression automatique** des réponses
-- **Cache intelligent** côté client
-- **Optimisation mobile** avec chargement adaptatif
-
-## 📱 Compatibilité
-
-### Navigateurs Supportés
-- Chrome/Chromium 70+
-- Firefox 65+
-- Safari 12+
-- Edge 79+
-- Navigateurs mobiles modernes
-
-### Dispositifs
-- **Desktop** : Écrans larges avec interface complète
-- **Tablette** : Interface adaptée tactile
-- **Mobile** : Version responsive optimisée
-
-## 🤝 Contribution et Support
-
-### Technologies Utilisées
-- **Backend** : FastAPI (Python) - API REST moderne et rapide
-- **Frontend** : Vanilla JavaScript - Performances optimales sans framework
-- **Graphiques** : Chart.js - Bibliothèque de graphiques professionnels
-- **Stockage** : CSV - Simple, portable, éditable manuellement
-- **Styles** : CSS3 avec variables - Thèmes adaptatifs et animations fluides
-
-### Structure de Contribution
-1. Fork du projet
-2. Création de branche pour fonctionnalité
-3. Tests locaux complets
-4. Pull request avec description détaillée
-
-## 📄 Licence
-
-Ce projet est sous licence libre. Vous êtes encouragés à l'adapter, le modifier et le redistribuer selon vos besoins.
+**Charles Bergeat** (Nyhllö, U615, e24)  
+📧 Email : [charles.bergeat@gmail.com](mailto:charles.bergeat@gmail.com)  
+🎓 Projet développé dans le cadre des études d'ingénieur  
 
 ---
 
-## 🍻 Prêt pour le Service !
+## 📄 Licence
 
-Le système a été optimisé pour une utilisation en production lors de soirées réelles. Toutes les fonctionnalités sont robustes, les performances sont optimisées pour de longues sessions, et l'interface est intuitive pour clients et barmans.
+Ce projet est développé à des fins éducatives et de démonstration. Libre d'utilisation et de modification.
 
-**Démarrage rapide** :
-```bash
-python server.py
-# → Interface publique : http://localhost:8000/client/index.html
-# → Interface admin : http://localhost:8000/client/admin.html (admin/secret)
-```
+---
 
-Bonne soirée et que les meilleurs traders l'emportent ! 🍺📈
+## 🍻 Remerciements
+
+Merci à tous ceux qui ont testé et contribué à l'amélioration de ce simulateur de marché des bières !
+
+**Sec mes frères. 📐**
