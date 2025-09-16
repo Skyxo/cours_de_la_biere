@@ -1,1 +1,2 @@
-drink_id,drink_name,quantity,unit_price,base_price,total_price,profit_loss,timestamp
+id,drink_id,name,price,quantity,change,event,timestamp
+506427,7,Ambrée,2.537999999999998,1,0.028999999999999915,buy,2025-09-16T10:35:33.506502

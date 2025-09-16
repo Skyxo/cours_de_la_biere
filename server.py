@@ -184,7 +184,7 @@ class CreateDrinkRequest(BaseModel):
     alcohol_degree: Optional[float] = 0.0
 
 class SessionStartRequest(BaseModel):
-    barman_name: str
+    session_name: str
     starting_cash: Optional[float] = 0.0
 
 class SessionSale(BaseModel):
@@ -199,7 +199,7 @@ class SessionSale(BaseModel):
 
 class SessionStats(BaseModel):
     session_id: Optional[str]
-    barman_name: Optional[str]
+    session_name: Optional[str]
     start_time: Optional[str]
     starting_cash: float
     total_sales: float
@@ -432,7 +432,7 @@ async def start_session(request: SessionStartRequest, admin: str = Depends(get_c
     
     current_session = {
         "session_id": session_id,
-        "barman_name": request.barman_name,
+        "session_name": request.session_name,
         "start_time": datetime.now().isoformat(),
         "starting_cash": request.starting_cash,
         "is_active": True
@@ -456,7 +456,7 @@ async def get_current_session(admin: str = Depends(get_current_admin)):
     
     stats = SessionStats(
         session_id=current_session.get('session_id'),
-        barman_name=current_session.get('barman_name'),
+        session_name=current_session.get('session_name'),
         start_time=current_session.get('start_time'),
         starting_cash=current_session.get('starting_cash', 0),
         total_sales=total_sales,
@@ -482,7 +482,18 @@ async def end_session(admin: str = Depends(get_current_admin)):
     drinks_sold = sum(sale['quantity'] for sale in session_sales)
     
     # Créer le fichier CSV de la session
-    session_filename = f"data/session_{current_session['session_id']}.csv"
+    session_id = current_session.get('session_id')
+    if not session_id:
+        # Générer un ID si manquant (cas de reprise de session ancienne)
+        session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        current_session['session_id'] = session_id
+
+    # Si c'est une session reprise, utiliser le nom de fichier original
+    resumed_from = current_session.get('resumed_from')
+    if resumed_from:
+        session_filename = f"data/{resumed_from}"
+    else:
+        session_filename = f"data/session_{session_id}.csv"
     
     try:
         with open(session_filename, 'w', newline='', encoding='utf-8') as csvfile:
@@ -494,11 +505,12 @@ async def end_session(admin: str = Depends(get_current_admin)):
             writer.writeheader()
             
             # Ligne de résumé de session
+            start_time = current_session.get("start_time") or current_session.get("created_at", datetime.now().isoformat())
             writer.writerow({
                 'drink_id': 'SESSION_SUMMARY',
-                'drink_name': f'Barman: {current_session["barman_name"]}',
+                'drink_name': f'Session: {current_session["session_name"]}',
                 'quantity': drinks_sold,
-                'unit_price': f'Start: {current_session["start_time"]}',
+                'unit_price': f'Start: {start_time}',
                 'base_price': f'End: {datetime.now().isoformat()}',
                 'total_price': total_sales,
                 'profit_loss': total_profit_loss,
@@ -557,6 +569,267 @@ async def resume_session(admin: str = Depends(get_current_admin)):
         return {"status": "resumed", "session": current_session, "sales_count": len(session_sales)}
     else:
         return {"status": "no_session", "message": "Aucune session à reprendre"}
+
+@app.get("/admin/sessions/list")
+async def list_previous_sessions(admin: str = Depends(get_current_admin)):
+    """Lister toutes les sessions précédentes"""
+    import glob
+    import os
+    import pandas as pd
+    
+    sessions = []
+    session_files = glob.glob("data/session_*.csv")
+    
+    for file_path in session_files:
+        try:
+            # Vérifier que le fichier existe toujours
+            if not os.path.exists(file_path):
+                continue
+                
+            filename = os.path.basename(file_path)
+            # Parse le nom de fichier pour extraire les infos
+            if filename.startswith("session_session_"):
+                timestamp_str = filename.replace("session_session_", "").replace(".csv", "")
+                created_at = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+            else:
+                # Fallback sur les stats du fichier
+                created_at = datetime.fromtimestamp(os.path.getctime(file_path))
+            
+            # Lire les données de la session depuis le CSV
+            try:
+                df = pd.read_csv(file_path)
+                
+                # Nettoyer les données : supprimer les lignes vides et les valeurs NaN
+                df = df.dropna(how='all')  # Supprimer les lignes complètement vides
+                df = df.fillna(0)  # Remplacer les NaN par 0
+                
+                if len(df) > 0:
+                    # Filtrer les lignes qui ne sont pas SESSION_SUMMARY pour les calculs
+                    data_rows = df[df['drink_id'] != 'SESSION_SUMMARY']
+                    summary_rows = df[df['drink_id'] == 'SESSION_SUMMARY']
+                    
+                    # Gérer les valeurs NaN avec fillna() et valeurs par défaut
+                    total_sales = data_rows['total_price'].fillna(0).sum()
+                    total_profit_loss = data_rows['profit_loss'].fillna(0).sum() 
+                    total_drinks_sold = data_rows['quantity'].fillna(0).sum()
+                    
+                    # Extraire le nom de session depuis SESSION_SUMMARY
+                    if len(summary_rows) > 0:
+                        session_info = summary_rows.iloc[0]['drink_name']  # "Session: Alice" ou "Barman: Alice" (rétrocompatibilité)
+                        if session_info and session_info.startswith('Session: '):
+                            session_name = session_info.replace('Session: ', '')
+                        elif session_info and session_info.startswith('Barman: '):
+                            session_name = session_info.replace('Barman: ', '')
+                        else:
+                            session_name = session_info or "Session inconnue"
+                    else:
+                        # Fallback: extraire depuis le nom de fichier
+                        if filename.startswith("session_session_"):
+                            timestamp_str = filename.replace("session_session_", "").replace(".csv", "")
+                            session_name = f"Session {timestamp_str}"
+                        else:
+                            session_name = filename.replace("session_", "").replace(".csv", "")
+                    
+                    # Calculer la durée depuis SESSION_SUMMARY si disponible
+                    duration_hours = None
+                    if len(summary_rows) > 0:
+                        try:
+                            # Extraire les timestamps de début/fin du SESSION_SUMMARY
+                            start_str = str(summary_rows.iloc[0]['unit_price'])  # Start: timestamp
+                            end_str = str(summary_rows.iloc[0]['base_price'])    # End: timestamp
+                            
+                            if start_str and end_str and start_str.startswith('Start: ') and end_str.startswith('End: '):
+                                start_time_str = start_str.replace('Start: ', '')
+                                end_time_str = end_str.replace('End: ', '')
+                                
+                                start_time = pd.to_datetime(start_time_str)
+                                end_time = pd.to_datetime(end_time_str)
+                                duration_hours = (end_time - start_time).total_seconds() / 3600
+                        except Exception as e:
+                            print(f"Erreur calcul durée session {filename}: {e}")
+                            duration_hours = None
+                    
+                    # Fallback: calculer depuis les ventes si pas de SESSION_SUMMARY
+                    if duration_hours is None and len(data_rows) > 1:
+                        try:
+                            first_sale = pd.to_datetime(data_rows['timestamp'].iloc[0])
+                            last_sale = pd.to_datetime(data_rows['timestamp'].iloc[-1])
+                            duration_hours = (last_sale - first_sale).total_seconds() / 3600
+                        except:
+                            duration_hours = None
+                else:
+                    total_sales = 0
+                    total_profit_loss = 0
+                    total_drinks_sold = 0
+                    session_name = "Session vide"
+                    duration_hours = None
+                    
+            except Exception as e:
+                # Si erreur de lecture CSV, utiliser des valeurs par défaut
+                total_sales = 0
+                total_profit_loss = 0
+                total_drinks_sold = 0
+                session_name = "Données indisponibles"
+                duration_hours = None
+            
+            sessions.append({
+                "filename": filename,
+                "created_at": created_at.isoformat(),
+                "session_name": session_name,  # Changé de barman_name à session_name
+                "total_sales": float(total_sales) if not pd.isna(total_sales) else 0.0,
+                "total_profit_loss": float(total_profit_loss) if not pd.isna(total_profit_loss) else 0.0,
+                "total_drinks_sold": int(total_drinks_sold) if not pd.isna(total_drinks_sold) else 0,
+                "duration_hours": float(duration_hours) if duration_hours is not None and not pd.isna(duration_hours) else None
+            })
+            
+        except Exception as e:
+            print(f"Erreur lors de l'analyse de {file_path}: {e}")
+            continue
+    
+    return {"sessions": sessions}
+
+@app.post("/admin/session/resume/{filename}")
+async def resume_specific_session(filename: str, admin: str = Depends(get_current_admin)):
+    """Reprendre une session spécifique"""
+    global current_session, session_sales
+    
+    import os
+    
+    # Sécurité : vérifier que le fichier existe et est valide
+    if not filename.endswith('.csv') or '..' in filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide")
+    
+    file_path = f"data/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"Session {filename} non trouvée. Le fichier a peut-être été supprimé.")
+    
+    try:
+        # Arrêter la session actuelle si elle existe
+        if current_session and current_session.get('is_active'):
+            current_session['is_active'] = False
+            save_session()
+        
+        # Charger les données de la session depuis le CSV
+        import pandas as pd
+        df = pd.read_csv(file_path)
+        
+        # Filtrer les lignes de données réelles (ignorer les lignes de métadonnées)
+        # Les lignes valides sont celles qui n'ont pas SESSION_SUMMARY dans drink_id
+        df_sales = df[df['drink_id'] != 'SESSION_SUMMARY']
+        df_sales = df_sales.dropna(subset=['drink_id'])  # Supprimer les lignes vides
+        
+        # Extraire les informations de la session depuis la ligne SESSION_SUMMARY
+        session_info = df[df['drink_id'] == 'SESSION_SUMMARY']
+        if len(session_info) > 0:
+            session_info_name = session_info.iloc[0]['drink_name']  # Format: "Session: nom" ou "Barman: nom" (rétrocompatibilité)
+            if session_info_name and session_info_name.startswith('Session: '):
+                session_name = session_info_name.replace('Session: ', '')
+            elif session_info_name and session_info_name.startswith('Barman: '):
+                session_name = session_info_name.replace('Barman: ', '')
+            else:
+                session_name = "Session inconnue"
+            
+            start_time_info = session_info.iloc[0]['unit_price']  # Format: "Start: timestamp"
+            if start_time_info and start_time_info.startswith('Start: '):
+                try:
+                    created_at = pd.to_datetime(start_time_info.replace('Start: ', '')).to_pydatetime()
+                except:
+                    created_at = datetime.now()
+            else:
+                created_at = datetime.now()
+        else:
+            session_name = "Session inconnue"
+            created_at = datetime.now()
+        
+        # Extraire l'ID de session original du nom de fichier
+        # Format: session_session_YYYYMMDD_HHMMSS.csv
+        if filename.startswith("session_session_"):
+            original_session_id = filename.replace("session_session_", "").replace(".csv", "")
+        else:
+            original_session_id = filename.replace("session_", "").replace(".csv", "")
+        
+        # Créer une session reprise basée sur les données existantes
+        current_session = {
+            "session_id": f"session_{original_session_id}",  # Préfixer avec "session_"
+            "session_name": session_name,
+            "start_time": created_at.isoformat(),  # Utiliser start_time comme les nouvelles sessions
+            "starting_cash": 0.0,  # Par défaut
+            "is_active": True,
+            "resumed_from": filename
+        }
+        
+        # Charger les ventes existantes
+        session_sales = []
+        for _, row in df.iterrows():
+            # Ignorer les lignes de résumé et les lignes vides
+            drink_id = row.get('drink_id', '')
+            drink_name = row.get('drink_name', '')
+            
+            # Vérifier que c'est une vraie vente (drink_id numérique)
+            try:
+                int(drink_id)  # Essayer de convertir en int
+                # Si ça marche, c'est une vraie vente
+                session_sales.append({
+                    "drink_id": drink_id,
+                    "drink_name": drink_name,
+                    "quantity": row.get('quantity', 0),
+                    "unit_price": row.get('unit_price', 0),
+                    "base_price": row.get('base_price', 0),
+                    "total_price": row.get('total_price', 0),
+                    "profit_loss": row.get('profit_loss', 0),
+                    "timestamp": row.get('timestamp', datetime.now().isoformat())
+                })
+            except (ValueError, TypeError):
+                # Ignorer les lignes non-numériques (SESSION_SUMMARY, lignes vides, etc.)
+                continue
+        
+        # Sauvegarder la nouvelle session
+        save_session()
+        
+        # Calculer la durée accumulée depuis SESSION_SUMMARY si disponible
+        accumulated_seconds = 0
+        if len(session_info) > 0:
+            try:
+                start_str = str(session_info.iloc[0]['unit_price'])  # "Start: timestamp"
+                end_str = str(session_info.iloc[0]['base_price'])    # "End: timestamp" 
+                
+                if start_str and end_str and start_str.startswith('Start: ') and end_str.startswith('End: '):
+                    start_time = pd.to_datetime(start_str.replace('Start: ', ''))
+                    end_time = pd.to_datetime(end_str.replace('End: ', ''))
+                    accumulated_seconds = int((end_time - start_time).total_seconds())
+            except Exception as e:
+                print(f"Erreur calcul durée accumulée: {e}")
+                accumulated_seconds = 0
+        
+        return {
+            "status": "resumed", 
+            "session": current_session, 
+            "sales_count": len(session_sales),
+            "accumulated_seconds": accumulated_seconds
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la reprise de session: {str(e)}")
+
+@app.delete("/admin/session/delete/{filename}")
+async def delete_session(filename: str, admin: str = Depends(get_current_admin)):
+    """Supprimer une session spécifique"""
+    import os
+    
+    # Sécurité : vérifier que le fichier existe et est valide
+    if not filename.endswith('.csv') or '..' in filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide")
+    
+    file_path = f"data/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Session non trouvée")
+    
+    try:
+        os.remove(file_path)
+        return {"status": "deleted", "message": f"Session {filename} supprimée avec succès"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
 
 @app.post('/crash')
 def crash():

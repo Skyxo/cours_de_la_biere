@@ -6,17 +6,19 @@ let sortMode = localStorage.getItem('sort-mode') || 'price';
 let currentSession = null;
 let sessionStartTime = null;
 let sessionUpdateInterval = null;
+let sessionTotalTime = 0; // Temps total cumulé en secondes
+let sessionResumeTime = null; // Moment où la session a été reprise
 
 // ===========================================
 // GESTION DES SESSIONS DE SERVICE
 // ===========================================
 
 async function startSession() {
-    const barmanName = document.getElementById('barmanName').value.trim();
+    const sessionName = document.getElementById('sessionName').value.trim();
     const startingCash = parseFloat(document.getElementById('startingCash').value) || 0;
     
-    if (!barmanName) {
-        showMessage('session-message', 'Veuillez entrer le nom du barman', 'error');
+    if (!sessionName) {
+        showMessage('session-message', 'Veuillez entrer le nom de la session', 'error');
         return;
     }
     
@@ -28,7 +30,7 @@ async function startSession() {
                 'Authorization': 'Basic ' + authToken 
             },
             body: JSON.stringify({ 
-                barman_name: barmanName,
+                session_name: sessionName,
                 starting_cash: startingCash 
             })
         });
@@ -36,7 +38,24 @@ async function startSession() {
         if (res.ok) {
             const data = await res.json();
             currentSession = data.session;
-            sessionStartTime = new Date(currentSession.start_time);
+            
+            // Initialiser les variables de temps pour une nouvelle session
+            sessionTotalTime = 0;
+            sessionResumeTime = new Date();
+            
+            // Initialiser sessionStartTime avec validation
+            if (currentSession && currentSession.start_time) {
+                const startTime = new Date(currentSession.start_time);
+                if (!isNaN(startTime.getTime())) {
+                    sessionStartTime = startTime;
+                } else {
+                    console.warn('Invalid start_time, using current time:', currentSession.start_time);
+                    sessionStartTime = new Date();
+                }
+            } else {
+                console.warn('No start_time available, using current time');
+                sessionStartTime = new Date();
+            }
             
             // Afficher l'interface de session active
             showActiveSession();
@@ -66,13 +85,49 @@ async function resumeSession() {
             
             if (data.status === 'resumed') {
                 currentSession = data.session;
-                sessionStartTime = new Date(currentSession.start_time);
+                
+                // Pour une session reprise, calculer le temps déjà écoulé si possible
+                // et définir le moment de reprise
+                sessionResumeTime = new Date();
+                
+                // Essayer de récupérer le temps total déjà écoulé depuis le localStorage
+                const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
+                if (savedSessionTime) {
+                    sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
+                } else {
+                    // Si pas de temps sauvegardé, commencer à 0 pour éviter la confusion
+                    sessionTotalTime = 0;
+                }
+                
+                // Initialiser sessionStartTime avec validation
+                if (currentSession && currentSession.start_time) {
+                    const startTime = new Date(currentSession.start_time);
+                    sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
+                } else {
+                    sessionStartTime = new Date();
+                }
                 showActiveSession();
                 startSessionTimer();
                 showMessage('session-message', `✅ Session reprise (${data.sales_count} ventes)`, 'success');
             } else if (data.status === 'already_active') {
                 currentSession = data.session;
-                sessionStartTime = new Date(currentSession.start_time);
+                
+                // Session déjà active, définir le moment de reprise et temps total
+                sessionResumeTime = new Date();
+                const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
+                if (savedSessionTime) {
+                    sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
+                } else {
+                    sessionTotalTime = 0;
+                }
+                
+                // Initialiser sessionStartTime avec validation
+                if (currentSession && currentSession.start_time) {
+                    const startTime = new Date(currentSession.start_time);
+                    sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
+                } else {
+                    sessionStartTime = new Date();
+                }
                 showActiveSession();
                 startSessionTimer();
                 showMessage('session-message', '✅ Session déjà active', 'success');
@@ -105,12 +160,22 @@ async function endSession() {
             // Arrêter le timer
             stopSessionTimer();
             
-            // Masquer l'interface de session active
-            showNoSession();
+            // Nettoyer le localStorage pour cette session
+            if (currentSession && currentSession.session_name) {
+                localStorage.removeItem(`session_time_${currentSession.session_name}`);
+            }
             
             // Réinitialiser les variables
             currentSession = null;
             sessionStartTime = null;
+            sessionTotalTime = 0;
+            sessionResumeTime = null;
+            
+            // Verrouiller immédiatement les sections
+            updateDrinkFormState();
+            
+            // Masquer l'interface de session active
+            showNoSession();
             
             showMessage('session-message', `✅ ${data.message}`, 'success');
         } else {
@@ -119,6 +184,172 @@ async function endSession() {
         }
     } catch (e) {
         showMessage('session-message', 'Erreur réseau lors de la fin de session', 'error');
+    }
+}
+
+// ========== Fonctions pour les sessions précédentes ==========
+
+async function loadPreviousSessions() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/sessions/list`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            displayPreviousSessions(data.sessions || []);
+        } else {
+            console.error('Erreur lors du chargement des sessions précédentes');
+        }
+    } catch (e) {
+        console.error('Erreur réseau lors du chargement des sessions précédentes:', e);
+    }
+}
+
+function displayPreviousSessions(sessions) {
+    const container = document.getElementById('previous-sessions-container');
+    const noSessionsMsg = document.getElementById('no-previous-sessions');
+    
+    if (!sessions || sessions.length === 0) {
+        noSessionsMsg.style.display = 'block';
+        // Supprimer toutes les cartes existantes
+        const existingCards = container.querySelectorAll('.session-card');
+        existingCards.forEach(card => card.remove());
+        return;
+    }
+    
+    noSessionsMsg.style.display = 'none';
+    
+    // Supprimer les cartes existantes
+    const existingCards = container.querySelectorAll('.session-card');
+    existingCards.forEach(card => card.remove());
+    
+    // Trier les sessions par date de création décroissante
+    const sortedSessions = sessions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    sortedSessions.forEach(session => {
+        const card = createSessionCard(session);
+        container.appendChild(card);
+    });
+}
+
+function createSessionCard(session) {
+    const card = document.createElement('div');
+    card.className = 'session-card';
+    
+    const createdDate = new Date(session.created_at);
+    const formattedDate = createdDate.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const duration = session.duration_hours 
+        ? `${Math.floor(session.duration_hours)}h${String(Math.round((session.duration_hours % 1) * 60)).padStart(2, '0')}m`
+        : 'En cours';
+        
+    const profitColor = session.total_profit_loss >= 0 ? '#4CAF50' : '#f44336';
+    
+    // Utiliser le template HTML existant
+    const template = document.getElementById('session-card-template');
+    if (!template) {
+        console.error('Template session-card-template non trouvé');
+        return card;
+    }
+    
+    // Cloner le contenu du template
+    const templateContent = template.content.cloneNode(true);
+    
+    // Remplir les données
+    templateContent.querySelector('.session-card-title').textContent = session.session_name;
+    templateContent.querySelector('.session-card-date').textContent = formattedDate;
+    
+    // Stats
+    const statValues = templateContent.querySelectorAll('.session-card-stat-value');
+    const statLabels = templateContent.querySelectorAll('.session-card-stat-label');
+    
+    statValues[0].textContent = `${session.total_sales.toFixed(2)} €`;
+    statValues[1].textContent = `${session.total_profit_loss >= 0 ? '+' : ''}${session.total_profit_loss.toFixed(2)} €`;
+    statValues[1].style.color = profitColor;
+    statValues[2].textContent = session.total_drinks_sold;
+    statValues[3].textContent = duration;
+    
+    // Boutons d'actions
+    const resumeBtn = templateContent.querySelector('.session-card-btn.resume');
+    const deleteBtn = templateContent.querySelector('.session-card-btn.delete');
+    
+    resumeBtn.onclick = () => resumeSpecificSession(session.filename);
+    deleteBtn.onclick = () => deleteSession(session.filename);
+    
+    // Ajouter le contenu à la carte
+    card.appendChild(templateContent);
+    
+    return card;
+}
+
+async function resumeSpecificSession(filename) {
+    if (!confirm('Reprendre cette session ? Cela remplacera la session actuelle.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/resume/${encodeURIComponent(filename)}`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            currentSession = data.session;
+            
+            // Initialiser sessionStartTime avec validation  
+            if (data.session && data.session.created_at) {
+                const startTime = new Date(data.session.created_at);
+                sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
+            } else {
+                sessionStartTime = new Date();
+            }
+            
+            // Initialiser les variables de temps pour le timer en reprenant la durée accumulée
+            sessionTotalTime = data.accumulated_seconds || 0;  // Durée déjà accumulée
+            sessionResumeTime = new Date();  // Moment de la reprise
+            
+            showActiveSession();
+            startSessionTimer();
+            
+            showMessage('session-message', '✅ Session reprise avec succès !', 'success');
+            loadPreviousSessions(); // Recharger la liste
+        } else {
+            const error = await res.json();
+            showMessage('session-message', `❌ Erreur: ${error.detail}`, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', '❌ Erreur réseau lors de la reprise de session', 'error');
+    }
+}
+
+async function deleteSession(filename) {
+    if (!confirm('Supprimer définitivement cette session ? Cette action est irréversible.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/delete/${encodeURIComponent(filename)}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        
+        if (res.ok) {
+            showMessage('session-message', '✅ Session supprimée avec succès !', 'success');
+            loadPreviousSessions(); // Recharger la liste
+        } else {
+            const error = await res.json();
+            showMessage('session-message', `❌ Erreur: ${error.detail}`, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', '❌ Erreur réseau lors de la suppression', 'error');
     }
 }
 
@@ -162,8 +393,23 @@ function showActiveSession() {
     document.getElementById('active-session').classList.remove('hidden');
     
     if (currentSession) {
-        document.getElementById('session-barman').textContent = currentSession.barman_name;
-        document.getElementById('session-start').textContent = new Date(currentSession.start_time).toLocaleString();
+        document.getElementById('session-name').textContent = currentSession.session_name;
+        
+        // Gérer l'affichage de la date de début avec validation
+        let startDateText = 'Date invalide';
+        if (currentSession.start_time) {
+            const startDate = new Date(currentSession.start_time);
+            if (!isNaN(startDate.getTime())) {
+                startDateText = startDate.toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit', 
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+        }
+        document.getElementById('session-start').textContent = startDateText;
     }
     
     // Mettre à jour les stats immédiatement
@@ -178,7 +424,7 @@ function showNoSession() {
     document.getElementById('active-session').classList.add('hidden');
     
     // Réinitialiser les champs
-    document.getElementById('barmanName').value = '';
+    document.getElementById('sessionName').value = '';
     document.getElementById('startingCash').value = '0';
     
     // Désactiver le formulaire d'ajout de boissons
@@ -196,30 +442,58 @@ function updateDrinkFormState() {
     const requireSessionElements = document.querySelectorAll('.require-session');
     
     if (currentSession && currentSession.is_active) {
-        // Session active - activer tous les éléments
+        // Session active - déverrouiller toutes les sections
         if (sessionWarning) sessionWarning.classList.add('hidden');
         if (globalSessionWarning) globalSessionWarning.classList.add('hidden');
-        if (addDrinkForm) addDrinkForm.style.opacity = '1';
+        // Suppression du changement d'opacité
         if (addDrinkBtn) addDrinkBtn.disabled = false;
         formInputs.forEach(input => input.disabled = false);
         
-        // Réactiver tous les éléments nécessitant une session
+        // Déverrouiller les sections et activer leurs boutons
         requireSessionElements.forEach(element => {
-            element.classList.remove('hidden-no-session');
+            element.classList.remove('locked');
+            // Activer tous les boutons dans cette section
+            const buttons = element.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            });
         });
         
     } else {
-        // Pas de session - désactiver tous les éléments
+        // Pas de session - verrouiller toutes les sections
         if (sessionWarning) sessionWarning.classList.remove('hidden');
         if (globalSessionWarning) globalSessionWarning.classList.remove('hidden');
-        if (addDrinkForm) addDrinkForm.style.opacity = '0.5';
+        // Suppression du changement d'opacité
         if (addDrinkBtn) addDrinkBtn.disabled = true;
         formInputs.forEach(input => input.disabled = true);
         
-        // Cacher/désactiver tous les éléments nécessitant une session
+        // Verrouiller les sections avec cadenas rouge
         requireSessionElements.forEach(element => {
-            element.classList.add('hidden-no-session');
+            element.classList.add('locked');
+            // Fermer la section si elle est ouverte et remettre tous les triangles à ▼
+            const content = element.querySelector('.section-content');
+            const toggle = element.querySelector('.toggle-icon');
+            if (content && content.classList.contains('active')) {
+                content.classList.remove('active');
+            }
+            // Remettre tous les triangles en position fermée
+            if (toggle) {
+                toggle.textContent = '▼';
+                toggle.classList.remove('rotated');
+            }
+            // Désactiver et griser tous les boutons dans cette section
+            const buttons = element.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+            });
         });
+        
+        // Réinitialiser tous les états des sections à fermé
+        sectionStates = {};
     }
 }
 
@@ -229,16 +503,33 @@ function startSessionTimer() {
     }
     
     sessionUpdateInterval = setInterval(() => {
-        // Mettre à jour la durée
-        if (sessionStartTime) {
+        // Calculer la durée totale en utilisant le temps cumulé + temps depuis reprise
+        let totalDuration = sessionTotalTime;
+        
+        if (sessionResumeTime && sessionResumeTime instanceof Date && !isNaN(sessionResumeTime.getTime())) {
             const now = new Date();
-            const duration = Math.floor((now - sessionStartTime) / 1000);
-            const hours = Math.floor(duration / 3600);
-            const minutes = Math.floor((duration % 3600) / 60);
-            const seconds = duration % 60;
+            const currentSegmentTime = Math.floor((now - sessionResumeTime) / 1000);
+            if (!isNaN(currentSegmentTime) && currentSegmentTime >= 0) {
+                totalDuration += currentSegmentTime;
+            }
+        }
+        
+        // Afficher la durée calculée
+        if (!isNaN(totalDuration) && totalDuration >= 0) {
+            const hours = Math.floor(totalDuration / 3600);
+            const minutes = Math.floor((totalDuration % 3600) / 60);
+            const seconds = totalDuration % 60;
             
             document.getElementById('session-duration').textContent = 
                 `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+            // Sauvegarder le temps total dans le localStorage pour la session
+            if (currentSession && currentSession.session_name) {
+                localStorage.setItem(`session_time_${currentSession.session_name}`, totalDuration.toString());
+            }
+        } else {
+            // Afficher un placeholder si la durée est invalide
+            document.getElementById('session-duration').textContent = '--:--:--';
         }
         
         // Mettre à jour les stats seulement toutes les 5 secondes
@@ -252,6 +543,16 @@ function stopSessionTimer() {
     if (sessionUpdateInterval) {
         clearInterval(sessionUpdateInterval);
         sessionUpdateInterval = null;
+    }
+    
+    // Sauvegarder le temps total cumulé quand on arrête le timer
+    if (sessionResumeTime && currentSession && currentSession.session_name) {
+        const now = new Date();
+        const currentSegmentTime = Math.floor((now - sessionResumeTime) / 1000);
+        if (!isNaN(currentSegmentTime) && currentSegmentTime >= 0) {
+            sessionTotalTime += currentSegmentTime;
+            localStorage.setItem(`session_time_${currentSession.session_name}`, sessionTotalTime.toString());
+        }
     }
 }
 
@@ -297,7 +598,26 @@ async function checkExistingSession() {
             
             if (data.session && data.session.is_active) {
                 currentSession = data.session;
-                sessionStartTime = new Date(currentSession.start_time);
+                
+                // Pour une session existante, initialiser le temps avec localStorage
+                sessionResumeTime = new Date();
+                
+                const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
+                if (savedSessionTime) {
+                    sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
+                } else {
+                    // Si pas de temps sauvegardé, commencer à 0 pour éviter la confusion
+                    sessionTotalTime = 0;
+                }
+                
+                // Initialiser sessionStartTime avec validation
+                if (currentSession.start_time) {
+                    const startTime = new Date(currentSession.start_time);
+                    sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
+                } else {
+                    sessionStartTime = new Date();
+                }
+                
                 showActiveSession();
                 startSessionTimer();
             } else {
@@ -722,6 +1042,7 @@ async function loadInitialData() {
     loadPriceControls(),
     loadPurchaseTable(), // Contient déjà les prix, donc pas besoin de loadHistory() ici
     loadAdminDrinksList(),
+    loadPreviousSessions(), // Charger les sessions précédentes
   ]);
   
   // Charger les données Happy Hour après que le DOM soit prêt
@@ -2148,6 +2469,14 @@ function toggleSection(sectionId) {
     const toggleIcon = document.getElementById(sectionId.replace('-section', '-toggle'));
     
     if (!section || !toggleIcon) return;
+    
+    // Vérifier si la section parente est verrouillée
+    const parentSection = section.closest('.require-session');
+    if (parentSection && parentSection.classList.contains('locked')) {
+        // Section verrouillée - afficher un message d'avertissement
+        showMessage('session-message', '🔒 Cette section nécessite une session active. Veuillez démarrer une session d\'abord.', 'error');
+        return;
+    }
     
     const isActive = section.classList.contains('active');
     

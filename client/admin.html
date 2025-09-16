@@ -217,6 +217,163 @@
       margin-top: 10px;
     }
     
+    /* Styles pour les cartes de sessions - desktop et mobile */
+    .sessions-scroll {
+      display: flex;
+      gap: 15px;
+      overflow-x: auto;
+      padding: 10px 0;
+      margin-bottom: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(var(--accent), 0.3) transparent;
+    }
+    
+    .sessions-scroll::-webkit-scrollbar {
+      height: 8px;
+    }
+    
+    .sessions-scroll::-webkit-scrollbar-track {
+      background: rgba(var(--accent), 0.1);
+      border-radius: 10px;
+    }
+    
+    .sessions-scroll::-webkit-scrollbar-thumb {
+      background: rgba(var(--accent), 0.3);
+      border-radius: 10px;
+    }
+    
+    .sessions-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(var(--accent), 0.5);
+    }
+    
+    .session-card {
+      min-width: 280px;
+      max-width: 320px;
+      background: linear-gradient(135deg, rgba(var(--accent), 0.05), rgba(var(--accent), 0.02));
+      border: 1px solid rgba(var(--accent), 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+      color: rgb(var(--text));
+    }
+    
+    .session-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      border-color: rgba(var(--accent), 0.4);
+    }
+    
+    .session-card-header {
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(var(--accent), 0.1);
+    }
+    
+    .session-card-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: rgb(var(--accent));
+      margin-bottom: 4px;
+    }
+    
+    .session-card-date {
+      font-size: 12px;
+      color: rgba(var(--text), 0.6);
+    }
+    
+    .session-card-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    
+    .session-card-stat {
+      text-align: center;
+    }
+    
+    .session-card-stat-value {
+      font-weight: 600;
+      font-size: 14px;
+      color: rgb(var(--accent));
+    }
+    
+    .session-card-stat-label {
+      font-size: 10px;
+      color: rgba(var(--text), 0.6);
+      margin-top: 2px;
+    }
+    
+    .session-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .session-card-btn {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 11px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .session-card-btn.resume {
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+    }
+    
+    .session-card-btn.resume:hover {
+      background: rgba(76, 175, 80, 1);
+      transform: scale(1.02);
+    }
+    
+    .session-card-btn.delete {
+      background: rgba(244, 67, 54, 0.9);
+      color: white;
+    }
+    
+    .session-card-btn.delete:hover {
+      background: rgba(244, 67, 54, 1);
+      transform: scale(1.02);
+    }
+    
+    .no-sessions {
+      text-align: center;
+      color: rgba(var(--text), 0.5);
+      font-style: italic;
+      padding: 20px;
+      min-width: 280px;
+    }
+    
+    /* Media queries pour mobile */
+    @media (max-width: 768px) {
+      .session-card {
+        min-width: 260px;
+        max-width: 280px;
+      }
+      
+      .session-card-stats {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      
+      .session-card-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .session-card-btn {
+        font-size: 10px;
+        padding: 5px 6px;
+      }
+    }
+    
     /* Responsive pour mobile */
     @media (max-width: 768px) {
       .accordion-container {
@@ -302,10 +459,10 @@
     .admin-header {
       text-align: center;
       margin-bottom: 30px;
-      padding: 20px;
-      background: rgba(var(--accent), 0.12);
+      padding: 0; /* Retirer le padding pour éviter la redondance */
+      background: transparent; /* Fond transparent pour éviter le conflit */
       border-radius: 10px;
-      border: 2px solid rgb(var(--accent));
+      border: none; /* Retirer la bordure pour éviter la redondance */
     }
     
     .admin-grid {
@@ -571,8 +728,8 @@
       justify-content: space-between;
       align-items: center;
       padding: 20px;
-      background: linear-gradient(90deg, rgba(var(--accent), 0.1), rgba(var(--accent), 0.05));
-      border-bottom: 2px solid rgb(var(--accent));
+      background: rgba(var(--accent), 0.08); /* Fond uniforme plus subtil */
+      border: 2px solid rgba(var(--accent), 0.3); /* Bordure plus subtile */
       margin-bottom: 30px;
       border-radius: 12px;
     }
@@ -1146,7 +1303,152 @@
         font-size: 0.75em;
         font-style: italic;
       }
-    }
+      
+      /* Neutraliser les effets visuels des éléments disabled */
+      input:disabled, 
+      button:disabled, 
+      select:disabled {
+        opacity: 1 !important;
+        color: inherit !important;
+        background-color: inherit !important;
+        cursor: pointer !important;
+        filter: none !important;
+      }
+      
+      /* Supprimer les différences visuelles pour les formulaires disabled */
+      form[style*="opacity"] {
+        opacity: 1 !important;
+      }
+      
+      /* Styles pour les sections verrouillées sans session */
+      .require-session.locked {
+        position: relative;
+      }
+      
+      .require-session.locked .section-content {
+        display: none !important;
+      }
+      
+      .require-session.locked .section-header {
+        opacity: 0.5;
+        cursor: not-allowed !important;
+        position: relative;
+        color: #6c757d !important;
+      }
+      
+      .require-session.locked .section-header h3,
+      .require-session.locked .section-header h4,
+      .require-session.locked .section-header h5,
+      .require-session.locked .section-header span,
+      .require-session.locked .section-header p {
+        color: #6c757d !important;
+        opacity: 0.6;
+        transition: color 0.3s ease, opacity 0.3s ease;
+      }
+      
+      /* Restaurer les couleurs normales quand les sections ne sont pas verrouillées */
+      .require-session:not(.locked) .section-header h3,
+      .require-session:not(.locked) .section-header h4,
+      .require-session:not(.locked) .section-header h5,
+      .require-session:not(.locked) .section-header span,
+      .require-session:not(.locked) .section-header p {
+        color: inherit;
+        opacity: 1;
+        transition: color 0.3s ease, opacity 0.3s ease;
+      }
+      
+      .require-session.locked .section-header::after {
+        content: "🔒";
+        color: #dc3545;
+        font-size: 1.2em;
+        margin-left: 10px;
+        animation: pulse 2s infinite;
+      }
+      
+      /* Cadenas pour les titres directement dans require-session (sans section-header) */
+      .require-session.locked > h3::after,
+      .require-session.locked > h4::after,
+      .require-session.locked > h5::after {
+        content: "🔒";
+        color: #dc3545;
+        font-size: 1.2em;
+        margin-left: 10px;
+        animation: pulse 2s infinite;
+      }
+      
+      /* Cadenas ouvert pour les sections déverrouillées */
+      .require-session:not(.locked) .section-header::after {
+        content: "🔓";
+        color: #28a745;
+        font-size: 1.2em;
+        margin-left: 10px;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+      }
+      
+      /* Cadenas ouvert pour les titres directement dans require-session */
+      .require-session:not(.locked) > h3::after,
+      .require-session:not(.locked) > h4::after,
+      .require-session:not(.locked) > h5::after {
+        content: "🔓";
+        color: #28a745;
+        font-size: 1.2em;
+        margin-left: 10px;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+      }
+      
+      .require-session:not(.locked) .section-header:hover::after {
+        opacity: 1;
+      }
+      
+      /* Effet hover pour les titres directs */
+      .require-session:not(.locked) > h3:hover::after,
+      .require-session:not(.locked) > h4:hover::after,
+      .require-session:not(.locked) > h5:hover::after {
+        opacity: 1;
+      }
+      
+      .require-session.locked .toggle-icon {
+        display: none;
+      }
+      
+      /* Styles pour les boutons désactivés dans les sections verrouillées */
+      .require-session.locked button:disabled {
+        background: #6c757d !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+        opacity: 0.4 !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+      }
+      
+      .require-session.locked button:disabled:hover {
+        background: #6c757d !important;
+        transform: none !important;
+      }
+      
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+      }
+      
+      /* Message de verrouillage */
+      .lock-message {
+        background: linear-gradient(45deg, #ffebee, #fce4ec);
+        border: 2px solid #dc3545;
+        border-radius: 8px;
+        padding: 12px;
+        margin: 10px 0;
+        color: #c62828;
+        text-align: center;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
   </style>
 </head>
 <body>
@@ -1202,9 +1504,6 @@
         </div>
       </div>
       
-      <h1>🔧 Interface Administrateur</h1>
-      <p>Gestion du marché des boissons en temps réel</p>
-      
       <!-- Message d'avertissement sans session -->
       <div id="global-session-warning" class="message warning hidden" style="margin: 20px 0; border: 2px solid #FF9800; background: linear-gradient(45deg, #FFF8DC, #FFFACD);">
         <h4 style="margin: 0 0 10px 0; color: #E65100; display: flex; align-items: center; gap: 8px;">
@@ -1217,10 +1516,20 @@
       </div>
       
       <!-- Section Gestion Session -->
-      <div id="session-section" style="margin: 20px 0; padding: 15px; border: 2px solid rgb(var(--accent)); border-radius: 8px; background: rgba(var(--surface), 0.9);">
+      <div id="session-section" style="margin: 20px 0; padding: 15px; border: 2px solid rgb(var(--accent)); border-radius: 8px; background: transparent;">
         <h3 style="margin: 0 0 15px 0; color: rgb(var(--accent)); display: flex; align-items: center; gap: 8px;">
           💼 Session de Service
         </h3>
+        
+        <!-- Panneau des sessions précédentes -->
+        <div class="previous-sessions-container">
+          <h4 style="margin: 0 0 10px 0; color: #6c757d; font-size: 1em;">📋 Sessions Précédentes</h4>
+          <div class="sessions-scroll" id="previous-sessions-container">
+            <div class="no-sessions" id="no-previous-sessions">
+              Aucune session précédente trouvée
+            </div>
+          </div>
+        </div>
         
         <!-- Indicateur de session -->
         <div id="session-status" style="margin-bottom: 15px;">
@@ -1228,8 +1537,8 @@
             <p style="color: #999; margin: 0;">❌ Aucune session active</p>
             <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: end;">
               <div style="flex: 1; min-width: 150px;">
-                <label for="barmanName" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Nom du barman :</label>
-                <input type="text" id="barmanName" placeholder="Nom du barman" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
+                <label for="sessionName" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Nom de la session :</label>
+                <input type="text" id="sessionName" placeholder="Nom de la session" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
               </div>
               <div style="min-width: 120px;">
                 <label for="startingCash" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Caisse départ (€) :</label>
@@ -1266,7 +1575,7 @@
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <div>
-                <strong style="color: rgb(var(--accent));">Barman:</strong> <span id="session-barman">-</span><br>
+                <strong style="color: rgb(var(--accent));">Session:</strong> <span id="session-name">-</span><br>
                 <strong style="color: rgb(var(--accent));">Démarrée:</strong> <span id="session-start">-</span>
               </div>
               <button onclick="endSession()" class="btn btn-danger">
@@ -1547,6 +1856,40 @@
       </select>
     </div>
   </div>
+
+  <!-- Template pour les cartes de session -->
+  <template id="session-card-template">
+    <div class="session-card-header">
+      <div class="session-card-title"></div>
+      <div class="session-card-date"></div>
+    </div>
+    <div class="session-card-stats">
+      <div class="session-card-stat">
+        <div class="session-card-stat-value"></div>
+        <div class="session-card-stat-label">Chiffre d'affaires</div>
+      </div>
+      <div class="session-card-stat">
+        <div class="session-card-stat-value"></div>
+        <div class="session-card-stat-label">Profit/Perte</div>
+      </div>
+      <div class="session-card-stat">
+        <div class="session-card-stat-value"></div>
+        <div class="session-card-stat-label">Boissons</div>
+      </div>
+      <div class="session-card-stat">
+        <div class="session-card-stat-value"></div>
+        <div class="session-card-stat-label">Durée</div>
+      </div>
+    </div>
+    <div class="session-card-actions">
+      <button class="session-card-btn resume">
+        ▶️ Reprendre
+      </button>
+      <button class="session-card-btn delete">
+        🗑️ Supprimer
+      </button>
+    </div>
+  </template>
 
   <script src="admin.js"></script>
 </body>

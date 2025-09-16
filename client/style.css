@@ -2312,28 +2312,21 @@ input:disabled {
     pointer-events: none;
 }
 
-/* Éléments à cacher sans session active */
+/* Éléments à cacher sans session active - effets visuels supprimés */
 .require-session {
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: none;
 }
 
 .require-session.hidden-no-session {
-    opacity: 0.3;
-    pointer-events: none;
-    user-select: none;
+    /* Suppression des effets d'assombrissement */
+    opacity: 1;
+    pointer-events: auto;
+    user-select: auto;
 }
 
 .require-session.hidden-no-session::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(128, 128, 128, 0.1);
-    border-radius: 6px;
-    z-index: 10;
-    pointer-events: none;
+    /* Suppression de l'overlay gris */
+    display: none;
 }
 
 /* Couleurs des prix min/base/max */

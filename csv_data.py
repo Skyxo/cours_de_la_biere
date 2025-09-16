@@ -211,7 +211,7 @@ class CSVDataManager:
                     'drink_id': int(row['drink_id']),
                     'name': row['name'],
                     'price': float(row['price']),
-                    'quantity': int(row['quantity']),
+                    'quantity': float(row['quantity']),
                     'change': float(row['change']),
                     'event': row['event'],
                     'timestamp': row['timestamp']

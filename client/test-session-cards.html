@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Session Cards</title>
+    <style>
+        :root {
+            --primary: 66, 165, 245;
+            --accent: 33, 150, 243;
+            --surface: 255, 255, 255;
+            --text: 33, 33, 33;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            color: rgb(var(--text));
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: rgb(var(--accent));
+            margin-bottom: 30px;
+        }
+
+        .sessions-scroll {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--accent), 0.3) transparent;
+        }
+
+        .sessions-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .sessions-scroll::-webkit-scrollbar-track {
+            background: rgba(var(--accent), 0.1);
+            border-radius: 10px;
+        }
+
+        .sessions-scroll::-webkit-scrollbar-thumb {
+            background: rgba(var(--accent), 0.3);
+            border-radius: 10px;
+        }
+
+        .sessions-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(var(--accent), 0.5);
+        }
+
+        .session-card {
+            min-width: 280px;
+            max-width: 320px;
+            background: linear-gradient(135deg, rgba(var(--accent), 0.05), rgba(var(--accent), 0.02));
+            border: 1px solid rgba(var(--accent), 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            border-color: rgba(var(--accent), 0.4);
+        }
+
+        .session-card-header {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(var(--accent), 0.1);
+        }
+
+        .session-card-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: rgb(var(--text));
+            margin-bottom: 4px;
+        }
+
+        .session-card-date {
+            font-size: 12px;
+            color: rgba(var(--text), 0.6);
+        }
+
+        .session-card-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .session-card-stat {
+            text-align: center;
+        }
+
+        .session-card-stat-value {
+            font-weight: 600;
+            font-size: 14px;
+            color: rgb(var(--accent));
+        }
+
+        .session-card-stat-label {
+            font-size: 10px;
+            color: rgba(var(--text), 0.6);
+            margin-top: 2px;
+        }
+
+        .session-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .session-card-btn {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .session-card-btn.resume {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+        }
+
+        .session-card-btn.resume:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: scale(1.02);
+        }
+
+        .session-card-btn.delete {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+        }
+
+        .session-card-btn.delete:hover {
+            background: rgba(244, 67, 54, 1);
+            transform: scale(1.02);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .session-card {
+                min-width: 260px;
+                max-width: 280px;
+            }
+            
+            .session-card-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .session-card-stat {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .session-card-btn {
+                font-size: 10px;
+                padding: 5px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test des Cartes de Session</h1>
+        <p>Ce test vérifie que les cartes de session s'affichent correctement en mode desktop et mobile avec scroll horizontal.</p>
+        
+        <div class="sessions-scroll" id="sessions-container">
+            <!-- Les cartes seront générées ici -->
+        </div>
+    </div>
+
+    <script>
+        // Données de test pour les sessions
+        const testSessions = [
+            {
+                session_name: "Session Test 1",
+                created_at: "2024-01-15T14:30:00Z",
+                total_sales: 125.50,
+                total_profit_loss: 25.30,
+                total_drinks_sold: 18,
+                duration_hours: 2.5,
+                filename: "test_session_1.csv"
+            },
+            {
+                session_name: "Session Test 2", 
+                created_at: "2024-01-14T16:45:00Z",
+                total_sales: 89.75,
+                total_profit_loss: -12.25,
+                total_drinks_sold: 12,
+                duration_hours: 1.75,
+                filename: "test_session_2.csv"
+            },
+            {
+                session_name: "Session Test 3",
+                created_at: "2024-01-13T19:15:00Z", 
+                total_sales: 210.30,
+                total_profit_loss: 45.80,
+                total_drinks_sold: 32,
+                duration_hours: 4.25,
+                filename: "test_session_3.csv"
+            },
+            {
+                session_name: "Session Test 4",
+                created_at: "2024-01-12T11:20:00Z",
+                total_sales: 67.25,
+                total_profit_loss: 8.90,
+                total_drinks_sold: 9,
+                duration_hours: null, // Session en cours
+                filename: "test_session_4.csv"
+            },
+            {
+                session_name: "Session Test 5",
+                created_at: "2024-01-11T20:00:00Z",
+                total_sales: 156.75,
+                total_profit_loss: 31.20,
+                total_drinks_sold: 24,
+                duration_hours: 3.0,
+                filename: "test_session_5.csv"
+            }
+        ];
+
+        function createSessionCard(session) {
+            const card = document.createElement('div');
+            card.className = 'session-card';
+            
+            const createdDate = new Date(session.created_at);
+            const formattedDate = createdDate.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit', 
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const duration = session.duration_hours 
+                ? `${Math.floor(session.duration_hours)}h${String(Math.round((session.duration_hours % 1) * 60)).padStart(2, '0')}m`
+                : 'En cours';
+                
+            const profitColor = session.total_profit_loss >= 0 ? '#4CAF50' : '#f44336';
+            
+            card.innerHTML = `
+                <div class="session-card-header">
+                    <div class="session-card-title">${session.session_name}</div>
+                    <div class="session-card-date">${formattedDate}</div>
+                </div>
+                <div class="session-card-stats">
+                    <div class="session-card-stat">
+                        <div class="session-card-stat-value">${session.total_sales.toFixed(2)} €</div>
+                        <div class="session-card-stat-label">Chiffre d'affaires</div>
+                    </div>
+                    <div class="session-card-stat">
+                        <div class="session-card-stat-value" style="color: ${profitColor}">
+                            ${session.total_profit_loss >= 0 ? '+' : ''}${session.total_profit_loss.toFixed(2)} €
+                        </div>
+                        <div class="session-card-stat-label">Profit/Perte</div>
+                    </div>
+                    <div class="session-card-stat">
+                        <div class="session-card-stat-value">${session.total_drinks_sold}</div>
+                        <div class="session-card-stat-label">Boissons</div>
+                    </div>
+                    <div class="session-card-stat">
+                        <div class="session-card-stat-value">${duration}</div>
+                        <div class="session-card-stat-label">Durée</div>
+                    </div>
+                </div>
+                <div class="session-card-actions">
+                    <button class="session-card-btn resume" onclick="alert('Reprendre ${session.session_name}')">
+                        ▶️ Reprendre
+                    </button>
+                    <button class="session-card-btn delete" onclick="alert('Supprimer ${session.session_name}')">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Générer les cartes de test
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('sessions-container');
+            
+            testSessions.forEach(session => {
+                const card = createSessionCard(session);
+                container.appendChild(card);
+            });
+        });
+    </script>
+</body>
+</html>
