@@ -80,8 +80,31 @@ function isImmediateMode() {
     return refreshIntervalMs === 0;
 }
 
+// Fonction pour vérifier s'il y a une session active
+async function checkSessionActive() {
+    try {
+        const response = await fetchWithRetry('/api/session/status');
+        if (response.ok) {
+            const data = await response.json();
+            return data.session && data.session.session_name;
+        }
+        return false;
+    } catch (error) {
+        console.warn('⚠️ Impossible de vérifier l\'état de la session:', error);
+        return false; // En cas d'erreur, considérer qu'il n'y a pas de session active
+    }
+}
+
 // Fonction pour nettoyer les anciennes animations avant d'en ajouter de nouvelles
+// MODIFIÉE: Ne supprime les animations qu'à la demande explicite pour conserver les indicateurs visuels
 function clearPreviousAnimations() {
+    // Cette fonction ne fait plus rien automatiquement - les animations restent visibles
+    // jusqu'à la prochaine actualisation réelle des données
+    console.log('clearPreviousAnimations: animations conservées pour maintenir la visibilité');
+}
+
+// Nouvelle fonction pour nettoyer explicitement toutes les animations (utilisée seulement lors de vraies mises à jour)
+function forceRemoveAllAnimations() {
     document.querySelectorAll('.price-change').forEach(el => el.classList.remove('price-change'));
     document.querySelectorAll('.price-flash-up').forEach(el => el.classList.remove('price-flash-up'));
     document.querySelectorAll('.price-flash-down').forEach(el => el.classList.remove('price-flash-down'));
@@ -418,6 +441,40 @@ async function syncWithServer() {
 }
 
 function updateTimer() {
+    // Si le timer n'est pas en cours d'exécution, ne rien faire
+    if (!isTimerRunning) {
+        // S'assurer que l'affichage est correct
+        const timerElement = document.getElementById('timer-countdown');
+        if (timerElement) {
+            timerElement.textContent = '--';
+            timerElement.style.color = '#999';
+        }
+        return;
+    }
+    
+    // Vérifier plus fréquemment (toutes les 10 secondes) s'il y a encore une session active
+    if (countdown % 10 === 0) {
+        checkSessionActive().then(hasActiveSession => {
+            if (!hasActiveSession && isTimerRunning) {
+                console.log('⏹️ Session terminée - arrêt du timer');
+                stopTimer();
+                return;
+            }
+        }).catch(e => {
+            // Si la vérification échoue (erreur réseau, etc.), arrêter le timer par précaution
+            console.warn('Erreur vérification session, arrêt du timer par sécurité:', e);
+            if (isTimerRunning) {
+                stopTimer();
+                return;
+            }
+        });
+    }
+    
+    // Si le timer n'est pas en cours d'exécution, ne pas continuer
+    if (!isTimerRunning) {
+        return;
+    }
+    
     // Utiliser les données du serveur quand elles sont disponibles
     if (serverTimerSync) {
         const now = new Date();
@@ -437,6 +494,9 @@ function updateTimer() {
         
         // Si le timer est écoulé, déclencher refresh
         if (countdown <= 0) {
+            // Vérifier si le timer est toujours actif avant de continuer
+            if (!isTimerRunning) return;
+            
             fetchPrices();
             // Remettre un countdown par défaut en attendant la prochaine sync
             countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
@@ -449,6 +509,9 @@ function updateTimer() {
         
         // Si le countdown local atteint 0, déclencher un refresh et remettre le compteur
         if (countdown <= 0) {
+            // Vérifier si le timer est toujours actif avant de continuer
+            if (!isTimerRunning) return;
+            
             fetchPrices();
             countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
             return;
@@ -456,17 +519,38 @@ function updateTimer() {
     }
     
     // Toujours afficher un nombre, jamais le sablier
+    const timerElement = document.getElementById('timer-countdown');
     if (timerElement) {
-        timerElement.textContent = countdown;
+        // Si le timer n'est pas en cours, afficher "--" au lieu du countdown
+        if (!isTimerRunning) {
+            timerElement.textContent = '--';
+            timerElement.style.color = '#999';
+        } else {
+            timerElement.textContent = countdown;
+            timerElement.style.color = ''; // Réinitialiser la couleur par défaut
+        }
     }
 }
 
 // Démarrer/Arrêter le compteur 1s
-function startTimer() {
+async function startTimer() {
     if (isTimerRunning) {
         console.log('⏰ Timer déjà en cours, resynchronisation...');
         // Si le timer tourne déjà, juste resynchroniser
         syncWithServer();
+        return;
+    }
+    
+    // Vérifier s'il y a une session active avant de démarrer le timer
+    const hasActiveSession = await checkSessionActive();
+    if (!hasActiveSession) {
+        console.log('⏹️ Aucune session active - timer non démarré');
+        const timerElement = document.getElementById('timer-countdown');
+        if (timerElement) {
+            timerElement.textContent = '--';
+            timerElement.style.color = '#999';
+        }
+        updateMarketStatus();
         return;
     }
     
@@ -484,6 +568,7 @@ function startTimer() {
             timerSyncIntervalId = setInterval(syncWithServer, 15000); // Toutes les 15 secondes
             
             console.log('✅ Timer universel démarré et synchronisé avec le serveur');
+            updateMarketStatus();
         } else {
             console.log('⚠️ Synchronisation échouée, démarrage avec countdown par défaut...');
             
@@ -495,6 +580,7 @@ function startTimer() {
             timerSyncIntervalId = setInterval(syncWithServer, 10000); // Retry plus fréquent (10s)
             
             console.log('🔄 Timer démarré en mode dégradé, retry de sync dans 10 secondes...');
+            updateMarketStatus();
         }
     }).catch((error) => {
         console.error('❌ Erreur critique lors du démarrage du timer:', error);
@@ -507,6 +593,7 @@ function startTimer() {
         timerSyncIntervalId = setInterval(syncWithServer, 10000);
         
         console.log('🔄 Timer démarré en mode secours après erreur');
+        updateMarketStatus();
     });
 }
 
@@ -522,6 +609,15 @@ function stopTimer() {
         timerSyncIntervalId = null;
         console.log('⏹️ Synchronisation timer arrêtée');
     }
+    
+    // S'assurer que l'affichage du timer est mis à jour immédiatement
+    const timerElement = document.getElementById('timer-countdown');
+    if (timerElement) {
+        timerElement.textContent = '--';
+        timerElement.style.color = '#999';
+    }
+    
+    updateMarketStatus();
 }
 
 // Fonctions pour gérer les timers Happy Hour
@@ -623,6 +719,32 @@ function updateTimestamp() {
     }
 }
 
+// Nouvelle fonction pour déclencher les animations d'apparition/disparition lors de la mise à jour
+function triggerUpdateAnimations() {
+    console.log('🎬 Déclenchement des animations d\'actualisation');
+    
+    // Animation de disparition d'abord
+    document.querySelectorAll('.stock-tile').forEach(tile => {
+        tile.classList.add('final-update-fade');
+    });
+    
+    // Après un court délai, animation d'apparition
+    setTimeout(() => {
+        document.querySelectorAll('.stock-tile').forEach(tile => {
+            tile.classList.remove('final-update-fade');
+            tile.classList.add('final-update-appear');
+        });
+        
+        // Nettoyer l'animation d'apparition après qu'elle soit terminée
+        setTimeout(() => {
+            document.querySelectorAll('.stock-tile').forEach(tile => {
+                tile.classList.remove('final-update-appear');
+            });
+        }, 2000); // Durée de l'animation finalAppear
+        
+    }, 800); // Court délai pour l'effet de transition
+}
+
 // Récupération des prix depuis l'API
 async function fetchPrices() {
     // Éviter les refreshs multiples simultanés
@@ -688,6 +810,14 @@ async function fetchPrices() {
         }
         
         renderStockWall(data.prices, data.active_drinks);
+        
+        // Déclencher les animations d'actualisation finale
+        if (!isInitialLoad) {
+            setTimeout(() => {
+                triggerUpdateAnimations();
+            }, 200); // Court délai pour permettre au DOM de se mettre à jour d'abord
+        }
+        
         // Connexion réussie
         handleReconnection();
         updateTimestamp();
@@ -858,11 +988,9 @@ function renderStockWall(drinks, activeDrinksList = null) {
     // Sauvegarder les données pour le re-tri
     lastDrinksData = drinks || [];
     
-    // Nettoyer les animations précédentes seulement au premier chargement
-    // Pas lors des cycles de timer pour garder les indicateurs de changement
-    if (isInitialLoad) {
-        clearPreviousAnimations();
-    }
+    // NE JAMAIS nettoyer les animations - elles restent visibles jusqu'à de vrais changements
+    // Cette logique est maintenant gérée au niveau de chaque tuile individuellement
+    // Les animations ne sont supprimées que lorsqu'il y a un nouveau changement réel
     
     if (!stockGrid) {
         console.error('Debug: stockGrid element not found!');
@@ -1008,9 +1136,21 @@ function createStockTile(drink) {
     
     // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
+        // Supprimer seulement les anciennes classes d'animation pour cette tuile spécifique
+        tile.classList.remove('price-flash-up', 'price-flash-down', 'price-flash-neutral', 'price-flash');
+        // Ajouter la nouvelle animation qui restera jusqu'à la prochaine actualisation RÉELLE
         tile.classList.add(`price-flash-${trend.class}`);
-        // L'animation restera jusqu'à la prochaine actualisation du graphique
+        
+        // Ajouter aussi l'effet pulse pour les changements réels
+        setTimeout(() => {
+            tile.classList.add('data-pulse');
+            // Retirer le pulse après quelques cycles
+            setTimeout(() => {
+                tile.classList.remove('data-pulse');
+            }, 4500); // 3 cycles de 1.5s
+        }, 1500); // Après l'animation d'apparition
     }
+    // Si pas de changement, conserver l'animation existante pour qu'elle reste visible
     
     tile.innerHTML = `
         <div class="tile-chart">
@@ -1127,9 +1267,12 @@ function updateStockTilePrice(drink) {
     
     // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
+        // Supprimer seulement les anciennes classes d'animation pour cette tuile spécifique
+        tile.classList.remove('price-flash-up', 'price-flash-down', 'price-flash-neutral', 'price-flash');
+        // Ajouter la nouvelle animation qui restera jusqu'à la prochaine actualisation RÉELLE
         tile.classList.add(`price-flash-${trend.class}`);
-        // L'animation restera jusqu'à la prochaine actualisation du graphique
     }
+    // Si pas de changement, conserver l'animation existante pour qu'elle reste visible
     
     // NE PAS mettre à jour lastPrices ici - c'est géré dans renderStockWall
 }
@@ -1263,7 +1406,7 @@ function createCandlestickChart(drink, canvas) {
     const isRealPriceChange = lastRecordedPrice === null || Math.abs(currentPrice - lastRecordedPrice) > 0.001;
     
     if (isRealPriceChange) {
-        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon utiliser un index
+        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon un index
         const transactionIndex = isImmediateMode() ? 
             Date.now() + Math.random() * 1000 : // Timestamp unique en mode manuel
             (lastCandle ? lastCandle.x + 1 : 0); // Index séquentiel en mode automatique
@@ -1437,7 +1580,7 @@ function createLineChart(drink, canvas) {
     const isRealPriceChange = lastRecordedPrice === null || Math.abs(currentPrice - lastRecordedPrice) > 0.001;
     
     if (isRealPriceChange) {
-        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon utiliser un index
+        // En mode manuel (timer = 0), utiliser un timestamp unique, sinon un index
         const transactionIndex = isImmediateMode() ? 
             Date.now() + Math.random() * 1000 : // Timestamp unique en mode manuel
             (lastPoint ? lastPoint.x + 1 : 0); // Index séquentiel en mode automatique
@@ -1606,9 +1749,12 @@ function createPriceRow(drink) {
     
     // Ajouter l'animation si le prix a changé
     if (trend.hasChanged) {
+        // Supprimer l'ancienne animation et ajouter la nouvelle
+        row.classList.remove('price-change');
         row.classList.add('price-change');
-        // L'animation restera jusqu'à la prochaine actualisation du graphique
+        // L'animation restera visible jusqu'à la prochaine actualisation RÉELLE
     }
+    // Si pas de changement, conserver l'animation existante
     
     return row;
 }
@@ -1684,31 +1830,85 @@ function stopAutoRefresh() {
     }
 }
 
+// Fonction pour mettre à jour le statut du marché selon l'état des sessions
+async function updateMarketStatus() {
+    const marketStatus = document.getElementById('marketStatus');
+    const timerElement = document.getElementById('timer-countdown');
+    if (!marketStatus) return;
+    
+    try {
+        const hasActiveSession = await checkSessionActive();
+        
+        if (hasActiveSession && isTimerRunning) {
+            // Session active ET timer en cours
+            marketStatus.innerHTML = '🟢 ACTIF';
+            marketStatus.style.color = '#00ff41';
+        } else if (hasActiveSession && !isTimerRunning) {
+            // Session active mais timer arrêté
+            marketStatus.innerHTML = '🟡 EN PAUSE';
+            marketStatus.style.color = '#ffa500';
+        } else {
+            // Aucune session active
+            marketStatus.innerHTML = '🔴 FERMÉ';
+            marketStatus.style.color = '#ff0040';
+            
+            // Forcer l'affichage du timer à "--" quand fermé
+            if (timerElement) {
+                timerElement.textContent = '--';
+                timerElement.style.color = '#999';
+            }
+        }
+    } catch (error) {
+        // Erreur de connexion
+        marketStatus.innerHTML = '🔴 DÉCONNECTÉ';
+        marketStatus.style.color = '#ff0040';
+        
+        // Forcer l'affichage du timer à "--" quand déconnecté
+        if (timerElement) {
+            timerElement.textContent = '--';
+            timerElement.style.color = '#999';
+        }
+    }
+}
+
 // Gestion des erreurs de connexion
 function handleConnectionError() {
-    // updateConnectionStatus(false); // SUPPRIMÉ
-    marketStatus.innerHTML = '🔴 DÉCONNECTÉ';
-    marketStatus.style.color = '#ff0040';
+    const marketStatus = document.getElementById('marketStatus');
+    if (marketStatus) {
+        marketStatus.innerHTML = '� DÉCONNECTÉ';
+        marketStatus.style.color = '#ff0040';
+    }
 }
 
 // Gestion de la reconnexion
 function handleReconnection() {
-    // updateConnectionStatus(true); // SUPPRIMÉ
-    marketStatus.innerHTML = '🟢 ACTIF';
-    marketStatus.style.color = '#00ff41';
+    // Mettre à jour selon l'état des sessions plutôt que juste "ACTIF"
+    updateMarketStatus();
 }
 
 // Détection de la visibilité de la page
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', async () => {
     if (document.hidden) {
         // NE PAS arrêter le timer universel quand on quitte la page
         // Le timer continue de tourner côté serveur
         console.log('📱 Page cachée - timer universel continue côté serveur');
     } else {
-        // Quand on revient, se resynchroniser sans redémarrer
-        console.log('📱 Page visible - resynchronisation avec timer universel');
-        if (!isTimerRunning) {
-            // Seulement démarrer si le timer n'est pas déjà en cours
+        // Quand on revient, vérifier s'il y a une session active avant de redémarrer
+        console.log('📱 Page visible - vérification session et resynchronisation');
+        const hasActiveSession = await checkSessionActive();
+        
+        if (!hasActiveSession) {
+            console.log('⏹️ Aucune session active - timer non redémarré');
+            if (isTimerRunning) {
+                stopTimer();
+            }
+            const timerElement = document.getElementById('timer-countdown');
+            if (timerElement) {
+                timerElement.textContent = '--';
+                timerElement.style.color = '#999';
+            }
+        } else if (!isTimerRunning) {
+            // Seulement démarrer si le timer n'est pas déjà en cours ET qu'il y a une session
             startTimer();
         } else {
             // Resynchroniser immédiatement avec le serveur
@@ -1811,6 +2011,7 @@ function initSortToggle() {
 document.addEventListener('DOMContentLoaded', () => {
     
     // Initialiser l'état de connexion immédiatement
+    const marketStatus = document.getElementById('marketStatus');
     if (marketStatus) {
         marketStatus.innerHTML = '🟡 CONNEXION...';
         marketStatus.style.color = '#ffa500';
@@ -1838,25 +2039,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 await fetchPrices();
             } catch (error) {
                 console.error('❌ Erreur lors du chargement initial:', error);
-                // Maintenir l'état de connexion pour ne pas inquiéter l'utilisateur
-                if (marketStatus) {
-                    marketStatus.innerHTML = '🟢 ACTIF';
-                    marketStatus.style.color = '#00ff41';
-                }
+                // Mettre à jour le statut selon l'état des sessions
+                updateMarketStatus();
             }
         }, 100);
         
         // Afficher le mode dans le timer
+        const timerElement = document.getElementById('timer-countdown');
         if (timerElement) {
             timerElement.textContent = 'IMMÉDIAT';
             timerElement.style.color = '#ff6b6b';
         }
+        // En mode immédiat, vérifier le statut des sessions
+        updateMarketStatus();
     } else {
         startAutoRefresh();
-        // Démarrer le timer seulement s'il n'est pas déjà en cours
-        if (!isTimerRunning) {
-            startTimer();
-        }
+        // Vérifier s'il y a une session active avant de démarrer le timer
+        checkSessionActive().then(hasActiveSession => {
+            if (hasActiveSession) {
+                // Démarrer le timer seulement s'il y a une session active et qu'il n'est pas déjà en cours
+                if (!isTimerRunning) {
+                    startTimer();
+                }
+            } else {
+                console.log('⏹️ Aucune session active au démarrage - timer non démarré');
+                const timerElement = document.getElementById('timer-countdown');
+                if (timerElement) {
+                    timerElement.textContent = '--';
+                    timerElement.style.color = '#999';
+                }
+                updateMarketStatus();
+            }
+        }).catch(e => {
+            console.warn('Erreur vérification session au démarrage:', e);
+            // En cas d'erreur, ne pas démarrer le timer par précaution
+            const timerElement = document.getElementById('timer-countdown');
+            if (timerElement) {
+                timerElement.textContent = '--';
+                timerElement.style.color = '#999';
+            }
+            updateMarketStatus();
+        });
     }
     
     // Afficher un message de bienvenue
@@ -1865,6 +2088,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Écouter les changements de localStorage (depuis admin.html ou autres onglets)
 window.addEventListener('storage', (e) => {
+    // Écouter les signaux de session depuis l'interface admin
+    if (e.key === 'session-started' && e.newValue) {
+        console.log('Signal session démarrée reçu - actualisation...');
+        // Démarrer le timer et mettre à jour le statut
+        if (!isTimerRunning) {
+            startTimer();
+        } else {
+            updateMarketStatus();
+        }
+        // Actualiser les données
+        setTimeout(() => {
+            fetchPrices();
+        }, 500);
+        // Nettoyer le signal
+        localStorage.removeItem('session-started');
+    }
+    
+    if (e.key === 'session-stopped' && e.newValue) {
+        console.log('Signal session arrêtée reçu - actualisation...');
+        // Arrêter le timer et mettre à jour le statut
+        stopTimer();
+        const timerElement = document.getElementById('timer-countdown');
+        if (timerElement) {
+            timerElement.textContent = '--';
+            timerElement.style.color = '#999';
+        }
+        // Actualiser les données
+        setTimeout(() => {
+            fetchPrices();
+        }, 500);
+        // Nettoyer le signal
+        localStorage.removeItem('session-stopped');
+    }
+    
     // Écouter les signaux de Happy Hour depuis l'interface admin
     if (e.key === 'happy-hour-started' && e.newValue) {
         try {

@@ -268,7 +268,6 @@ body.stock-wall {
     font-weight: bold;
     transition: all 0.3s ease;
     text-shadow: 0 0 5px currentColor;
-    animation: pulse-glow 2s infinite;
 }
 
 .trend-indicator.left,
@@ -291,25 +290,6 @@ body.stock-wall {
 .stock-tile.trend-neutral .trend-indicator {
     color: #888888;
     text-shadow: 0 0 5px rgba(136, 136, 136, 0.6);
-}
-
-/* Animation de pulsation pour les indicateurs */
-@keyframes pulse-glow {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.7;
-        transform: scale(1.1);
-    }
-}
-
-.tile-price-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
 }
 
 .tile-price-exact {
@@ -513,12 +493,8 @@ body.stock-wall {
 
 .sort-toggle-btn[data-sort-mode="alphabetical"] {
     border-color: #ff8800;
-    color: #ff8800;
-}
-
-.sort-toggle-btn[data-sort-mode="alphabetical"]:hover {
-    background: rgba(255, 136, 0, 0.1);
-    box-shadow: 0 0 10px rgba(255, 136, 0, 0.3);
+    color: #888888;
+    text-shadow: 0 0 5px rgba(136, 136, 136, 0.6);
 }
 
 /* ==============================
@@ -884,35 +860,155 @@ body.stock-wall {
     }
 }
 
-/* Animation pour changements de prix */
+/* Animation pour changements de prix - avec état final persistant */
 .price-flash-up {
-    animation: priceFlashUp 0.5s ease-in-out;
+    animation: priceFlashUp 1.5s ease-in-out;
+    background: rgba(34, 197, 94, 0.15) !important; /* État final persistant */
+    position: relative;
+    z-index: 2; /* Éviter les chevauchements */
 }
 
 .price-flash-down {
-    animation: priceFlashDown 0.5s ease-in-out;
+    animation: priceFlashDown 1.5s ease-in-out;
+    background: rgba(239, 68, 68, 0.15) !important; /* État final persistant */
+    position: relative;
+    z-index: 2; /* Éviter les chevauchements */
 }
 
 .price-flash-neutral {
-    animation: priceFlashNeutral 0.5s ease-in-out;
+    animation: priceFlashNeutral 1.5s ease-in-out;
+    background: rgba(107, 114, 128, 0.15) !important; /* État final persistant */
+    position: relative;
+    z-index: 2; /* Éviter les chevauchements */
 }
 
 @keyframes priceFlashUp {
-    0% { background: rgba(34, 197, 94, 0.3); } /* Vert */
-    50% { background: rgba(34, 197, 94, 0.6); }
-    100% { background: rgba(34, 197, 94, 0.1); }
+    0% { 
+        background: rgba(34, 197, 94, 0.0);
+        transform: scale(1);
+        opacity: 1;
+    }
+    20% { 
+        background: rgba(34, 197, 94, 0.8);
+        transform: scale(1.015); /* Réduit de 1.05 à 1.015 */
+        opacity: 0.7;
+    }
+    40% { 
+        background: rgba(34, 197, 94, 0.4);
+        transform: scale(1.008); /* Réduit de 1.02 à 1.008 */
+        opacity: 0.9;
+    }
+    100% { 
+        background: rgba(34, 197, 94, 0.15);
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes priceFlashDown {
-    0% { background: rgba(239, 68, 68, 0.3); } /* Rouge */
-    50% { background: rgba(239, 68, 68, 0.6); }
-    100% { background: rgba(239, 68, 68, 0.1); }
+    0% { 
+        background: rgba(239, 68, 68, 0.0);
+        transform: scale(1);
+        opacity: 1;
+    }
+    20% { 
+        background: rgba(239, 68, 68, 0.8);
+        transform: scale(1.015); /* Réduit de 1.05 à 1.015 */
+        opacity: 0.7;
+    }
+    40% { 
+        background: rgba(239, 68, 68, 0.4);
+        transform: scale(1.008); /* Réduit de 1.02 à 1.008 */
+        opacity: 0.9;
+    }
+    100% { 
+        background: rgba(239, 68, 68, 0.15);
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes priceFlashNeutral {
-    0% { background: rgba(107, 114, 128, 0.3); } /* Gris */
-    50% { background: rgba(107, 114, 128, 0.6); }
-    100% { background: rgba(107, 114, 128, 0.1); }
+    0% { 
+        background: rgba(107, 114, 128, 0.0);
+        transform: scale(1);
+        opacity: 1;
+    }
+    20% { 
+        background: rgba(107, 114, 128, 0.8);
+        transform: scale(1.015); /* Réduit de 1.05 à 1.015 */
+        opacity: 0.7;
+    }
+    40% { 
+        background: rgba(107, 114, 128, 0.4);
+        transform: scale(1.008); /* Réduit de 1.02 à 1.008 */
+        opacity: 0.9;
+    }
+    100% { 
+        background: rgba(107, 114, 128, 0.15);
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ========== NOUVELLES ANIMATIONS D'APPARITION/DISPARITION ========== */
+
+/* Animation d'apparition finale au moment de l'actualisation */
+.final-update-appear {
+    animation: finalAppear 2.0s ease-out;
+    position: relative;
+    z-index: 1; /* Éviter les chevauchements */
+}
+
+@keyframes finalAppear {
+    0% {
+        opacity: 0.3;
+        filter: blur(1px);
+    }
+    30% {
+        opacity: 0.8;
+        filter: blur(0px);
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Animation de disparition finale (pour transition douce) */
+.final-update-fade {
+    animation: finalFade 1.0s ease-in-out;
+}
+
+@keyframes finalFade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    20% {
+        opacity: 0.7;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+}
+
+/* Animation spéciale pour l'effet "pulse" des nouvelles données */
+.data-pulse {
+    animation: dataPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dataPulse {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+    }
 }
 
 /* ========== Animations Happy Hour ========== */
@@ -1374,7 +1470,7 @@ tbody tr:nth-child(even) {
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+    50% { transform: scale(1); }
     100% { transform: scale(1); }
 }
 
@@ -1828,7 +1924,7 @@ tbody tr:nth-child(even) {
 
 @keyframes pulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
+    50% { transform: scale(1); }
     100% { transform: scale(1); }
 }
 
@@ -2492,4 +2588,416 @@ body.dark-theme .section-title {
 
 body.dark-theme .toggle-icon {
     color: var(--primary-color);
+}
+
+/* ================================================
+   OVERRIDES POUR LE THÈME CLAIR - INDEX.HTML
+   ================================================ */
+
+/* Override complet du style de base pour le thème clair */
+body.stock-wall[data-theme="light"] {
+    background: #ffffff !important;
+    color: #212529 !important;
+}
+
+/* Header avec fond blanc et bordure sombre */
+body.stock-wall[data-theme="light"] .wall-header {
+    background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 3px solid #0d4f26 !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* Texte du header en sombre */
+body.stock-wall[data-theme="light"] .wall-header h1 {
+    color: #0d4f26 !important;
+    text-shadow: 0 2px 4px rgba(13, 79, 38, 0.3) !important;
+    font-weight: bold !important;
+}
+
+/* Informations du timer en sombre */
+body.stock-wall[data-theme="light"] .timer-info {
+    color: #212529 !important;
+    font-weight: 600 !important;
+}
+
+/* Boutons de contrôle avec fond clair et meilleur contraste */
+body.stock-wall[data-theme="light"] .toggle-btn,
+body.stock-wall[data-theme="light"] .admin-link {
+    background: #ffffff !important;
+    color: #212529 !important;
+    border: 2px solid #6c757d !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    font-weight: 600 !important;
+}
+
+body.stock-wall[data-theme="light"] .toggle-btn:hover,
+body.stock-wall[data-theme="light"] .admin-link:hover {
+    background: #e9ecef !important;
+    color: #0d4f26 !important;
+    border-color: #0d4f26 !important;
+    box-shadow: 0 3px 8px rgba(13, 79, 38, 0.2) !important;
+}
+
+/* Tuiles des boissons avec fond blanc et meilleur contraste */
+body.stock-wall[data-theme="light"] .stock-tile {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 2px solid #adb5bd !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    color: #212529 !important;
+}
+
+body.stock-wall[data-theme="light"] .stock-tile:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25) !important;
+    transform: translateY(-3px) !important;
+    border-color: #6c757d !important;
+}
+
+/* Noms des boissons plus visibles */
+body.stock-wall[data-theme="light"] .stock-tile .drink-name {
+    color: #212529 !important;
+    text-shadow: none !important;
+    font-weight: 700 !important;
+    font-size: 1.1em !important;
+}
+
+/* Prix des boissons plus contrastés */
+body.stock-wall[data-theme="light"] .stock-tile .price {
+    color: #0d4f26 !important;
+    text-shadow: 0 1px 3px rgba(13, 79, 38, 0.3) !important;
+    font-weight: 800 !important;
+    font-size: 1.2em !important;
+}
+
+/* Prix en hausse plus visible */
+body.stock-wall[data-theme="light"] .stock-tile .price.price-up {
+    color: #0d4f26 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 1px 3px rgba(13, 79, 38, 0.4) !important;
+}
+
+/* Prix en baisse plus visible */
+body.stock-wall[data-theme="light"] .stock-tile .price.price-down {
+    color: #8b1538 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 1px 3px rgba(139, 21, 56, 0.4) !important;
+}
+
+/* Indicateurs de variation plus contrastés */
+body.stock-wall[data-theme="light"] .price-change {
+    color: #495057 !important;
+    font-weight: 600 !important;
+}
+
+/* Happy Hour indicators plus visibles */
+body.stock-wall[data-theme="light"] .happy-hour-indicator {
+    background: rgba(255, 193, 7, 0.95) !important;
+    color: #212529 !important;
+    border: 2px solid #ffc107 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3) !important;
+}
+
+/* Graphiques avec meilleur contraste */
+body.stock-wall[data-theme="light"] .mini-chart {
+    background: rgba(248, 249, 250, 0.95) !important;
+    border: 2px solid #adb5bd !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+}
+
+/* Améliorations pour les graphiques en mode clair */
+body.stock-wall[data-theme="light"] .tile-chart {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid #adb5bd !important;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+body.stock-wall[data-theme="light"] .tile-chart canvas {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 4px !important;
+    filter: contrast(1.3) saturate(1.4) !important;
+}
+
+/* Variables CSS pour les couleurs des graphiques en mode clair */
+body.stock-wall[data-theme="light"] {
+    --chart-up-color: #0d4f26 !important;        /* Vert très foncé */
+    --chart-down-color: #8b1538 !important;      /* Rouge très foncé */
+    --chart-neutral-color: #495057 !important;   /* Gris foncé */
+    --chart-grid-color: #6c757d !important;      /* Gris moyen */
+    --chart-text-color: #212529 !important;      /* Noir */
+    --chart-bg-color: #ffffff !important;        /* Blanc */
+}
+
+/* Styles spécifiques pour améliorer la visibilité des éléments de graphique */
+body.stock-wall[data-theme="light"] .chart-container {
+    background: #ffffff !important;
+    border: 2px solid #dee2e6 !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15) !important;
+}
+
+/* Amélioration des lignes et courbes via CSS filters */
+body.stock-wall[data-theme="light"] .chart-container canvas,
+body.stock-wall[data-theme="light"] .tile-chart canvas {
+    filter: contrast(1.6) saturate(1.8) brightness(0.8) !important;
+}
+
+/* Styles pour les indicateurs graphiques */
+body.stock-wall[data-theme="light"] .chart-legend {
+    background: rgba(248, 249, 250, 0.95) !important;
+    border: 1px solid #adb5bd !important;
+    color: #212529 !important;
+    font-weight: 600 !important;
+}
+
+/* Amélioration des tooltips et labels */
+body.stock-wall[data-theme="light"] .chart-tooltip {
+    background: rgba(33, 37, 41, 0.95) !important;
+    color: #ffffff !important;
+    border: 2px solid #495057 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    font-weight: 600 !important;
+}
+
+/* Override des couleurs par défaut des graphiques Chart.js */
+body.stock-wall[data-theme="light"] .chartjs-tooltip {
+    background: rgba(33, 37, 41, 0.95) !important;
+    color: #ffffff !important;
+}
+
+/* Amélioration spécifique pour les mini-graphiques */
+body.stock-wall[data-theme="light"] .mini-chart svg,
+body.stock-wall[data-theme="light"] .mini-chart path {
+    stroke-width: 2.5px !important;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)) !important;
+}
+
+/* Couleurs spécifiques pour les paths SVG */
+body.stock-wall[data-theme="light"] .mini-chart .line-up {
+    stroke: #0d4f26 !important;
+    stroke-width: 3px !important;
+}
+
+body.stock-wall[data-theme="light"] .mini-chart .line-down {
+    stroke: #8b1538 !important;
+    stroke-width: 3px !important;
+}
+
+body.stock-wall[data-theme="light"] .mini-chart .line-neutral {
+    stroke: #495057 !important;
+    stroke-width: 3px !important;
+}
+
+/* Particules pour le thème clair - plus visibles */
+body.stock-wall[data-theme="light"] .particles {
+    opacity: 0.4 !important;
+}
+
+body.stock-wall[data-theme="light"] .particle {
+    background: #0d4f26 !important;
+    box-shadow: 0 0 3px rgba(13, 79, 38, 0.5) !important;
+}
+
+/* Scrollbar pour le thème clair avec meilleur contraste */
+body.stock-wall[data-theme="light"] ::-webkit-scrollbar-track {
+    background: #e9ecef !important;
+}
+
+body.stock-wall[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: #0d4f26 !important;
+    border-radius: 6px !important;
+    border: 2px solid #e9ecef !important;
+}
+
+body.stock-wall[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+    background: #157347 !important;
+}
+
+/* Améliorations supplémentaires pour la visibilité */
+
+/* Variations de prix animées plus visibles avec couleurs sombres et état final persistant */
+body.stock-wall[data-theme="light"] .price-flash-up {
+    background-color: rgba(13, 79, 38, 0.2) !important; /* Vert très foncé persistant */
+    box-shadow: 0 0 12px rgba(13, 79, 38, 0.4) !important;
+    border: 1px solid rgba(13, 79, 38, 0.3) !important;
+}
+
+body.stock-wall[data-theme="light"] .price-flash-down {
+    background-color: rgba(139, 21, 56, 0.2) !important; /* Rouge très foncé persistant */
+    box-shadow: 0 0 12px rgba(139, 21, 56, 0.4) !important;
+    border: 1px solid rgba(139, 21, 56, 0.3) !important;
+}
+
+body.stock-wall[data-theme="light"] .price-flash-neutral {
+    background-color: rgba(73, 80, 87, 0.15) !important;
+    box-shadow: 0 0 8px rgba(73, 80, 87, 0.3) !important;
+    border: 1px solid rgba(73, 80, 87, 0.2) !important;
+}
+
+/* Animations d'apparition/disparition pour thème clair */
+body.stock-wall[data-theme="light"] .final-update-appear {
+    animation: finalAppearLight 2.0s ease-out;
+    position: relative;
+    z-index: 1; /* Éviter les chevauchements */
+}
+
+@keyframes finalAppearLight {
+    0% {
+        opacity: 0.2;
+        filter: blur(0.5px);
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    30% {
+        opacity: 0.9;
+        filter: blur(0px);
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    60% {
+        opacity: 1;
+        box-shadow: 0 0 8px rgba(0,0,0,0.15);
+    }
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+}
+
+body.stock-wall[data-theme="light"] .data-pulse {
+    animation: dataPulseLight 1.5s ease-in-out infinite;
+}
+
+@keyframes dataPulseLight {
+    0%, 100% {
+        box-shadow: 0 0 8px rgba(13, 79, 38, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 18px rgba(13, 79, 38, 0.6);
+    }
+}
+
+/* Améliorer les éléments de variation */
+body.stock-wall[data-theme="light"] .stock-tile .variation {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+/* Améliorer les pourcentages de variation */
+body.stock-wall[data-theme="light"] .stock-tile .percentage {
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+/* ================================================
+   ÉLÉMENTS SPÉCIFIQUES DES CARTES - MODE CLAIR
+   ================================================ */
+
+/* Nom des boissons - texte principal */
+body.stock-wall[data-theme="light"] .drink-name-text {
+    color: #212529 !important;
+    font-weight: 800 !important;
+    font-size: 1.1em !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+}
+
+/* Degré d'alcool */
+body.stock-wall[data-theme="light"] .alcohol-degree {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    font-size: 0.9em !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1) !important;
+}
+
+/* Conteneur de prix principal */
+body.stock-wall[data-theme="light"] .tile-price-container {
+    color: #0d4f26 !important;
+    font-weight: 800 !important;
+}
+
+/* Prix exact dans les tuiles */
+body.stock-wall[data-theme="light"] .tile-price-exact {
+    color: #0d4f26 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 4px rgba(13, 79, 38, 0.3) !important;
+}
+
+/* Variations de prix dans les tuiles */
+body.stock-wall[data-theme="light"] .tile-variation {
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+body.stock-wall[data-theme="light"] .tile-variation.up {
+    color: #0d4f26 !important;
+}
+
+body.stock-wall[data-theme="light"] .tile-variation.down {
+    color: #8b1538 !important;
+}
+
+body.stock-wall[data-theme="light"] .tile-variation.neutral {
+    color: #6c757d !important;
+}
+
+/* Indicateurs de tendance */
+body.stock-wall[data-theme="light"] .trend-indicator {
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+/* Prix conteneurs généraux */
+body.stock-wall[data-theme="light"] .price-container {
+    color: #0d4f26 !important;
+    font-weight: 700 !important;
+}
+
+body.stock-wall[data-theme="light"] .price-exact {
+    color: #0d4f26 !important;
+    font-weight: 800 !important;
+    text-shadow: 0 1px 3px rgba(13, 79, 38, 0.3) !important;
+}
+
+body.stock-wall[data-theme="light"] .price-rounded {
+    color: #0d4f26 !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(13, 79, 38, 0.2) !important;
+}
+
+/* Vue de prix spéciale */
+body.stock-wall[data-theme="light"] .price-view {
+    color: #212529 !important;
+    font-weight: 600 !important;
+}
+
+body.stock-wall[data-theme="light"] .price-view .price-exact {
+    color: #0d4f26 !important;
+    font-weight: 800 !important;
+}
+
+/* Améliorations supplémentaires pour les informations secondaires */
+body.stock-wall[data-theme="light"] .stock-tile .volume,
+body.stock-wall[data-theme="light"] .stock-tile .info,
+body.stock-wall[data-theme="light"] .stock-tile .details {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1) !important;
+}
+
+/* Pourcentages et statistiques */
+body.stock-wall[data-theme="light"] .stock-tile .percent,
+body.stock-wall[data-theme="light"] .stock-tile .stats {
+    color: #6c757d !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.15) !important;
+}
+
+/* Chart.js spécifique - renforcement des couleurs */
+body[data-theme="light"] .chartjs-render-monitor,
+body[data-theme="light"] canvas.chartjs-render-monitor {
+    filter: contrast(1.7) saturate(2.0) brightness(0.75) !important;
+    background: #ffffff !important;
+}
+
+/* Forcer les couleurs vives pour les graphiques principaux */
+body[data-theme="light"] #priceChart,
+body[data-theme="light"] .main-chart canvas {
+    filter: contrast(1.8) saturate(2.2) brightness(0.7) !important;
 }

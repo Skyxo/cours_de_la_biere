@@ -63,6 +63,12 @@ async function startSession() {
             // Démarrer la mise à jour du timer
             startSessionTimer();
             
+            // Envoyer un signal aux autres onglets (page principale)
+            localStorage.setItem('session-started', JSON.stringify({
+                session_name: sessionName,
+                timestamp: new Date().getTime()
+            }));
+            
             showMessage('session-message', '✅ Session démarrée avec succès', 'success');
         } else {
             const err = await res.json();
@@ -108,6 +114,14 @@ async function resumeSession() {
                 }
                 showActiveSession();
                 startSessionTimer();
+                
+                // Envoyer un signal aux autres onglets (page principale)
+                localStorage.setItem('session-started', JSON.stringify({
+                    session_name: currentSession.session_name,
+                    resumed: true,
+                    timestamp: new Date().getTime()
+                }));
+                
                 showMessage('session-message', `✅ Session reprise (${data.sales_count} ventes)`, 'success');
             } else if (data.status === 'already_active') {
                 currentSession = data.session;
@@ -130,6 +144,14 @@ async function resumeSession() {
                 }
                 showActiveSession();
                 startSessionTimer();
+                
+                // Envoyer un signal aux autres onglets (page principale)
+                localStorage.setItem('session-started', JSON.stringify({
+                    session_name: currentSession.session_name,
+                    already_active: true,
+                    timestamp: new Date().getTime()
+                }));
+                
                 showMessage('session-message', '✅ Session déjà active', 'success');
             } else {
                 showMessage('session-message', '❌ Aucune session à reprendre', 'error');
@@ -176,6 +198,11 @@ async function endSession() {
             
             // Masquer l'interface de session active
             showNoSession();
+            
+            // Envoyer un signal aux autres onglets (page principale)
+            localStorage.setItem('session-stopped', JSON.stringify({
+                timestamp: new Date().getTime()
+            }));
             
             showMessage('session-message', `✅ ${data.message}`, 'success');
         } else {
@@ -319,6 +346,13 @@ async function resumeSpecificSession(filename) {
             showActiveSession();
             startSessionTimer();
             
+            // Envoyer un signal aux autres onglets (page principale)
+            localStorage.setItem('session-started', JSON.stringify({
+                session_name: currentSession.session_name,
+                resumed_specific: true,
+                timestamp: new Date().getTime()
+            }));
+            
             showMessage('session-message', '✅ Session reprise avec succès !', 'success');
             loadPreviousSessions(); // Recharger la liste
         } else {
@@ -422,6 +456,13 @@ function showActiveSession() {
 function showNoSession() {
     document.getElementById('no-session').classList.remove('hidden');
     document.getElementById('active-session').classList.add('hidden');
+    
+    // Arrêter tous les timers et réinitialiser les variables de session
+    stopSessionTimer();
+    stopAdminTimer();
+    currentSession = null;
+    sessionTotalTime = 0;
+    sessionResumeTime = null;
     
     // Réinitialiser les champs
     document.getElementById('sessionName').value = '';

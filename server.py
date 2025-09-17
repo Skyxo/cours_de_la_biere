@@ -411,6 +411,22 @@ async def get_history():
 def health():
     return {'status': 'ok', 'time': datetime.utcnow().isoformat()}
 
+@app.get("/api/session/status")
+async def get_session_status():
+    """Obtenir le statut de la session courante (endpoint public)"""
+    if not current_session:
+        return {"session": None}
+    
+    # Retourner uniquement les informations de base de la session
+    return {
+        "session": {
+            "session_id": current_session.get('session_id'),
+            "session_name": current_session.get('session_name'),
+            "is_active": current_session.get('is_active', False),
+            "start_time": current_session.get('start_time')
+        }
+    }
+
 @app.post('/reset')
 def reset():
     data_manager.reset_prices()

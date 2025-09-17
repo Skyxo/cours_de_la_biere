@@ -2,10 +2,451 @@
   "session": {
     "session_id": "session_20250916_102812",
     "session_name": "cc",
-    "created_at": "2025-09-16T10:28:12.506274",
+    "start_time": "2025-09-16T10:28:12.506274",
     "starting_cash": 0.0,
     "is_active": true,
     "resumed_from": "session_session_20250916_102812.csv"
   },
-  "sales": []
+  "sales": [
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.5,
+      "base_price": 2.9,
+      "total_price": 2.5,
+      "profit_loss": -0.3999999999999999,
+      "timestamp": "2025-09-17T09:57:40.076741"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.6,
+      "base_price": 2.9,
+      "total_price": 2.6,
+      "profit_loss": -0.2999999999999998,
+      "timestamp": "2025-09-17T09:57:40.200849"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.6,
+      "base_price": 2.9,
+      "total_price": 2.6,
+      "profit_loss": -0.2999999999999998,
+      "timestamp": "2025-09-17T09:57:40.336968"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.6,
+      "base_price": 2.9,
+      "total_price": 2.6,
+      "profit_loss": -0.2999999999999998,
+      "timestamp": "2025-09-17T09:57:40.473357"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.7,
+      "base_price": 2.9,
+      "total_price": 2.7,
+      "profit_loss": -0.19999999999999973,
+      "timestamp": "2025-09-17T09:57:40.622676"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.7,
+      "base_price": 2.9,
+      "total_price": 2.7,
+      "profit_loss": -0.19999999999999973,
+      "timestamp": "2025-09-17T09:57:40.760056"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.7,
+      "base_price": 2.9,
+      "total_price": 2.7,
+      "profit_loss": -0.19999999999999973,
+      "timestamp": "2025-09-17T09:57:40.895395"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.7,
+      "base_price": 2.9,
+      "total_price": 2.7,
+      "profit_loss": -0.19999999999999973,
+      "timestamp": "2025-09-17T09:57:41.031218"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.8,
+      "base_price": 2.9,
+      "total_price": 2.8,
+      "profit_loss": -0.10000000000000009,
+      "timestamp": "2025-09-17T09:57:41.169574"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.8,
+      "base_price": 2.9,
+      "total_price": 2.8,
+      "profit_loss": -0.10000000000000009,
+      "timestamp": "2025-09-17T09:57:41.297560"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.8,
+      "base_price": 2.9,
+      "total_price": 2.8,
+      "profit_loss": -0.10000000000000009,
+      "timestamp": "2025-09-17T09:57:41.449646"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.9,
+      "base_price": 2.9,
+      "total_price": 2.9,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-17T09:57:41.574254"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.9,
+      "base_price": 2.9,
+      "total_price": 2.9,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-17T09:57:41.714424"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 2.9,
+      "base_price": 2.9,
+      "total_price": 2.9,
+      "profit_loss": 0.0,
+      "timestamp": "2025-09-17T09:57:41.855896"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.6,
+      "base_price": 5.5,
+      "total_price": 3.6,
+      "profit_loss": -1.9,
+      "timestamp": "2025-09-17T09:58:02.794190"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 5.5,
+      "total_price": 3.7,
+      "profit_loss": -1.7999999999999998,
+      "timestamp": "2025-09-17T09:58:02.940543"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 5.5,
+      "total_price": 3.7,
+      "profit_loss": -1.7999999999999998,
+      "timestamp": "2025-09-17T09:58:03.096900"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.8,
+      "base_price": 5.5,
+      "total_price": 3.8,
+      "profit_loss": -1.7000000000000002,
+      "timestamp": "2025-09-17T09:58:03.242482"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.7,
+      "base_price": 2.6,
+      "total_price": 1.7,
+      "profit_loss": -0.9000000000000001,
+      "timestamp": "2025-09-17T09:58:10.252515"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.8,
+      "base_price": 2.6,
+      "total_price": 1.8,
+      "profit_loss": -0.8,
+      "timestamp": "2025-09-17T09:58:10.373475"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.8,
+      "base_price": 2.6,
+      "total_price": 1.8,
+      "profit_loss": -0.8,
+      "timestamp": "2025-09-17T09:58:10.513124"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.8,
+      "base_price": 2.6,
+      "total_price": 1.8,
+      "profit_loss": -0.8,
+      "timestamp": "2025-09-17T09:58:10.655403"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.2,
+      "base_price": 3.2,
+      "total_price": 2.2,
+      "profit_loss": -1.0,
+      "timestamp": "2025-09-17T09:58:12.146690"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.2,
+      "base_price": 3.2,
+      "total_price": 2.2,
+      "profit_loss": -1.0,
+      "timestamp": "2025-09-17T09:58:12.285025"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 3.2,
+      "total_price": 2.3,
+      "profit_loss": -0.9000000000000004,
+      "timestamp": "2025-09-17T09:58:12.417313"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 3.2,
+      "total_price": 2.3,
+      "profit_loss": -0.9000000000000004,
+      "timestamp": "2025-09-17T09:58:12.553311"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.3,
+      "base_price": 3.2,
+      "total_price": 2.3,
+      "profit_loss": -0.9000000000000004,
+      "timestamp": "2025-09-17T09:58:12.688510"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.4,
+      "base_price": 3.2,
+      "total_price": 2.4,
+      "profit_loss": -0.8000000000000003,
+      "timestamp": "2025-09-17T09:58:12.837631"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.4,
+      "base_price": 3.2,
+      "total_price": 2.4,
+      "profit_loss": -0.8000000000000003,
+      "timestamp": "2025-09-17T09:58:12.959446"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.5,
+      "base_price": 2.9,
+      "total_price": 3.5,
+      "profit_loss": 0.6000000000000001,
+      "timestamp": "2025-09-17T13:07:20.864629"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.5,
+      "base_price": 2.9,
+      "total_price": 3.5,
+      "profit_loss": 0.6000000000000001,
+      "timestamp": "2025-09-17T13:14:22.125574"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.6,
+      "base_price": 5.5,
+      "total_price": 3.6,
+      "profit_loss": -1.9,
+      "timestamp": "2025-09-17T13:14:29.195010"
+    },
+    {
+      "drink_id": 12,
+      "drink_name": "Barley Wine",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 5.5,
+      "total_price": 3.7,
+      "profit_loss": -1.7999999999999998,
+      "timestamp": "2025-09-17T13:14:30.268916"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.7,
+      "base_price": 2.6,
+      "total_price": 1.7,
+      "profit_loss": -0.9000000000000001,
+      "timestamp": "2025-09-17T13:14:31.531122"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.8,
+      "base_price": 2.6,
+      "total_price": 1.8,
+      "profit_loss": -0.8,
+      "timestamp": "2025-09-17T13:14:31.936014"
+    },
+    {
+      "drink_id": 6,
+      "drink_name": "Blonde",
+      "quantity": 1,
+      "unit_price": 1.8,
+      "base_price": 2.6,
+      "total_price": 1.8,
+      "profit_loss": -0.8,
+      "timestamp": "2025-09-17T13:15:00.974126"
+    },
+    {
+      "drink_id": 2,
+      "drink_name": "IPA",
+      "quantity": 1,
+      "unit_price": 2.4,
+      "base_price": 3.2,
+      "total_price": 2.4,
+      "profit_loss": -0.8000000000000003,
+      "timestamp": "2025-09-17T13:15:11.192155"
+    },
+    {
+      "drink_id": 1,
+      "drink_name": "Pils",
+      "quantity": 1,
+      "unit_price": 1.5,
+      "base_price": 2.5,
+      "total_price": 1.5,
+      "profit_loss": -1.0,
+      "timestamp": "2025-09-17T13:16:28.835421"
+    },
+    {
+      "drink_id": 5,
+      "drink_name": "Lager",
+      "quantity": 1,
+      "unit_price": 1.6,
+      "base_price": 2.3,
+      "total_price": 1.6,
+      "profit_loss": -0.6999999999999997,
+      "timestamp": "2025-09-17T13:16:37.111822"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 2.9,
+      "total_price": 3.7,
+      "profit_loss": 0.8000000000000003,
+      "timestamp": "2025-09-17T14:13:55.065348"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 2.9,
+      "total_price": 3.7,
+      "profit_loss": 0.8000000000000003,
+      "timestamp": "2025-09-17T14:13:59.310205"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.7,
+      "base_price": 2.9,
+      "total_price": 3.7,
+      "profit_loss": 0.8000000000000003,
+      "timestamp": "2025-09-17T14:13:59.702706"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.8,
+      "base_price": 2.9,
+      "total_price": 3.8,
+      "profit_loss": 0.8999999999999999,
+      "timestamp": "2025-09-17T14:14:00.054893"
+    },
+    {
+      "drink_id": 7,
+      "drink_name": "Ambr\u00e9e",
+      "quantity": 1,
+      "unit_price": 3.8,
+      "base_price": 2.9,
+      "total_price": 3.8,
+      "profit_loss": 0.8999999999999999,
+      "timestamp": "2025-09-17T15:34:58.960591"
+    }
+  ]
 }
