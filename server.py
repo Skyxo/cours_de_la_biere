@@ -4,12 +4,15 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 import os
 import secrets
 import uvicorn
 import io
 import json
+import threading
+import time
 import csv
 from csv_data import CSVDataManager
 app = FastAPI()
@@ -82,6 +85,9 @@ def load_session_if_exists():
             with open('data/current_session.json', 'r') as f:
                 session_data = json.load(f)
                 current_session = session_data.get('session')
+                # S'assurer que is_active est bien un booléen
+                if current_session:
+                    current_session['is_active'] = bool(current_session.get('is_active'))
                 session_sales = session_data.get('sales', [])
     except Exception as e:
         print(f"Erreur lors du chargement de la session: {e}")
@@ -100,36 +106,33 @@ def save_session():
         except Exception as e:
             print(f"Erreur lors de la sauvegarde de la session: {e}")
 
-# Charger l'état du timer au démarrage du serveur (seulement si c'est le processus principal)
-if __name__ == "__main__" or not hasattr(load_timer_state, '_loaded'):
-    load_timer_state()
-    load_timer_state._loaded = True
-
-# Sauvegarder périodiquement l'état du timer (toutes les 30 secondes)
-import threading
-import time
-
-def periodic_timer_save():
-    """Sauvegarde périodique de l'état du timer"""
+# Sauvegarde périodique pour la robustesse en cas de crash
+def periodic_save_thread():
+    """Thread qui sauvegarde l'état du timer et de la session toutes les 30 secondes."""
     while True:
-        time.sleep(30)  # Attendre 30 secondes
+        time.sleep(30)
         save_timer_state()
+        save_session()
 
-# Démarrer le thread de sauvegarde périodique seulement si c'est le processus principal
-if __name__ == "__main__" or not hasattr(periodic_timer_save, '_started'):
-    timer_save_thread = threading.Thread(target=periodic_timer_save, daemon=True)
-    timer_save_thread.start()
-    if not hasattr(periodic_timer_save, '_logged'):
-        print("🔄 Sauvegarde périodique du timer universel démarrée (30s)")
-        periodic_timer_save._logged = True
-    periodic_timer_save._started = True
+# --- Démarrage de l'application ---
 
-# Charger la session au démarrage
-if __name__ == "__main__" or not hasattr(load_session_if_exists, '_loaded'):
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gère le cycle de vie de l'application (démarrage et arrêt)."""
+    # Code à exécuter au démarrage
+    load_timer_state()
     load_session_if_exists()
-    load_session_if_exists._loaded = True
+    
+    save_thread = threading.Thread(target=periodic_save_thread, daemon=True)
+    save_thread.start()
+    print("🔄 Sauvegarde périodique de l'état démarrée (30s)")
+    
+    yield
+    # Code à exécuter à l'arrêt (si nécessaire)
 
-app = FastAPI(title="Wall Street Bar")
+# --- Fin du Démarrage ---
+
+app = FastAPI(title="Wall Street Bar", lifespan=lifespan)
 security = HTTPBasic()
 
 ADMIN_USERNAME = "admin"
@@ -305,6 +308,7 @@ async def set_volatility(request: VolatilityRequest, admin: str = Depends(get_cu
     market_volatility = max(0.25, min(request.factor, 4.0))
     data_manager.volatility = market_volatility
     save_timer_state()
+    save_timer_state() # Sauvegarde immédiate
     return {"status": "ok", "factor": market_volatility}
 
 @app.get("/sync/timer")
@@ -335,7 +339,7 @@ async def get_timer_sync():
 async def force_refresh_all_clients(admin: str = Depends(get_current_admin)):
     """Force tous les clients à se synchroniser immédiatement"""
     global market_timer_start
-    market_timer_start = datetime.now()
+    market_timer_start = datetime.now() # Redémarre le cycle
     save_timer_state()  # Sauvegarder immédiatement
     
     return {
@@ -348,7 +352,7 @@ async def force_refresh_all_clients(admin: str = Depends(get_current_admin)):
 async def restart_universal_timer(admin: str = Depends(get_current_admin)):
     """Redémarre uniquement le timer universel sans changer l'intervalle"""
     global market_timer_start
-    market_timer_start = datetime.now()
+    market_timer_start = datetime.now() # Redémarre le cycle
     save_timer_state()  # Sauvegarder immédiatement
     
     return {
@@ -466,7 +470,7 @@ async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(ge
     active_drinks.clear()
     timer_start_time = datetime.now()
     market_timer_start = datetime.now()  # Redémarrer le timer global du marché
-    save_timer_state()  # Sauvegarder immédiatement
+    save_timer_state() # Sauvegarde immédiate
     
     return {"status": "ok", "interval_ms": current_refresh_interval}
 
@@ -516,7 +520,7 @@ async def buy(request: Request):
             }
             
             session_sales.append(sale)
-            save_session()  # Sauvegarder automatiquement
+            save_session()  # Sauvegarder l'état de la session après chaque vente
             
         return {
             "status": "ok", 
@@ -543,6 +547,7 @@ def health():
 @app.get("/api/session/status")
 async def get_session_status():
     """Obtenir le statut de la session courante (endpoint public)"""
+    load_session_if_exists() # Recharger pour être sûr d'avoir l'état le plus récent
     if not current_session:
         return {"session": None}
     
@@ -583,7 +588,7 @@ async def start_session(request: SessionStartRequest, admin: str = Depends(get_c
     }
     
     session_sales = []
-    save_session()
+    save_session() # Sauvegarde immédiate de la nouvelle session
     
     return {"status": "success", "session": current_session}
 
@@ -677,6 +682,7 @@ async def end_session(admin: str = Depends(get_current_admin)):
         # Supprimer le fichier de session temporaire
         if os.path.exists('data/current_session.json'):
             os.remove('data/current_session.json')
+            print("Fichier de session temporaire supprimé.")
         
         session_data = {
             "session": current_session,
@@ -707,7 +713,7 @@ async def resume_session(admin: str = Depends(get_current_admin)):
     
     # Charger la session sauvegardée
     load_session_if_exists()
-    
+
     if current_session and current_session.get('is_active'):
         return {"status": "resumed", "session": current_session, "sales_count": len(session_sales)}
     else:
