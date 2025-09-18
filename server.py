@@ -26,52 +26,59 @@ active_drinks = set()
 timer_start_time = datetime.now()
 market_timer_start = datetime.now()  # Timer global du marché, indépendant des clients
 
+# --- Début de la gestion des verrous pour la concurrence ---
+timer_state_lock = threading.Lock()
+session_state_lock = threading.Lock()
+# --- Fin de la gestion des verrous ---
+
 # Fonction pour charger/sauvegarder l'état du timer persistant
 def load_timer_state():
     """Charger l'état du timer depuis le fichier de sauvegarde"""
     global market_timer_start, current_refresh_interval, market_volatility
-    try:
-        if os.path.exists('data/timer_state.json'):
-            with open('data/timer_state.json', 'r') as f:
-                timer_data = json.load(f)
-                market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
-                current_refresh_interval = timer_data.get('refresh_interval', 10000)
-                market_volatility = timer_data.get('market_volatility', 1.0)
-                data_manager.volatility = market_volatility # Transmettre au data_manager
-                # Réduire les logs au démarrage
+    with timer_state_lock:
+        try:
+            if os.path.exists('data/timer_state.json'):
+                with open('data/timer_state.json', 'r') as f:
+                    timer_data = json.load(f)
+                    market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
+                    current_refresh_interval = timer_data.get('refresh_interval', 10000)
+                    market_volatility = timer_data.get('market_volatility', 1.0)
+                    data_manager.volatility = market_volatility # Transmettre au data_manager
+                    # Réduire les logs au démarrage
+                    if not hasattr(load_timer_state, '_logged'):
+                        print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+                        load_timer_state._logged = True
+            else:
                 if not hasattr(load_timer_state, '_logged'):
-                    print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
+                    print(f"⏰ Aucun état de timer sauvegardé trouvé, démarrage nouveau timer universel")
                     load_timer_state._logged = True
-        else:
-            if not hasattr(load_timer_state, '_logged'):
-                print(f"⏰ Aucun état de timer sauvegardé trouvé, démarrage nouveau timer universel")
-                load_timer_state._logged = True
-            # Créer immédiatement un état initial
+                # Créer immédiatement un état initial
+                save_timer_state()
+        except Exception as e:
+            print(f"❌ Erreur lors du chargement du timer: {e}")
+            market_timer_start = datetime.now()
             save_timer_state()
-    except Exception as e:
-        print(f"❌ Erreur lors du chargement du timer: {e}")
-        market_timer_start = datetime.now()
-        save_timer_state()
 
 def save_timer_state():
     """Sauvegarder l'état du timer dans un fichier"""
     global market_timer_start, current_refresh_interval, market_volatility
-    try:
-        os.makedirs('data', exist_ok=True)
-        timer_data = {
-            'market_timer_start': market_timer_start.isoformat(),
-            'refresh_interval': current_refresh_interval,
-            'market_volatility': market_volatility,
-            'last_saved': datetime.now().isoformat()
-        }
-        with open('data/timer_state.json', 'w') as f:
-            json.dump(timer_data, f, indent=2)
-        # Réduire les logs : seulement afficher de temps en temps
-        if not hasattr(save_timer_state, '_last_log') or (datetime.now() - save_timer_state._last_log).seconds > 300:
-            print(f"💾 État du timer universel sauvegardé: {market_timer_start.isoformat()}")
-            save_timer_state._last_log = datetime.now()
-    except Exception as e:
-        print(f"❌ Erreur lors de la sauvegarde du timer: {e}")
+    with timer_state_lock:
+        try:
+            os.makedirs('data', exist_ok=True)
+            timer_data = {
+                'market_timer_start': market_timer_start.isoformat(),
+                'refresh_interval': current_refresh_interval,
+                'market_volatility': market_volatility,
+                'last_saved': datetime.now().isoformat()
+            }
+            with open('data/timer_state.json', 'w') as f:
+                json.dump(timer_data, f, indent=2)
+            # Réduire les logs : seulement afficher de temps en temps
+            if not hasattr(save_timer_state, '_last_log') or (datetime.now() - save_timer_state._last_log).seconds > 300:
+                print(f"💾 État du timer universel sauvegardé: {market_timer_start.isoformat()}")
+                save_timer_state._last_log = datetime.now()
+        except Exception as e:
+            print(f"❌ Erreur lors de la sauvegarde du timer: {e}")
 
 # Variables de session
 current_session = None
@@ -80,31 +87,33 @@ session_sales = []  # Liste des ventes de la session en cours
 def load_session_if_exists():
     """Charger la session sauvegardée s'il y en a une"""
     global current_session, session_sales
-    try:
-        if os.path.exists('data/current_session.json'):
-            with open('data/current_session.json', 'r') as f:
-                session_data = json.load(f)
-                current_session = session_data.get('session')
-                # S'assurer que is_active est bien un booléen
-                if current_session:
-                    current_session['is_active'] = bool(current_session.get('is_active'))
-                session_sales = session_data.get('sales', [])
-    except Exception as e:
-        print(f"Erreur lors du chargement de la session: {e}")
+    with session_state_lock:
+        try:
+            if os.path.exists('data/current_session.json'):
+                with open('data/current_session.json', 'r') as f:
+                    session_data = json.load(f)
+                    current_session = session_data.get('session')
+                    # S'assurer que is_active est bien un booléen
+                    if current_session:
+                        current_session['is_active'] = bool(current_session.get('is_active'))
+                    session_sales = session_data.get('sales', [])
+        except Exception as e:
+            print(f"Erreur lors du chargement de la session: {e}")
 
 def save_session():
     """Sauvegarder la session courante"""
     global current_session, session_sales
     if current_session:
-        try:
-            session_data = {
-                'session': current_session,
-                'sales': session_sales
-            }
-            with open('data/current_session.json', 'w') as f:
-                json.dump(session_data, f, indent=2)
-        except Exception as e:
-            print(f"Erreur lors de la sauvegarde de la session: {e}")
+        with session_state_lock:
+            try:
+                session_data = {
+                    'session': current_session,
+                    'sales': session_sales
+                }
+                with open('data/current_session.json', 'w') as f:
+                    json.dump(session_data, f, indent=2)
+            except Exception as e:
+                print(f"Erreur lors de la sauvegarde de la session: {e}")
 
 # Sauvegarde périodique pour la robustesse en cas de crash
 def periodic_save_thread():
@@ -218,6 +227,7 @@ class SessionStats(BaseModel):
     sales: List[SessionSale]
 @app.get("/prices")
 async def get_prices():
+    load_timer_state()  # Recharger l'état du timer pour être à jour
     try:
         prices = data_manager.get_all_prices()
         
@@ -314,6 +324,7 @@ async def set_volatility(request: VolatilityRequest, admin: str = Depends(get_cu
 @app.get("/sync/timer")
 async def get_timer_sync():
     """Endpoint pour synchroniser le timer entre tous les clients"""
+    load_timer_state()  # Recharger l'état du timer pour être à jour
     current_time = datetime.now()
     elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
     if current_refresh_interval > 0:
@@ -477,7 +488,9 @@ async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(ge
 
 @app.post("/buy")
 async def buy(request: Request):
-    global active_drinks, session_sales
+    load_timer_state()  # Recharger l'état du timer
+    load_session_if_exists()  # Recharger l'état de la session
+    global active_drinks, session_sales # Garder pour la modification
     
     try:
         data = await request.json()
