@@ -66,6 +66,7 @@ async function fetchWithRetry(url, options = {}, retries = API_CONFIG.maxRetries
 // État global
 let lastPrices = {};
 let isConnected = false;
+let lastVariations = new Map(); // Pour stocker l'état de la dernière variation
 let isRefreshing = false; // Flag pour éviter les refreshs multiples simultanés
 let refreshIntervalMs = null; // durée en ms entre deux rafraîchissements
 let refreshIntervalId = null; // handle de setInterval pour le fetch auto
@@ -378,6 +379,11 @@ async function syncWithServer() {
         const adjustedRemaining = data.timer_remaining_ms - timeDiff;
         
         countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+        // Plafonner le décompte à la durée de l'intervalle pour éviter les valeurs aberrantes (ex: 12s pour un intervalle de 10s)
+        const maxCountdown = Math.ceil(refreshIntervalMs / 1000);
+        if (countdown > maxCountdown) {
+            countdown = maxCountdown;
+        }
         
         // Si le timer est écoulé côté serveur, on démarre un nouveau cycle
         if (countdown <= 0) {
@@ -441,6 +447,19 @@ async function syncWithServer() {
 }
 
 function updateTimer() {
+    // Si le mode manuel est activé (intervalle 0), arrêter le timer et mettre à jour l'UI.
+    if (isImmediateMode()) {
+        if (isTimerRunning) {
+            stopTimer(); // Arrête les intervalles et met à jour l'UI vers '--'
+        }
+        // Forcer l'affichage "IMMÉDIAT"
+        const timerElement = document.getElementById('timer-countdown');
+        if (timerElement) {
+            timerElement.textContent = 'IMMÉDIAT';
+            timerElement.style.color = '#ff6b6b';
+        }
+        return;
+    }
     // Si le timer n'est pas en cours d'exécution, ne rien faire
     if (!isTimerRunning) {
         // S'assurer que l'affichage est correct
@@ -490,6 +509,12 @@ function updateTimer() {
             countdown = Math.max(0, countdown - 1);
         } else {
             countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+            
+            // Plafonner pour éviter les sauts (ex: 12s pour un intervalle de 10s)
+            const maxCountdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
+            if (countdown > maxCountdown) {
+                countdown = maxCountdown;
+            }
         }
         
         // Si le timer est écoulé, déclencher refresh
@@ -499,7 +524,7 @@ function updateTimer() {
             
             fetchPrices();
             // Remettre un countdown par défaut en attendant la prochaine sync
-            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
             return;
         }
     } else {
@@ -513,7 +538,7 @@ function updateTimer() {
             if (!isTimerRunning) return;
             
             fetchPrices();
-            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
             return;
         }
     }
@@ -526,7 +551,12 @@ function updateTimer() {
             timerElement.textContent = '--';
             timerElement.style.color = '#999';
         } else {
-            timerElement.textContent = countdown;
+            // Afficher "IMMÉDIAT" si le countdown est à 0, sinon afficher le temps restant
+            if (countdown <= 0) {
+                timerElement.textContent = 'IMMÉDIAT';
+            } else {
+                timerElement.textContent = countdown;
+            }
             timerElement.style.color = ''; // Réinitialiser la couleur par défaut
         }
     }
@@ -560,6 +590,18 @@ async function startTimer() {
     // Essayer de synchroniser avec le serveur au démarrage
     syncWithServer().then((success) => {
         if (success) {
+            // Si le serveur confirme le mode manuel, ne pas démarrer le timer
+            if (isImmediateMode()) {
+                console.log('⏹️ Mode manuel détecté après synchronisation, timer non démarré.');
+                stopTimer();
+                const timerElement = document.getElementById('timer-countdown');
+                if (timerElement) {
+                    timerElement.textContent = 'IMMÉDIAT';
+                    timerElement.style.color = '#ff6b6b';
+                }
+                updateMarketStatus();
+                return;
+            }
             isTimerRunning = true;
             // Démarrer le timer avec synchronisation réussie
             timerIntervalId = setInterval(updateTimer, 1000);
@@ -574,7 +616,7 @@ async function startTimer() {
             
             // Même si la sync échoue, démarrer quand même le timer avec des valeurs par défaut
             isTimerRunning = true;
-            countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+            countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
             
             timerIntervalId = setInterval(updateTimer, 1000);
             timerSyncIntervalId = setInterval(syncWithServer, 10000); // Retry plus fréquent (10s)
@@ -587,7 +629,7 @@ async function startTimer() {
         
         // En cas d'erreur, démarrer quand même avec un timer de base
         isTimerRunning = true;
-        countdown = Math.ceil((refreshIntervalMs || 10000) / 1000);
+        countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
         
         timerIntervalId = setInterval(updateTimer, 1000);
         timerSyncIntervalId = setInterval(syncWithServer, 10000);
@@ -811,12 +853,14 @@ async function fetchPrices() {
         
         renderStockWall(data.prices, data.active_drinks);
         
+        /*
         // Déclencher les animations d'actualisation finale
         if (!isInitialLoad) {
             setTimeout(() => {
                 triggerUpdateAnimations();
             }, 200); // Court délai pour permettre au DOM de se mettre à jour d'abord
         }
+        */
         
         // Connexion réussie
         handleReconnection();
@@ -835,12 +879,19 @@ async function fetchPrices() {
             const adjustedRemaining = serverTimerSync.timer_remaining_ms - timeDiff;
             
             countdown = Math.ceil(Math.max(0, adjustedRemaining) / 1000);
+            
+            // Plafonner pour éviter les sauts (ex: 12s pour un intervalle de 10s)
+            const maxCountdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
+            if (countdown > maxCountdown) {
+                countdown = maxCountdown;
+            }
+            
             if (countdown <= 0) {
-                countdown = Math.ceil(refreshIntervalMs / 1000);
+                countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
             }
         } else {
             // Fallback
-            countdown = Math.ceil(refreshIntervalMs / 1000);
+            countdown = Math.ceil((refreshIntervalMs ?? 10000) / 1000);
         }
         
         if (timerElement) {
@@ -1100,6 +1151,9 @@ function createStockTile(drink) {
     const variation = calculateVariation(drink);
     const drinkColor = getDrinkColor(drink.name, drink.id);
     
+    // Initialiser l'état persistant pour cette boisson
+    lastVariations.set(drink.id, { trendClass: trend.class, variationText: variation });
+    
     // Générer les indicateurs de tendance
     const trendIndicators = getTrendIndicators(trend.class);
     
@@ -1154,7 +1208,7 @@ function createStockTile(drink) {
     
     tile.innerHTML = `
         <div class="tile-chart">
-            <canvas id="chart-${drink.id}" width="100%" height="100%"></canvas>
+            <canvas id="chart-${drink.id}"></canvas>
         </div>
         <div class="tile-info">
             <div class="tile-name">
@@ -1231,8 +1285,25 @@ function updateStockTilePrice(drink) {
     const trend = calculateTrend(drink);
     const variation = calculateVariation(drink);
     
+    // --- Début de la nouvelle logique ---
+    let displayTrendClass = trend.class;
+    let displayVariationText = variation;
+
+    if (trend.hasChanged) {
+        // Un vrai changement a eu lieu. On stocke le nouvel état.
+        lastVariations.set(drink.id, { trendClass: trend.class, variationText: variation });
+    } else {
+        // Pas de changement ce cycle. On utilise le dernier état sauvegardé s'il existe.
+        const lastState = lastVariations.get(drink.id);
+        if (lastState) {
+            displayTrendClass = lastState.trendClass;
+            displayVariationText = lastState.variationText;
+        }
+    }
+    // --- Fin de la nouvelle logique ---
+
     // Mettre à jour les indicateurs de tendance
-    const trendIndicators = getTrendIndicators(trend.class);
+    const trendIndicators = getTrendIndicators(displayTrendClass); // Utiliser la classe de tendance persistante
     const leftIndicator = tile.querySelector('.trend-indicator.left');
     const rightIndicator = tile.querySelector('.trend-indicator.right');
     
@@ -1252,8 +1323,8 @@ function updateStockTilePrice(drink) {
     // Mettre à jour la variation
     const variationElement = tile.querySelector('.tile-variation');
     if (variationElement) {
-        variationElement.textContent = variation;
-        variationElement.className = `tile-variation ${trend.class}`;
+        variationElement.textContent = displayVariationText; // Utiliser le texte de variation persistant
+        variationElement.className = `tile-variation ${displayTrendClass}`; // Utiliser la classe de tendance persistante
     }
     
     // Mettre à jour la classe de tendance de la tuile en préservant les autres classes importantes
@@ -1263,7 +1334,7 @@ function updateStockTilePrice(drink) {
         cls.startsWith('grid-layout-') ||
         cls.startsWith('special-')
     );
-    tile.className = `stock-tile trend-${trend.class} ${existingClasses.join(' ')}`.trim();
+    tile.className = `stock-tile trend-${displayTrendClass} ${existingClasses.join(' ')}`.trim(); // Utiliser la classe de tendance persistante
     
     // Animation flash si le prix change avec la bonne couleur
     if (trend.hasChanged) {
@@ -1317,10 +1388,6 @@ function createOrUpdateStockChart(drink) {
         }
         stockCharts.delete(drink.id);
     }
-    
-    // Réinitialiser les dimensions du canvas pour éviter les problèmes de redimensionnement
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
     
     // Choisir le type de graphique selon le toggle
     if (currentChartType === 'candlestick') {
@@ -1438,6 +1505,14 @@ function createCandlestickChart(drink, canvas) {
     // Sauvegarder l'historique au format OHLC (important pour préserver lors du changement de mode)
     drinkPriceHistory.set(drink.id, ohlcHistory);
     
+    // Calculer le padding pour l'axe X pour éviter que les graphiques soient coupés
+    const xValues = ohlcHistory.map(p => p.x);
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    const xRange = maxX - minX;
+    // Ajouter un padding de 10% de chaque côté, ou une valeur fixe si la plage est nulle
+    const xPadding = xRange > 0 ? xRange * 0.1 : 1;
+    
     
     // Créer un nouveau graphique candlestick
         const ctx = canvas.getContext('2d');
@@ -1496,6 +1571,8 @@ function createCandlestickChart(drink, canvas) {
                         x: {
                             type: 'linear',
                             display: false,
+                            min: minX - xPadding,
+                            max: maxX + xPadding,
                             grid: {
                                 color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
                             }
@@ -1600,6 +1677,14 @@ function createLineChart(drink, canvas) {
     // Sauvegarder l'historique au format line (important pour préserver lors du changement de mode)
     drinkPriceHistory.set(drink.id, lineHistory);
     
+    // Calculer le padding pour l'axe X pour éviter que les graphiques soient coupés
+    const xValues = lineHistory.map(p => p.x);
+    const minX = Math.min(...xValues);
+    const maxX = Math.max(...xValues);
+    const xRange = maxX - minX;
+    // Ajouter un padding de 5% de chaque côté, ou une valeur fixe si la plage est nulle
+    const xPadding = xRange > 0 ? xRange * 0.05 : 1;
+    
     
     // Créer le graphique linéaire
     const ctx = canvas.getContext('2d');
@@ -1650,6 +1735,8 @@ function createLineChart(drink, canvas) {
                     x: {
                         type: 'linear',
                         display: false,
+                        min: minX - xPadding,
+                        max: maxX + xPadding,
                         grid: {
                             color: isInHappyHour ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)'
                         }

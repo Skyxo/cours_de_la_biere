@@ -1,5 +1,6 @@
 {
-  "market_timer_start": "2025-09-12T12:13:31.533571",
-  "refresh_interval": 10000,
-  "last_saved": "2025-09-17T23:06:53.839525"
+  "market_timer_start": "2025-09-18T02:02:03.991443",
+  "refresh_interval": 100000,
+  "market_volatility": 1.0,
+  "last_saved": "2025-09-18T16:15:32.033096"
 }

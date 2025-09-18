@@ -1,5 +1,6 @@
 import csv
 import os
+import json
 from datetime import datetime
 from typing import List, Dict, Optional
 import random
@@ -9,7 +10,10 @@ class CSVDataManager:
         self.data_dir = data_dir
         self.drinks_file = os.path.join(data_dir, "drinks.csv")
         self.history_file = os.path.join(data_dir, "history.csv")
+        self.undone_file = os.path.join(data_dir, "undone_transactions.json")
+        self.history_fieldnames = ['id', 'transaction_id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp']
         
+        self.volatility = 1.0
         # Structure pour gérer les Happy Hours actives
         self.active_happy_hours = {}  # {drink_id: {'start_time': datetime, 'duration': int}}
         
@@ -38,7 +42,7 @@ class CSVDataManager:
         if not os.path.exists(self.history_file):
             with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                writer.writerow(['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp'])
+                writer.writerow(self.history_fieldnames)
     
     def get_all_prices(self) -> List[Dict]:
         prices = []
@@ -133,7 +137,7 @@ class CSVDataManager:
             writer.writeheader()
             writer.writerows(drinks)
     
-    def add_history_entry(self, drink_id: int, name: str, price: float, quantity: int, change: float, event: str):
+    def add_history_entry(self, drink_id: int, name: str, price: float, quantity: int, change: float, event: str, transaction_id: int):
         entry_id = int(datetime.now().timestamp() * 1000000) % 1000000
         
         # Ajouter la nouvelle entrée
@@ -141,6 +145,7 @@ class CSVDataManager:
             writer = csv.writer(f)
             writer.writerow([
                 entry_id,
+                transaction_id,
                 drink_id,
                 name,
                 price,
@@ -171,7 +176,7 @@ class CSVDataManager:
                 recent_rows = all_rows[-5000:]
                 
                 with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.writer(f)
+                    writer = csv.DictWriter(f, fieldnames=self.history_fieldnames)
                     writer.writerow(header)
                     writer.writerows(recent_rows)
                     
@@ -193,7 +198,7 @@ class CSVDataManager:
                 recent_rows = rows[-max_entries:]
                 
                 with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
-                    writer = csv.DictWriter(f, fieldnames=['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp'])
+                    writer = csv.DictWriter(f, fieldnames=self.history_fieldnames)
                     writer.writeheader()
                     writer.writerows(recent_rows)
         except Exception:
@@ -206,21 +211,23 @@ class CSVDataManager:
             reader = csv.DictReader(f)
             rows = list(reader)
             for row in rows[-limit:]:
+                drink_id_val = row.get('drink_id')
                 history.append({
-                    'id': int(row['id']),
-                    'drink_id': int(row['drink_id']),
-                    'name': row['name'],
-                    'price': float(row['price']),
-                    'quantity': float(row['quantity']),
-                    'change': float(row['change']),
-                    'event': row['event'],
-                    'timestamp': row['timestamp']
+                    'id': int(row.get('id') or 0),
+                    'transaction_id': int(row.get('transaction_id') or 0),
+                    'drink_id': int(drink_id_val) if drink_id_val and drink_id_val.strip() else None,
+                    'name': row.get('name', ''),
+                    'price': float(row.get('price') or 0.0),
+                    'quantity': float(row.get('quantity') or 0.0),
+                    'change': float(row.get('change') or 0.0),
+                    'event': row.get('event', ''),
+                    'timestamp': row.get('timestamp', '')
                 })
         return history
 
     def update_history_entry(self, entry_id: int, quantity: Optional[int] = None, event: Optional[str] = None) -> Optional[Dict]:
         updated_row = None
-        fieldnames = ['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp']
+        fieldnames = self.history_fieldnames
 
         with open(self.history_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
@@ -255,7 +262,7 @@ class CSVDataManager:
         }
 
     def delete_history_entry(self, entry_id: int) -> bool:
-        fieldnames = ['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp']
+        fieldnames = self.history_fieldnames
         with open(self.history_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -269,7 +276,7 @@ class CSVDataManager:
         return True
 
     def revert_and_delete_history_entry(self, entry_id: int) -> bool:
-        fieldnames = ['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp']
+        fieldnames = self.history_fieldnames
         with open(self.history_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -307,27 +314,28 @@ class CSVDataManager:
         if not drink:
             raise ValueError('Boisson introuvable')
 
+        transaction_id = int(datetime.now().timestamp() * 1000)
         all_drinks = self.get_all_prices()
 
-        step_up = max(0.01 * float(drink['base_price']) * int(quantity), 0.01)
-        new_price = max(drink['min_price'], min(drink['max_price'], drink['price'] + step_up))
+        price_increase = max(0.01 * float(drink['base_price']) * int(quantity), 0.01) * self.volatility
+        new_price = max(drink['min_price'], min(drink['max_price'], drink['price'] + price_increase))
         change = new_price - drink['price']
 
         self.update_drink_price(drink_id, new_price)
-        self.add_history_entry(drink_id, drink['name'], new_price, quantity, change, 'buy')
+        self.add_history_entry(drink_id, drink['name'], new_price, quantity, change, 'buy', transaction_id)
 
         for other in all_drinks:
             if other['id'] == drink_id:
                 continue
             current = float(other['price'])
-            step_down = 0.005 * current * int(quantity)
-            if step_down <= 0:
+            price_decrease = (0.005 * current * int(quantity)) * self.volatility
+            if price_decrease <= 0:
                 continue
-            new_other = max(float(other['min_price']), min(float(other['max_price']), current - step_down))
+            new_other = max(float(other['min_price']), min(float(other['max_price']), current - price_decrease))
             change_other = new_other - current
             if change_other != 0:
                 self.update_drink_price(other['id'], new_other)
-                self.add_history_entry(other['id'], other['name'], new_other, 0, change_other, 'balance')
+                self.add_history_entry(other['id'], other['name'], new_other, 0, change_other, 'balance', transaction_id)
 
         return self.get_drink_by_id(drink_id)
     
@@ -341,7 +349,7 @@ class CSVDataManager:
         change = new_price - drink['price']
 
         self.update_drink_price(drink_id, new_price)
-        self.add_history_entry(drink_id, drink['name'], new_price, quantity, change, 'buy')
+        self.add_history_entry(drink_id, drink['name'], new_price, quantity, change, 'buy', int(datetime.now().timestamp() * 1000))
 
         return self.get_drink_by_id(drink_id)
     
@@ -349,7 +357,7 @@ class CSVDataManager:
         drinks = self.get_all_prices()
         for drink in drinks:
             self.update_drink_price(drink['id'], drink['base_price'])
-            self.add_history_entry(drink['id'], drink['name'], drink['base_price'], 0, 0, 'reset')
+            self.add_history_entry(drink['id'], drink['name'], drink['base_price'], 0, 0, 'reset', int(datetime.now().timestamp() * 1000))
     
     def trigger_crash(self, level='medium'):
         """
@@ -382,7 +390,7 @@ class CSVDataManager:
             change = new_price - drink['price']
             if change != 0:
                 self.update_drink_price(drink['id'], new_price)
-                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'crash_{level}')
+                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'crash_{level}', int(datetime.now().timestamp() * 1000))
     
     def trigger_boom(self, level='medium'):
         """
@@ -415,7 +423,7 @@ class CSVDataManager:
             change = new_price - drink['price']
             if change != 0:
                 self.update_drink_price(drink['id'], new_price)
-                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'boom_{level}')
+                self.add_history_entry(drink['id'], drink['name'], new_price, 0, change, f'boom_{level}', int(datetime.now().timestamp() * 1000))
     
     def _next_drink_id(self) -> int:
         drinks = self.get_all_prices()
@@ -485,7 +493,7 @@ class CSVDataManager:
             return None
 
         with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
+            writer = csv.DictWriter(f, fieldnames=self.get_drink_fieldnames())
             writer.writeheader()
             writer.writerows(rows)
 
@@ -505,15 +513,15 @@ class CSVDataManager:
         if len(new_rows) == len(rows):
             return False
         with open(self.drinks_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree'])
+            writer = csv.DictWriter(f, fieldnames=self.get_drink_fieldnames())
             writer.writeheader()
             writer.writerows(new_rows)
         return True
 
     def clear_history(self) -> None:
         with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(['id', 'drink_id', 'name', 'price', 'quantity', 'change', 'event', 'timestamp'])
+            writer = csv.DictWriter(f, fieldnames=self.history_fieldnames)
+            writer.writeheader()
 
     def start_happy_hour(self, drink_id: int, duration_seconds: int) -> Dict:
         """Démarre une Happy Hour pour une boisson spécifique"""
@@ -532,7 +540,7 @@ class CSVDataManager:
         }
         
         # Ajouter à l'historique
-        self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, f'happy_hour_start_{duration_seconds}s')
+        self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, f'happy_hour_start_{duration_seconds}s', int(datetime.now().timestamp() * 1000))
         
         return {
             'drink_id': drink_id,
@@ -548,7 +556,7 @@ class CSVDataManager:
             drink = self.get_drink_by_id(drink_id)
             
             if drink:
-                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop')
+                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop', int(datetime.now().timestamp() * 1000))
             
             del self.active_happy_hours[drink_id]
             return True
@@ -562,7 +570,7 @@ class CSVDataManager:
         for drink_id, happy_hour_info in self.active_happy_hours.items():
             drink = self.get_drink_by_id(drink_id)
             if drink:
-                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop_all')
+                self.add_history_entry(drink_id, drink['name'], drink['price'], 0, 0, 'happy_hour_stop_all', int(datetime.now().timestamp() * 1000))
         
         self.active_happy_hours.clear()
         return count
@@ -607,11 +615,74 @@ class CSVDataManager:
             happy_hour_info = self.active_happy_hours[drink_id]
             drink_name = happy_hour_info.get('drink_name', f'Drink {drink_id}')
             # Éviter la récursion en ne cherchant pas le drink par ID
-            # Utiliser les infos stockées dans happy_hour_info
-            self.add_history_entry(drink_id, drink_name, 0, 0, 0, 'happy_hour_expired')
+            # Utiliser les infos stockées dans happy_hour_info. Le prix n'est pas pertinent ici.
+            self.add_history_entry(drink_id, drink_name, 0, 0, 0, 'happy_hour_expired', int(datetime.now().timestamp() * 1000))
             del self.active_happy_hours[drink_id]
     
     def is_drink_in_happy_hour(self, drink_id: int) -> bool:
         """Vérifie si une boisson est actuellement en Happy Hour"""
         self._clean_expired_happy_hours()
         return drink_id in self.active_happy_hours
+
+    def get_drink_fieldnames(self) -> List[str]:
+        """Retourne les noms de colonnes pour drinks.csv, gère la rétrocompatibilité."""
+        # Par défaut, inclure la nouvelle colonne
+        fieldnames = ['id', 'name', 'price', 'base_price', 'min_price', 'max_price', 'alcohol_degree']
+        try:
+            with open(self.drinks_file, 'r', encoding='utf-8') as f:
+                reader = csv.reader(f)
+                header = next(reader)
+                # Si la colonne n'existe pas dans le fichier, ne pas l'inclure pour l'écriture
+                if 'alcohol_degree' not in header:
+                    fieldnames.remove('alcohol_degree')
+        except (FileNotFoundError, StopIteration):
+            # Le fichier n'existe pas ou est vide, utiliser les nouveaux fieldnames
+            pass
+        return fieldnames
+
+    def _read_undone_stack(self) -> List:
+        if not os.path.exists(self.undone_file):
+            return []
+        try:
+            with open(self.undone_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, FileNotFoundError):
+            return []
+
+    def _write_undone_stack(self, stack: List):
+        with open(self.undone_file, 'w', encoding='utf-8') as f:
+            json.dump(stack, f)
+
+    def undo_last_transaction(self) -> Optional[Dict]:
+        with open(self.history_file, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        
+        if not rows:
+            return None
+
+        last_transaction_id = rows[-1].get('transaction_id')
+        if not last_transaction_id:
+            return None
+
+        transaction_entries = [row for row in rows if row.get('transaction_id') == last_transaction_id]
+        remaining_entries = [row for row in rows if row.get('transaction_id') != last_transaction_id]
+
+        for entry in reversed(transaction_entries):
+            drink_id = int(entry['drink_id'])
+            change = float(entry['change'])
+            current_price = float(entry['price'])
+            reverted_price = current_price - change
+            self.update_drink_price(drink_id, reverted_price)
+
+        undone_stack = self._read_undone_stack()
+        undone_stack.append(transaction_entries)
+        self._write_undone_stack(undone_stack)
+
+        with open(self.history_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=self.history_fieldnames)
+            writer.writeheader()
+            writer.writerows(remaining_entries)
+
+        buy_entry = next((e for e in transaction_entries if e['event'] == 'buy'), None)
+        return {"undone_transaction_id": last_transaction_id, "drink_name": buy_entry['name'] if buy_entry else "N/A"}

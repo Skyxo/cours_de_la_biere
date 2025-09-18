@@ -97,10 +97,10 @@
     }
     
     .section-content {
-      padding: 25px;
+      padding: 0 25px;
       max-height: 0;
       overflow: hidden;
-      transition: all 0.4s ease;
+      transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out, opacity 0.5s ease-in-out;
       opacity: 0;
     }
     
@@ -143,6 +143,7 @@
       top: 0;
       background: rgba(var(--accent), 0.15);
       z-index: 10;
+      color: rgb(var(--text));
       padding: 12px 8px;
       border-bottom: 2px solid rgba(var(--accent), 0.3);
     }
@@ -195,6 +196,7 @@
       top: 0;
       background: rgba(var(--accent), 0.15);
       z-index: 10;
+      color: rgb(var(--text));
       padding: 12px 8px;
       border-bottom: 2px solid rgba(var(--accent), 0.3);
     }
@@ -280,7 +282,7 @@
     
     .session-card-date {
       font-size: 12px;
-      color: rgba(var(--text), 0.6);
+      color: rgb(var(--text-muted));
     }
     
     .session-card-stats {
@@ -302,7 +304,7 @@
     
     .session-card-stat-label {
       font-size: 10px;
-      color: rgba(var(--text), 0.6);
+      color: rgb(var(--text-muted));
       margin-top: 2px;
     }
     
@@ -323,23 +325,44 @@
     }
     
     .session-card-btn.resume {
-      background: rgba(76, 175, 80, 0.9);
+      background: rgba(var(--up), 0.9);
       color: white;
     }
     
     .session-card-btn.resume:hover {
-      background: rgba(76, 175, 80, 1);
+      background: rgb(var(--up));
       transform: scale(1.02);
     }
     
     .session-card-btn.delete {
-      background: rgba(244, 67, 54, 0.9);
+      background: rgba(var(--down), 0.9);
       color: white;
     }
     
     .session-card-btn.delete:hover {
-      background: rgba(244, 67, 54, 1);
+      background: rgb(var(--down));
       transform: scale(1.02);
+    }
+    
+    .session-card-actions-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    
+    .session-card-btn.delete {
+      width: 100%;
+      margin-top: 8px;
+      background: rgba(var(--danger), 0.9);
+    }
+    
+    .session-card-btn.export {
+      background: rgba(var(--accent), 0.9);
+      color: white;
+    }
+    
+    .session-card-btn.export:hover {
+      background: rgb(var(--accent));
     }
     
     .no-sessions {
@@ -350,6 +373,136 @@
       min-width: 280px;
     }
     
+    /* Styles pour les sections verrouillées sans session */
+    .require-session.locked {
+      position: relative;
+    }
+    
+    .require-session.locked .section-content {
+      display: none !important;
+    }
+    
+    .require-session.locked .section-header {
+      opacity: 0.5;
+      cursor: not-allowed !important;
+      position: relative;
+      color: rgb(var(--text-muted)) !important;
+    }
+    
+    .require-session.locked .section-header h3,
+    .require-session.locked .section-header h4,
+    .require-session.locked .section-header h5,
+    .require-session.locked .section-header span,
+    .require-session.locked .section-header p {
+      color: rgb(var(--text-muted)) !important;
+      opacity: 0.6;
+      transition: color 0.3s ease, opacity 0.3s ease;
+    }
+    
+    /* Restaurer les couleurs normales quand les sections ne sont pas verrouillées */
+    .require-session:not(.locked) .section-header h3,
+    .require-session:not(.locked) .section-header h4,
+    .require-session:not(.locked) .section-header h5,
+    .require-session:not(.locked) .section-header span,
+    .require-session:not(.locked) .section-header p {
+      color: inherit;
+      opacity: 1;
+      transition: color 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .require-session.locked .section-header::after {
+      content: "🔒";
+      color: rgb(var(--danger));
+      font-size: 1.2em;
+      margin-left: 10px;
+      animation: pulse 2s infinite;
+    }
+    
+    /* Cadenas pour les titres directement dans require-session (sans section-header) */
+    .require-session.locked > h3::after,
+    .require-session.locked > h4::after,
+    .require-session.locked > h5::after {
+      content: "🔒";
+      color: rgb(var(--danger));
+      font-size: 1.2em;
+      margin-left: 10px;
+      animation: pulse 2s infinite;
+    }
+    
+    /* Cadenas ouvert pour les sections déverrouillées */
+    .require-session:not(.locked) .section-header::after {
+      content: "🔓";
+      color: rgb(var(--up));
+      font-size: 1.2em;
+      margin-left: 10px;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+    
+    /* Cadenas ouvert pour les titres directement dans require-session */
+    .require-session:not(.locked) > h3::after,
+    .require-session:not(.locked) > h4::after,
+    .require-session:not(.locked) > h5::after {
+      content: "🔓";
+      color: rgb(var(--up));
+      font-size: 1.2em;
+      margin-left: 10px;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+    
+    .require-session:not(.locked) .section-header:hover::after {
+      opacity: 1;
+    }
+    
+    /* Effet hover pour les titres directs */
+    .require-session:not(.locked) > h3:hover::after,
+    .require-session:not(.locked) > h4:hover::after,
+    .require-session:not(.locked) > h5:hover::after {
+      opacity: 1;
+    }
+    
+    .require-session.locked .toggle-icon {
+      display: none;
+    }
+    
+    /* Styles pour les boutons désactivés dans les sections verrouillées */
+    .require-session.locked button:disabled {
+      background: rgb(var(--text-muted)) !important;
+      border-color: rgb(var(--text-muted)) !important;
+      color: #fff !important;
+      opacity: 0.4 !important;
+      cursor: not-allowed !important;
+      pointer-events: none;
+    }
+    
+    .require-session.locked button:disabled:hover {
+      background: rgb(var(--text-muted)) !important;
+      transform: none !important;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    
+    /* Message de verrouillage */
+    .lock-message {
+      background: rgba(var(--danger), 0.1);
+      border: 2px solid rgb(var(--danger));
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      color: rgb(var(--danger));
+      text-align: center;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
     /* Media queries pour mobile */
     @media (max-width: 768px) {
       .session-card {
@@ -516,22 +669,31 @@
     }
     
     .btn {
-      background: linear-gradient(45deg, rgb(var(--accent)), rgba(var(--danger), 0.9));
-      color: #fff;
+      background: rgb(var(--accent));
+      color: rgb(var(--th-text));
       border: none;
-      padding: 12px 24px;
-      border-radius: 25px;
+      padding: 10px 20px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1em;
-      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 0.9em;
+      transition: all 0.2s ease-in-out;
       margin: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
     /* Petits boutons icônes (trash) */
     .btn-icon {
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 0.95em;
+      padding: 8px 12px;
+      font-size: 1em;
+      min-width: auto;
+      text-transform: none;
+      letter-spacing: normal;
       line-height: 1;
       display: inline-flex;
       align-items: center;
@@ -540,18 +702,55 @@
       min-height: 32px;
     }
     
+    .btn-lg {
+      font-size: 1.1em;
+      padding: 12px 24px;
+    }
+
     .btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(var(--accent), 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
     
     .btn-danger {
       background: linear-gradient(45deg, rgb(var(--danger)), #B71C1C);
       color: #fff;
     }
+    .btn-danger:hover {
+      box-shadow: 0 4px 10px rgba(var(--danger), 0.4);
+    }
     
     .btn-warning {
       background: linear-gradient(45deg, #FFA726, #FB8C00);
+    }
+    .btn-warning:hover {
+      box-shadow: 0 4px 10px rgba(var(--warning), 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(45deg, rgb(var(--up)), #388E3C);
+    }
+    .btn-success:hover {
+      box-shadow: 0 4px 10px rgba(var(--up), 0.4);
+    }
+
+    .btn-purple {
+      background: linear-gradient(45deg, #9C27B0, #673AB7);
+    }
+    .btn-purple:hover {
+      box-shadow: 0 4px 10px rgba(156, 39, 176, 0.4);
+    }
+
+    .btn-blue {
+      background: linear-gradient(45deg, #2196F3, #1976D2);
+    }
+    .btn-blue:hover {
+      box-shadow: 0 4px 10px rgba(33, 150, 243, 0.4);
     }
     
     /* Animation pour les boutons maximaux */
@@ -589,7 +788,7 @@
     }
     
     .stat-label {
-      color: #888;
+      color: rgb(var(--text-muted));
       font-size: 0.9em;
     }
     
@@ -645,34 +844,34 @@
     }
     
     .next-price {
-      color: #888;
+      color: rgb(var(--text-muted));
       font-size: 0.85em;
     }
     
     .next-price.increase {
-      color: #4CAF50;
+      color: rgb(var(--up));
     }
     
     .next-price.decrease {
-      color: #ff4444;
+      color: rgb(var(--down));
     }
     
     .price-arrow {
-      color: #888;
+      color: rgb(var(--text-muted));
       font-size: 0.8em;
       margin: 0 4px;
     }
     
     .price-arrow.price-increase {
-      color: #4CAF50;
+      color: rgb(var(--up));
     }
     
     .price-arrow.price-decrease {
-      color: #ff4444;
+      color: rgb(var(--down));
     }
     
     .price-arrow.price-stable {
-      color: #888;
+      color: rgb(var(--text-muted));
     }
     
     .timer-section {
@@ -763,12 +962,6 @@
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    
-    .theme-controls label {
-      color: rgb(var(--accent));
-      font-weight: 600;
-      white-space: nowrap;
     }
     
     .theme-controls select {
@@ -1478,13 +1671,7 @@
       <div class="admin-controls">
         <!-- Contrôles gauche -->
         <div class="admin-controls-left">
-          <div class="theme-controls">
-            <label for="admin-theme-select">🎨 Thème Interface Principale:</label>
-            <select id="admin-theme-select">
-              <option value="light">☀️ Clair</option>
-              <option value="dark">🌙 Sombre</option>
-            </select>
-          </div>
+          <!-- Espace réservé pour d'éventuels contrôles futurs -->
         </div>
         
         <!-- Contrôles centre -->
@@ -1506,10 +1693,10 @@
       
       <!-- Message d'avertissement sans session -->
       <div id="global-session-warning" class="message warning hidden" style="margin: 20px 0; border: 2px solid #FF9800; background: linear-gradient(45deg, #FFF8DC, #FFFACD);">
-        <h4 style="margin: 0 0 10px 0; color: #E65100; display: flex; align-items: center; gap: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: rgb(var(--warning)); display: flex; align-items: center; gap: 8px;">
           🚫 Session Requise
         </h4>
-        <p style="margin: 0; color: #BF360C;">
+        <p style="margin: 0; color: rgb(var(--warning)); opacity: 0.8;">
           <strong>La plupart des fonctions admin nécessitent une session active.</strong><br>
           Veuillez démarrer une session ci-dessous pour accéder aux contrôles du marché, achats, historique et gestion des boissons.
         </p>
@@ -1523,7 +1710,7 @@
         
         <!-- Panneau des sessions précédentes -->
         <div class="previous-sessions-container">
-          <h4 style="margin: 0 0 10px 0; color: #6c757d; font-size: 1em;">📋 Sessions Précédentes</h4>
+          <h4 style="margin: 0 0 10px 0; color: rgb(var(--text-muted)); font-size: 1em;">📋 Sessions Précédentes</h4>
           <div class="sessions-scroll" id="previous-sessions-container">
             <div class="no-sessions" id="no-previous-sessions">
               Aucune session précédente trouvée
@@ -1534,21 +1721,14 @@
         <!-- Indicateur de session -->
         <div id="session-status" style="margin-bottom: 15px;">
           <div id="no-session" class="session-state">
-            <p style="color: #999; margin: 0;">❌ Aucune session active</p>
+            <p style="color: rgb(var(--text-muted)); margin: 0;">❌ Aucune session active</p>
             <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: end;">
-              <div style="flex: 1; min-width: 150px;">
+              <div style="flex: 2; min-width: 200px;">
                 <label for="sessionName" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Nom de la session :</label>
                 <input type="text" id="sessionName" placeholder="Nom de la session" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
               </div>
-              <div style="min-width: 120px;">
-                <label for="startingCash" style="display: block; margin-bottom: 5px; color: rgb(var(--accent)); font-weight: 600;">Caisse départ (€) :</label>
-                <input type="number" id="startingCash" value="0" min="0" step="0.01" style="width: 100%; padding: 8px 12px; border: 1px solid rgba(var(--grid), 0.5); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text));">
-              </div>
-              <button onclick="startSession()" class="btn" style="background: linear-gradient(45deg, #4CAF50, #45a049);">
+              <button onclick="startSession()" class="btn btn-success" style="flex: 1;">
                 🚀 Démarrer Session
-              </button>
-              <button onclick="resumeSession()" class="btn btn-warning">
-                🔄 Reprendre Session
               </button>
             </div>
           </div>
@@ -1583,7 +1763,7 @@
               </button>
             </div>
             
-            <div style="font-size: 0.9em; color: #999;">
+            <div style="font-size: 0.9em; color: rgb(var(--text-muted));">
               💾 Session sauvegardée automatiquement
             </div>
           </div>
@@ -1594,81 +1774,92 @@
       <div class="require-session" style="margin: 20px 0; text-align: center; position: relative;">
         <h3 style="margin-bottom: 15px;">📉 CRASH du Marché</h3>
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
-          <button onclick="triggerMarketCrash('small')" class="btn btn-warning" style="background: linear-gradient(45deg, #FF9800, #F57C00);">
+          <button onclick="triggerMarketCrash('small')" class="btn btn-warning">
             📉 Petit Crash (-5% à -15%)
           </button>
           <button onclick="triggerMarketCrash('medium')" class="btn btn-danger">
             📉 Crash Moyen (-10% à -30%)
           </button>
-          <button onclick="triggerMarketCrash('large')" class="btn btn-danger" style="background: linear-gradient(45deg, #D32F2F, #B71C1C);">
+          <button onclick="triggerMarketCrash('large')" class="btn btn-danger">
             📉 Gros Crash (-20% à -50%)
           </button>
-          <button onclick="triggerMarketCrash('maximum')" class="btn btn-danger" style="background: linear-gradient(45deg, #B71C1C, #8B0000); animation: pulse 2s infinite;">
+          <button onclick="triggerMarketCrash('maximum')" class="btn btn-danger" style="animation: pulse 2s infinite;">
             � CRASH MAXIMAL (Prix Min)
           </button>
         </div>
         
         <h3 style="margin-bottom: 15px;">📈 BOOM du Marché</h3>
         <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-          <button onclick="triggerMarketBoom('small')" class="btn" style="background: linear-gradient(45deg, #8BC34A, #689F38);">
+          <button onclick="triggerMarketBoom('small')" class="btn btn-success">
             📈 Petit Boom (+5% à +15%)
           </button>
-          <button onclick="triggerMarketBoom('medium')" class="btn" style="background: linear-gradient(45deg, #4CAF50, #388E3C);">
+          <button onclick="triggerMarketBoom('medium')" class="btn btn-success">
             📈 Boom Moyen (+10% à +30%)
           </button>
-          <button onclick="triggerMarketBoom('large')" class="btn" style="background: linear-gradient(45deg, #2E7D32, #1B5E20);">
+          <button onclick="triggerMarketBoom('large')" class="btn btn-success">
             📈 Gros Boom (+20% à +50%)
           </button>
-          <button onclick="triggerMarketBoom('maximum')" class="btn" style="background: linear-gradient(45deg, #1B5E20, #0D4F0D); animation: pulse 2s infinite;">
+          <button onclick="triggerMarketBoom('maximum')" class="btn btn-success" style="animation: pulse 2s infinite;">
             🚀 BOOM MAXIMAL (Prix Max)
           </button>
         </div>
         
         <!-- Bouton de reset des prix -->
         <div style="margin-top: 25px; text-align: center;">
-          <button onclick="resetAllPrices()" class="btn" style="background: linear-gradient(45deg, #2196F3, #1976D2); color: white; font-weight: 600; border: 2px solid #0D47A1; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3); font-size: 16px; padding: 12px 20px;">
+          <button onclick="resetAllPrices()" class="btn btn-blue">
             🔄 Remettre tous les prix de base
           </button>
         </div>
 
-        <!-- Happy Hour intégré dans les contrôles marché -->
-        <div style="margin-top: 25px; padding: 15px; border: 2px solid #FFD700; border-radius: 8px; background: linear-gradient(45deg, #2C1810, #3D2317); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);">
-          <h4 style="margin: 0 0 15px 0; color: #FFD700; display: flex; align-items: center; gap: 8px; font-weight: bold; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);">
-            🍺 Happy Hour !
-          </h4>
-          <div class="market-controls" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap; margin-bottom: 15px;">
-            <div style="flex: 1; min-width: 200px;">
-              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: #FFD700;">Boisson :</label>
-              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: #1a1a1a; color: #FFD700; font-size: 14px;">
-                <option value="">🍺 Sélectionner une boisson...</option>
-              </select>
-            </div>
-            <div style="min-width: 120px;">
-              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: #FFD700;">Durée (sec) :</label>
-              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid #FFD700; border-radius: 6px; background: #1a1a1a; color: #FFD700; font-size: 14px;">
-            </div>
-            <button onclick="startHappyHour()" class="btn" style="background: linear-gradient(45deg, #FFD700, #FFA500); color: #333; font-weight: 600; border: 2px solid #FF8C00; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);">
-              🌟 Lancer Happy Hour
-            </button>
-            <button onclick="stopAllHappyHours()" class="btn" style="background: linear-gradient(45deg, #FF6B6B, #FF5252); color: white; font-weight: 600;">
-              🛑 Arrêter Toutes
-            </button>
-          </div>
-          
-          <!-- Liste des Happy Hours actives -->
-          <div id="active-happy-hours" style="border: 2px solid #DAA520; border-radius: 6px; padding: 10px; background: rgba(26, 26, 26, 0.9);">
-            <h5 style="margin: 0 0 8px 0; color: #FFD700; font-weight: bold;">🌟 Happy Hours Actives :</h5>
-            <div id="happy-hours-list">
-              <p style="color: #B8860B; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
-            </div>
-          </div>
-        </div>
       </div>
+
     </div>
 
     <!-- Sections accordéon pour l'interface admin -->
     <div class="accordion-container">
       
+      <!-- Boutons d'action rapide -->
+      <div class="require-session" style="text-align: center; margin: 0 0 20px 0; display: flex; flex-direction: column; gap: 10px; align-items: center;">
+        <button onclick="triggerImmediateRefresh()" class="btn" style="background: linear-gradient(45deg, #9C27B0, #673AB7); font-size: 1.1em; padding: 12px 24px;">
+          🔄 Actualiser le marché
+        </button>
+        <button id="reset-timer-btn" class="btn" style="background: rgb(var(--accent));">⏰ Réinitialiser le timer</button>
+      </div>
+
+      <!-- Section Happy Hour -->
+      <div class="admin-section require-session">
+        <div class="section-header" onclick="toggleSection('happy-hour-section')" style="background: rgba(var(--warning), 0.1); border-bottom-color: rgba(var(--warning), 0.2);">
+          <h3 style="color: rgb(var(--warning));">🍺 Happy Hour !</h3>
+          <span class="toggle-icon" id="happy-hour-toggle" style="color: rgb(var(--warning));">▼</span>
+        </div>
+        <div class="section-content" id="happy-hour-section">
+          <div class="market-controls" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="happyHourDrinkSelect" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--warning));">Boisson :</label>
+              <select id="happyHourDrinkSelect" style="width: 100%; padding: 8px 12px; border: 2px solid rgb(var(--warning)); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text)); font-size: 14px;">
+                <option value="">🍺 Sélectionner une boisson...</option>
+              </select>
+            </div>
+            <div style="min-width: 120px;">
+              <label for="happyHourDuration" style="display: block; margin-bottom: 5px; font-weight: 600; color: rgb(var(--warning));">Durée (sec) :</label>
+              <input type="number" id="happyHourDuration" value="300" min="10" max="7200" style="width: 100%; padding: 8px 12px; border: 2px solid rgb(var(--warning)); border-radius: 6px; background: rgba(var(--surface), 0.8); color: rgb(var(--text)); font-size: 14px;">
+            </div>
+            <button onclick="startHappyHour()" class="btn btn-warning">
+              🌟 Lancer Happy Hour
+            </button>
+            <button onclick="stopAllHappyHours()" class="btn btn-danger">
+              🛑 Arrêter Toutes
+            </button>
+          </div>
+          <div id="active-happy-hours" style="border: 2px solid rgba(var(--warning), 0.7); border-radius: 6px; padding: 10px; background: rgba(var(--surface), 0.8);">
+            <h5 style="margin: 0 0 8px 0; color: rgb(var(--warning)); font-weight: bold;">🌟 Happy Hours Actives :</h5>
+            <div id="happy-hours-list">
+              <p style="color: rgba(var(--warning), 0.7); font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Section 1: Enregistrer un achat -->
       <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('purchase-section')">
@@ -1705,10 +1896,13 @@
           <span class="toggle-icon" id="history-toggle">▼</span>
         </div>
         <div class="section-content" id="history-section">
-          <div id="history-message" class="message hidden" style="margin-bottom: 10px;"></div>
-          <div class="mb-2">
-            <button onclick="clearHistory()" class="btn btn-danger btn-icon" title="Supprimer tout l'historique" aria-label="Supprimer tout l'historique">🗑️</button>
-            <span style="margin-left: 15px; color: #888;">
+          <div id="history-message" class="message hidden"></div>
+          <div class="mb-2" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+              <button onclick="undoTransaction()" id="undo-btn" class="btn btn-warning" title="Annuler la dernière transaction">↩️ Annuler la dernière transaction</button>
+              <button onclick="clearHistory()" class="btn btn-danger btn-icon" title="Supprimer tout l'historique" aria-label="Supprimer tout l'historique">🗑️</button>
+            </div>
+            <span style="color: rgb(var(--text-muted)); font-size: 0.9em;">
               Dernière mise à jour: <span id="last-update">--</span>
             </span>
           </div>
@@ -1720,7 +1914,6 @@
                   <th>Boisson</th>
                   <th>Prix</th>
                   <th>Variation</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="history-tbody">
@@ -1796,45 +1989,47 @@
       <!-- Section 4: Intervalle d'actualisation -->
       <div class="admin-section require-session">
         <div class="section-header" onclick="toggleSection('interval-section')">
-          <h3>⏱️ Intervalle d'actualisation</h3>
+          <h3>⚙️ Paramètres généraux</h3>
           <span class="toggle-icon" id="interval-toggle">▼</span>
         </div>
         <div class="section-content" id="interval-section">
+        <div class="form-group">
+          <label for="admin-theme-select">🎨 Thème Interface Principale</label>
+          <select id="admin-theme-select" class="form-select">
+            <option value="light">☀️ Clair</option>
+            <option value="dark">🌙 Sombre</option>
+          </select>
+        </div>
         <form id="refresh-interval-form">
           <div class="form-group">
             <label for="refresh-interval">Intervalle de rafraîchissement des prix (secondes)</label>
             <input type="number" id="refresh-interval" min="0" step="1" placeholder="30">
-            <small style="color: #888; display: block; margin-top: 5px;">
-              0 = mode manuel (pas d'actualisation automatique)
+            <small style="color: rgb(var(--text-muted)); display: block; margin-top: 5px;">
+              0 = mode manuel (actualisation à chaque achat)
             </small>
           </div>
           <button type="submit" class="btn">Mettre à jour l'intervalle</button>
           <div id="interval-message" class="message hidden"></div>
         </form>
+
+        <!-- Contrôle de la volatilité -->
+        <div class="form-group" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(var(--accent), 0.2);">
+          <label for="volatility-factor" class="form-label" style="font-size: 1.1em; font-weight: 600;">🌪️ Amplitude des variations de prix</label>
+          <input type="range" id="volatility-factor" class="form-range" min="0.25" max="4.0" step="0.25" value="1.0">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: rgba(var(--text), 0.7); padding: 0 5px; margin-top: 5px;">
+            <span>Petites</span>
+            <span>Normales</span>
+            <span>Grandes</span>
+            <span>Très Grandes</span>
+          </div>
+          <div style="text-align: center; font-weight: bold; margin-top: 10px; font-size: 1.1em; color: rgb(var(--accent));">
+            Facteur : <span id="volatility-factor-value">1.00</span>x
+          </div>
+          <div id="volatility-message" class="message hidden" style="margin-top: 10px;"></div>
+        </div>
         
         <!-- Contrôles de synchronisation -->
-        <div style="margin-top: 20px; padding: 15px; background: rgba(var(--warning), 0.1); border-radius: 8px; border: 1px solid rgba(var(--warning), 0.3);">
-          <h4 style="color: rgb(var(--warning)); margin-bottom: 15px;">🔄 Timer Universel</h4>
-          <p style="font-size: 0.9em; margin-bottom: 15px;">
-            Le timer universel fonctionne en continu sur le serveur. Tous les clients s'y synchronisent automatiquement.
-          </p>
-          <button id="force-sync-btn" class="btn" style="background: rgb(var(--warning)); margin-right: 10px;">
-            🔄 Forcer la synchronisation
-          </button>
-          <button id="reset-timer-btn" class="btn" style="background: rgb(var(--accent));">
-            ⏰ Redémarrer le timer universel
-          </button>
-          <div id="sync-message" class="message hidden" style="margin-top: 10px;"></div>
-        </div>
-          
-          <!-- Affichage de l'état actuel -->
-          <div style="margin-top: 20px; padding: 15px; background: rgba(var(--surface), 0.5); border-radius: 8px;">
-            <h4>État actuel :</h4>
-            <p>Intervalle : <span id="current-interval">--</span> secondes</p>
-            <p>Prochaine actualisation : <span id="admin-timer">--</span></p>
-            <p>Timer actif depuis : <span id="timer-start">--</span></p>
-            <p><strong>Statut serveur :</strong> <span id="server-sync-status">🔄 Synchronisation...</span></p>
-          </div>
+        <div id="sync-message" class="message hidden" style="margin-top: 10px;"></div>
         </div>
       </div>
 
@@ -1849,7 +2044,7 @@
 
     <!-- Sélecteur de thème (2 thèmes: Clair / Sombre) -->
     <div id="theme-controls" class="theme-controls d-inline-flex align-items-center gap-2 mt-3" style="justify-content:center;">
-      <label for="theme-select" class="mb-0" style="opacity: 0.9;">Thème Admin:</label>
+      <label for="theme-select" class="mb-0">Thème Admin:</label>
       <select id="theme-select" class="form-select form-select-sm" style="background: transparent; color: inherit; border: 1px solid currentColor; padding: 6px 10px; border-radius: 8px; width: auto; margin-left:8px;">
           <option value="light">Clair</option>
           <option value="dark">Sombre</option>
@@ -1882,15 +2077,18 @@
       </div>
     </div>
     <div class="session-card-actions">
-      <button class="session-card-btn resume">
-        ▶️ Reprendre
-      </button>
-      <button class="session-card-btn delete">
-        🗑️ Supprimer
-      </button>
+      <div class="session-card-actions-top">
+        <button class="session-card-btn resume">
+          ▶️ Reprendre
+        </button>
+        <button class="session-card-btn export">
+          📄 Exporter
+        </button>
+      </div>
+      <button class="session-card-btn delete">🗑️ Supprimer</button>
     </div>
   </template>
 
-  <script src="admin.js"></script>
+  <script src="admin.js" defer></script>
 </body>
 </html>

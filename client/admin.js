@@ -15,7 +15,6 @@ let sessionResumeTime = null; // Moment où la session a été reprise
 
 async function startSession() {
     const sessionName = document.getElementById('sessionName').value.trim();
-    const startingCash = parseFloat(document.getElementById('startingCash').value) || 0;
     
     if (!sessionName) {
         showMessage('session-message', 'Veuillez entrer le nom de la session', 'error');
@@ -30,8 +29,7 @@ async function startSession() {
                 'Authorization': 'Basic ' + authToken 
             },
             body: JSON.stringify({ 
-                session_name: sessionName,
-                starting_cash: startingCash 
+                session_name: sessionName
             })
         });
         
@@ -79,92 +77,6 @@ async function startSession() {
     }
 }
 
-async function resumeSession() {
-    try {
-        const res = await fetch(`${API_BASE}/admin/session/resume`, {
-            method: 'POST',
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            
-            if (data.status === 'resumed') {
-                currentSession = data.session;
-                
-                // Pour une session reprise, calculer le temps déjà écoulé si possible
-                // et définir le moment de reprise
-                sessionResumeTime = new Date();
-                
-                // Essayer de récupérer le temps total déjà écoulé depuis le localStorage
-                const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
-                if (savedSessionTime) {
-                    sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
-                } else {
-                    // Si pas de temps sauvegardé, commencer à 0 pour éviter la confusion
-                    sessionTotalTime = 0;
-                }
-                
-                // Initialiser sessionStartTime avec validation
-                if (currentSession && currentSession.start_time) {
-                    const startTime = new Date(currentSession.start_time);
-                    sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
-                } else {
-                    sessionStartTime = new Date();
-                }
-                showActiveSession();
-                startSessionTimer();
-                
-                // Envoyer un signal aux autres onglets (page principale)
-                localStorage.setItem('session-started', JSON.stringify({
-                    session_name: currentSession.session_name,
-                    resumed: true,
-                    timestamp: new Date().getTime()
-                }));
-                
-                showMessage('session-message', `✅ Session reprise (${data.sales_count} ventes)`, 'success');
-            } else if (data.status === 'already_active') {
-                currentSession = data.session;
-                
-                // Session déjà active, définir le moment de reprise et temps total
-                sessionResumeTime = new Date();
-                const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
-                if (savedSessionTime) {
-                    sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
-                } else {
-                    sessionTotalTime = 0;
-                }
-                
-                // Initialiser sessionStartTime avec validation
-                if (currentSession && currentSession.start_time) {
-                    const startTime = new Date(currentSession.start_time);
-                    sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
-                } else {
-                    sessionStartTime = new Date();
-                }
-                showActiveSession();
-                startSessionTimer();
-                
-                // Envoyer un signal aux autres onglets (page principale)
-                localStorage.setItem('session-started', JSON.stringify({
-                    session_name: currentSession.session_name,
-                    already_active: true,
-                    timestamp: new Date().getTime()
-                }));
-                
-                showMessage('session-message', '✅ Session déjà active', 'success');
-            } else {
-                showMessage('session-message', '❌ Aucune session à reprendre', 'error');
-            }
-        } else {
-            const err = await res.json();
-            showMessage('session-message', 'Erreur: ' + err.detail, 'error');
-        }
-    } catch (e) {
-        showMessage('session-message', 'Erreur réseau lors de la reprise de session', 'error');
-    }
-}
-
 async function endSession() {
     if (!confirm('Êtes-vous sûr de vouloir terminer la session ? Cela créera un fichier CSV avec toutes les ventes.')) {
         return;
@@ -198,6 +110,9 @@ async function endSession() {
             
             // Masquer l'interface de session active
             showNoSession();
+
+            // Recharger la liste des sessions précédentes pour inclure la nouvelle
+            await loadPreviousSessions();
             
             // Envoyer un signal aux autres onglets (page principale)
             localStorage.setItem('session-stopped', JSON.stringify({
@@ -211,6 +126,21 @@ async function endSession() {
         }
     } catch (e) {
         showMessage('session-message', 'Erreur réseau lors de la fin de session', 'error');
+    }
+}
+
+function highlightActiveSessionCard() {
+    // Supprimer la classe 'selected' de toutes les cartes
+    document.querySelectorAll('.session-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // S'il y a une session active qui a été reprise, surligner sa carte
+    if (currentSession && currentSession.resumed_from) {
+        const activeCard = document.querySelector(`.session-card[data-filename="${currentSession.resumed_from}"]`);
+        if (activeCard) {
+            activeCard.classList.add('selected');
+        }
     }
 }
 
@@ -263,6 +193,7 @@ function displayPreviousSessions(sessions) {
 function createSessionCard(session) {
     const card = document.createElement('div');
     card.className = 'session-card';
+    card.dataset.filename = session.filename;
     
     const createdDate = new Date(session.created_at);
     const formattedDate = createdDate.toLocaleDateString('fr-FR', {
@@ -306,9 +237,11 @@ function createSessionCard(session) {
     // Boutons d'actions
     const resumeBtn = templateContent.querySelector('.session-card-btn.resume');
     const deleteBtn = templateContent.querySelector('.session-card-btn.delete');
+    const exportBtn = templateContent.querySelector('.session-card-btn.export');
     
-    resumeBtn.onclick = () => resumeSpecificSession(session.filename);
+    resumeBtn.onclick = () => resumeSpecificSession(session);
     deleteBtn.onclick = () => deleteSession(session.filename);
+    exportBtn.onclick = () => exportSessionTreasury(session.filename);
     
     // Ajouter le contenu à la carte
     card.appendChild(templateContent);
@@ -316,51 +249,88 @@ function createSessionCard(session) {
     return card;
 }
 
-async function resumeSpecificSession(filename) {
-    if (!confirm('Reprendre cette session ? Cela remplacera la session actuelle.')) {
+async function resumeSpecificSession(session) {
+    if (currentSession && currentSession.is_active) {
+        showMessage('session-message', '❌ Une session est déjà active. Veuillez la terminer avant d\'en reprendre une autre.', 'error');
         return;
     }
-    
+
+    if (!confirm(`Reprendre la session depuis le fichier ${session.filename} ?`)) {
+        return;
+    }
+
     try {
-        const res = await fetch(`${API_BASE}/admin/session/resume/${encodeURIComponent(filename)}`, {
+        const res = await fetch(`${API_BASE}/admin/session/resume/${encodeURIComponent(session.filename)}`, {
             method: 'POST',
             headers: { 'Authorization': 'Basic ' + authToken }
         });
-        
+
         if (res.ok) {
             const data = await res.json();
             currentSession = data.session;
+
+            // Initialiser les variables de temps pour une session reprise
+            sessionResumeTime = new Date();
+            // 1. Essayer de charger depuis localStorage (pour les sessions juste "pausées")
+            const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
+            if (savedSessionTime) {
+                sessionTotalTime = parseInt(savedSessionTime, 10) || 0;
+            } else {
+                // 2. Sinon, utiliser la durée du CSV (pour les sessions "terminées" qu'on reprend)
+                sessionTotalTime = session.duration_hours ? Math.round(session.duration_hours * 3600) : 0;
+            }
             
-            // Initialiser sessionStartTime avec validation  
-            if (data.session && data.session.created_at) {
-                const startTime = new Date(data.session.created_at);
+            if (currentSession.start_time) {
+                const startTime = new Date(currentSession.start_time);
                 sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
             } else {
                 sessionStartTime = new Date();
             }
-            
-            // Initialiser les variables de temps pour le timer en reprenant la durée accumulée
-            sessionTotalTime = data.accumulated_seconds || 0;  // Durée déjà accumulée
-            sessionResumeTime = new Date();  // Moment de la reprise
-            
+
             showActiveSession();
             startSessionTimer();
-            
-            // Envoyer un signal aux autres onglets (page principale)
+
             localStorage.setItem('session-started', JSON.stringify({
                 session_name: currentSession.session_name,
-                resumed_specific: true,
                 timestamp: new Date().getTime()
             }));
-            
-            showMessage('session-message', '✅ Session reprise avec succès !', 'success');
-            loadPreviousSessions(); // Recharger la liste
+
+            showMessage('session-message', `✅ Session "${currentSession.session_name}" reprise avec succès.`, 'success');
         } else {
-            const error = await res.json();
-            showMessage('session-message', `❌ Erreur: ${error.detail}`, 'error');
+            const err = await res.json();
+            showMessage('session-message', 'Erreur: ' + err.detail, 'error');
         }
     } catch (e) {
-        showMessage('session-message', '❌ Erreur réseau lors de la reprise de session', 'error');
+        showMessage('session-message', 'Erreur réseau lors de la reprise de la session.', 'error');
+    }
+}
+
+async function exportSessionTreasury(filename) {
+    try {
+        const res = await fetch(`${API_BASE}/admin/session/export/${encodeURIComponent(filename)}`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            // Propose a filename like 'tresorerie_session_name.csv'
+            const downloadFilename = `tresorerie_${filename.replace('.csv', '')}.csv`;
+            a.download = downloadFilename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showMessage('session-message', '✅ Exportation de la trésorerie réussie.', 'success');
+        } else {
+            const error = await res.json();
+            showMessage('session-message', `❌ Erreur d'exportation: ${error.detail}`, 'error');
+        }
+    } catch (e) {
+        showMessage('session-message', '❌ Erreur réseau lors de l\'exportation.', 'error');
     }
 }
 
@@ -451,25 +421,35 @@ function showActiveSession() {
     
     // Activer le formulaire d'ajout de boissons
     updateDrinkFormState();
+
+    // Mettre à jour le surlignage
+    highlightActiveSessionCard();
 }
 
 function showNoSession() {
     document.getElementById('no-session').classList.remove('hidden');
     document.getElementById('active-session').classList.add('hidden');
-    
-    // Arrêter tous les timers et réinitialiser les variables de session
-    stopSessionTimer();
-    stopAdminTimer();
+
+    // Arrêter le timer sans sauvegarder la durée, car il n'y a pas de session active.
+    if (sessionUpdateInterval) {
+        clearInterval(sessionUpdateInterval);
+        sessionUpdateInterval = null;
+    }
+
+    // Réinitialiser les variables de session
     currentSession = null;
+    sessionStartTime = null;
     sessionTotalTime = 0;
     sessionResumeTime = null;
-    
+
     // Réinitialiser les champs
     document.getElementById('sessionName').value = '';
-    document.getElementById('startingCash').value = '0';
-    
+
     // Désactiver le formulaire d'ajout de boissons
     updateDrinkFormState();
+
+    // S'assurer qu'aucune carte n'est surlignée
+    highlightActiveSessionCard();
 }
 
 function updateDrinkFormState() {
@@ -734,32 +714,22 @@ async function addDrink() {
     }
 }
 
-async function loadAdminDrinksList() {
+function populateAdminDrinksList(adminDrinks, publicDrinks) {
     const container = document.getElementById('drinks-admin-list');
     if (!container) return;
-    try {
-        // Récupérer les données admin ET publiques pour synchroniser les prix
-        const [adminRes, publicRes] = await Promise.all([
-            fetch(`${API_BASE}/admin/drinks`, { headers: { 'Authorization': 'Basic ' + authToken } }),
-            fetch(`${API_BASE}/prices`)
-        ]);
-        
-        const adminData = await adminRes.json();
-        const publicData = await publicRes.json();
-        
-        // Créer un map des prix publics pour référence rapide
-        const publicPrices = {};
-        (publicData.prices || []).forEach(drink => {
-            publicPrices[drink.id] = drink.price;
-        });
-        
-        container.innerHTML = '';
-        
-        // Trier les bières par ordre alphabétique
-        const sortedDrinks = (adminData.drinks || []).sort((a, b) => a.name.localeCompare(b.name));
-        
-        sortedDrinks.forEach(d => {
-            const publicPrice = publicPrices[d.id] || d.price;
+
+    // Créer un map des prix publics pour référence rapide
+    const publicPricesMap = {};
+    (publicDrinks || []).forEach(drink => {
+        publicPricesMap[drink.id] = drink.price;
+    });
+
+    container.innerHTML = '';
+    // Trier les bières par ordre alphabétique
+    const sortedDrinks = (adminDrinks || []).sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedDrinks.forEach(d => {
+        const publicPrice = publicPricesMap[d.id] || d.price;
             const div = document.createElement('div');
             div.className = 'drinks-table-row';
             div.innerHTML = `
@@ -823,6 +793,17 @@ async function loadAdminDrinksList() {
             });
             container.appendChild(div);
         });
+}
+
+async function loadAdminDrinksList() {
+    try {
+        const [adminRes, publicRes] = await Promise.all([
+            fetch(`${API_BASE}/admin/drinks`, { headers: { 'Authorization': 'Basic ' + authToken } }),
+            fetch(`${API_BASE}/prices`)
+        ]);
+        const adminData = await adminRes.json();
+        const publicData = await publicRes.json();
+        populateAdminDrinksList(adminData.drinks, publicData.prices);
     } catch (e) {
         console.error('Erreur chargement liste boissons admin:', e);
     }
@@ -851,14 +832,37 @@ const authMessage = document.getElementById('auth-message');
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    // Appliquer le thème CLC (light/dark) depuis localStorage - par défaut sombre
-    try {
-        const saved = localStorage.getItem('theme');
-        const theme = saved === 'light' ? 'light' : 'dark'; // Par défaut: dark
-        document.body.setAttribute('data-theme', theme);
-    } catch (e) { 
-        // En cas d'erreur, appliquer le thème sombre par défaut
-        document.body.setAttribute('data-theme', 'dark');
+    // Initialiser les sélecteurs de thème séparés
+    const themeSelect = document.getElementById('theme-select'); // Thème admin
+    const adminThemeSelect = document.getElementById('admin-theme-select'); // Thème interface principale
+    
+    // Thème de l'admin (local)
+    if (themeSelect) {
+        const currentAdminTheme = localStorage.getItem('admin-theme') || 'dark'; // Par défaut dark
+        themeSelect.value = currentAdminTheme;
+        document.body.setAttribute('data-theme', currentAdminTheme);
+        
+        themeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('admin-theme', theme);
+            console.log(`🎨 Thème admin changé: ${theme}`);
+        });
+    }
+    
+    // Thème de l'interface principale (contrôlé depuis l'admin)
+    if (adminThemeSelect) {
+        const currentMainTheme = localStorage.getItem('main-theme') || 'dark'; // Par défaut dark
+        adminThemeSelect.value = currentMainTheme;
+        
+        adminThemeSelect.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            console.log(`🎨 Admin: Changement de thème vers ${theme}`);
+            localStorage.setItem('main-theme', theme);
+            console.log(`🎨 Admin: Thème sauvegardé dans localStorage`);
+            localStorage.setItem('main-theme-signal', Date.now().toString());
+            console.log(`🎨 Admin: Signal envoyé pour thème interface principale: ${theme}`);
+        });
     }
 
     // Vérifier si on est déjà authentifié
@@ -877,60 +881,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Ne montrer le formulaire que si pas authentifié
     showAuthForm();
-
-    // Initialiser les sélecteurs de thème séparés
-    const themeSelect = document.getElementById('theme-select'); // Thème admin
-    const adminThemeSelect = document.getElementById('admin-theme-select'); // Thème interface principale
-    
-    // Thème de l'admin (local)
-    if (themeSelect) {
-        const currentAdminTheme = localStorage.getItem('admin-theme') || 'dark'; // Par défaut dark
-        themeSelect.value = currentAdminTheme;
-        document.body.setAttribute('data-theme', currentAdminTheme);
-        
-        themeSelect.addEventListener('change', (e) => {
-            const theme = e.target.value === 'dark' ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', theme);
-            localStorage.setItem('admin-theme', theme);
-            console.log(`🎨 Thème admin changé: ${theme}`);
-        });
-    }
-    
-    // Thème de l'interface principale (contrôlé depuis l'admin)
-    if (adminThemeSelect) {
-        const currentMainTheme = localStorage.getItem('main-theme') || 'dark'; // Par défaut dark
-        adminThemeSelect.value = currentMainTheme;
-        
-        adminThemeSelect.addEventListener('change', (e) => {
-            const theme = e.target.value === 'dark' ? 'dark' : 'light';
-            console.log(`🎨 Admin: Changement de thème vers ${theme}`);
-            localStorage.setItem('main-theme', theme);
-            console.log(`🎨 Admin: Thème sauvegardé dans localStorage`);
-            localStorage.setItem('main-theme-signal', Date.now().toString());
-            console.log(`🎨 Admin: Signal envoyé pour thème interface principale: ${theme}`);
-            
-            // Si nous sommes dans un iframe ou un onglet qui contient l'interface principale,
-            // appliquer le changement immédiatement aussi
-            try {
-                if (window.parent && window.parent !== window) {
-                    // Nous sommes dans un iframe
-                    if (window.parent.applyTheme) {
-                        window.parent.applyTheme(theme);
-                    }
-                } else {
-                    // Nous sommes dans un onglet séparé, le storage event devrait fonctionner
-                    // Mais on peut aussi essayer de trigger manuellement
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'main-theme-signal',
-                        newValue: Date.now().toString(),
-                        storageArea: localStorage
-                    }));
-                }
-            } catch (error) {
-                console.log('🎨 Pas possible de trigger direct, storage event utilisé');
-            }
-        });
-    }
 });
 
 // Synchroniser les thèmes si modifiés depuis une autre page/onglet
@@ -989,7 +939,7 @@ async function authenticate(username, password) {
             
             showAdminInterface();
             updateConnectionStatus(true); // Explicitement indiquer la connexion
-            loadInitialData();
+            loadInitialDataOptimized();
         } else {
             throw new Error('Authentification échouée');
         }
@@ -1052,7 +1002,6 @@ function logout() {
     authToken = null;
     localStorage.removeItem('admin_auth');
     showAuthForm();
-    stopAdminTimer(); // Arrêter le timer d'affichage
 }
 
 // Fonctions d'affichage des messages
@@ -1077,67 +1026,122 @@ function showMessage(elementId, message, type) {
 }
 
 // Chargement des données initiales
-async function loadInitialData() {
-  await Promise.all([
-    loadDrinks(),
-    loadPriceControls(),
-    loadPurchaseTable(), // Contient déjà les prix, donc pas besoin de loadHistory() ici
-    loadAdminDrinksList(),
-    loadPreviousSessions(), // Charger les sessions précédentes
-  ]);
-  
-  // Charger les données Happy Hour après que le DOM soit prêt
-  await loadHappyHourDrinks();
-  
-  // Charger l'historique et les Happy Hours actives séparément après un délai pour éviter la surcharge
-  setTimeout(() => {
-    loadHistory();
-    loadActiveHappyHours();
-  }, 1000);
-  
-  // Initialiser les graphiques
-  initCharts();
-  
-  // SUPPRIMÉ : Pas de rafraîchissement automatique - seulement manuel
-  // startAutoRefresh();
-  
-  // Rafraîchissement périodique de l'historique (toutes les 30 secondes)
-  setInterval(() => {
-    loadHistory();
-  }, 30000);
-  
-  // Initialiser le timer admin synchronisé
-  initAdminTimer();
+async function loadInitialDataOptimized() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/initial-data`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        if (!res.ok) {
+            throw new Error(`Erreur serveur: ${res.status}`);
+        }
+        const data = await res.json();
+
+        // Peupler toutes les sections avec les données agrégées
+        populateDrinks(data.drinks);
+        populatePriceControls(data.drinks);
+        populatePurchaseTable(data.drinks);
+        populateAdminDrinksList(data.drinks, data.drinks); // Utilise les mêmes données pour les prix publics
+        displayPreviousSessions(data.previous_sessions);
+        initVolatilityControl(data.volatility_factor);
+        populateHappyHourDrinks(data.drinks);
+        populateHistory(data.history);
+        displayActiveHappyHours(data.active_happy_hours);
+
+        // Vérifier le statut de la session depuis les données agrégées
+        if (data.current_session && data.current_session.is_active) {
+            currentSession = data.current_session;
+            sessionResumeTime = new Date();
+            const savedSessionTime = localStorage.getItem(`session_time_${currentSession.session_name}`);
+            sessionTotalTime = savedSessionTime ? parseInt(savedSessionTime, 10) || 0 : 0;
+            if (currentSession.start_time) {
+                const startTime = new Date(currentSession.start_time);
+                sessionStartTime = !isNaN(startTime.getTime()) ? startTime : new Date();
+            } else {
+                sessionStartTime = new Date();
+            }
+            showActiveSession();
+            startSessionTimer();
+        } else {
+            showNoSession();
+        }
+
+        // Initialisations finales
+        initCharts();
+        setInterval(() => {
+            loadHistory(); // Garder un rafraîchissement périodique pour l'historique
+        }, 30000);
+
+    } catch (error) {
+        console.error("Erreur lors du chargement des données initiales:", error);
+        showMessage('auth-message', 'Impossible de charger les données du marché.', 'error');
+    }
+}
+
+async function initVolatilityControl() {
+    const slider = document.getElementById('volatility-factor');
+    const valueDisplay = document.getElementById('volatility-factor-value');
+
+    if (!slider || !valueDisplay) return;
+
+    try {
+        // 1. Récupérer la valeur actuelle depuis le serveur
+        const res = await fetch(`${API_BASE}/admin/config/volatility`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            slider.value = data.factor;
+            valueDisplay.textContent = parseFloat(data.factor).toFixed(2);
+        }
+
+        // 2. Ajouter les écouteurs d'événements
+        slider.addEventListener('input', () => {
+            valueDisplay.textContent = parseFloat(slider.value).toFixed(2);
+        });
+
+        slider.addEventListener('change', async () => {
+            const newFactor = parseFloat(slider.value);
+            try {
+                const postRes = await fetch(`${API_BASE}/admin/config/volatility`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + authToken
+                    },
+                    body: JSON.stringify({ factor: newFactor })
+                });
+
+                if (postRes.ok) {
+                    showMessage('volatility-message', `Vitesse de variation mise à jour à ${newFactor.toFixed(2)}x`, 'success');
+                } else {
+                    const err = await postRes.json();
+                    showMessage('volatility-message', `Erreur: ${err.detail}`, 'error');
+                }
+            } catch (e) {
+                showMessage('volatility-message', 'Erreur réseau', 'error');
+            }
+        });
+    } catch (e) {
+        console.error("Erreur initialisation contrôle volatilité:", e);
+    }
 }
 
 // Remplir la liste déroulante avec les boissons
-async function loadDrinks() {
-  try {
-        const res = await fetch(`${API_BASE}/admin/drinks`, {
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-    const data = await res.json();
-
+function populateDrinks(drinks) {
     // Ancienne liste (pour compatibilité)
     const select = document.getElementById("drink");
     if (!select) {
       // Ignorer sans erreur si l'élément n'existe pas
       console.log("Élément select #drink non trouvé (normal si non utilisé)");
-    } else {
-      select.innerHTML = "";
-      data.drinks.forEach(drink => {
+      return;
+    }
+    select.innerHTML = "";
+    (drinks || []).forEach(drink => {
         const option = document.createElement("option");
         option.value = drink.id;
         option.textContent = `${drink.name} – ${drink.price.toFixed(2)} €`;
         select.appendChild(option);
       });
-    }
-
-    updateConnectionStatus(true);
-  } catch (error) {
-    console.error("Erreur chargement boissons:", error);
-        updateConnectionStatus(false);
-    }
 }
 
 // Charger les statistiques
@@ -1186,18 +1190,11 @@ async function loadStats() {
 }
 
 // Charger les contrôles de prix
-async function loadPriceControls() {
-    try {
-        const res = await fetch(`${API_BASE}/admin/drinks`, {
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-        const data = await res.json();
-        
-        const priceControls = document.getElementById('price-controls');
-        if (!priceControls) return; // Section supprimée dans l'UI simplifiée
-        priceControls.innerHTML = '';
-        
-        data.drinks.forEach(drink => {
+function populatePriceControls(drinks) {
+    const priceControls = document.getElementById('price-controls');
+    if (!priceControls) return; // Section supprimée dans l'UI simplifiée
+    priceControls.innerHTML = '';
+    (drinks || []).forEach(drink => {
             const control = document.createElement('div');
             control.className = 'form-group';
             control.innerHTML = `
@@ -1214,20 +1211,12 @@ async function loadPriceControls() {
             `;
             priceControls.appendChild(control);
         });
-    } catch (error) {
-        console.error("Erreur chargement contrôles prix:", error);
-    }
 }
 
 // Charger l'historique
-async function loadHistory() {
-    try {
-        const res = await fetch(`${API_BASE}/admin/history?limit=50`, {
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-        const data = await res.json();
+function populateHistory(historyData) {
     // Ne garder que les achats (exclure variations: balance, correlation, crash, reset, etc.)
-    const history = (data.history || [])
+    const history = (historyData || [])
         .filter(entry => (entry.event || '').toLowerCase() === 'buy')
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         const tbody = document.getElementById('history-tbody');
@@ -1244,41 +1233,55 @@ async function loadHistory() {
                 <td data-label="Boisson">${entry.name}</td>
                 <td data-label="Prix">${entry.price.toFixed(2)}€</td>
                 <td data-label="Variation" class="${changeClass}">${changeText}</td>
-                <td data-label="Actions">
-                    <button class="btn btn-danger btn-icon btn-delete" title="Supprimer" aria-label="Supprimer">
-                        🗑️
-                    </button>
-                </td>
             `;
-
-            const deleteBtn = row.querySelector('.btn-delete');
-
-            deleteBtn.addEventListener('click', async () => {
-                try {
-                    const res = await fetch(`${API_BASE}/admin/history/${entry.id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': 'Basic ' + authToken }
-                    });
-                    if (res.ok) {
-                        
-                        await loadHistory();
-                        // loadPurchaseTable(); // SUPPRIMÉ - pas besoin de recharger les prix
-                        // loadAdminDrinksList(); // SUPPRIMÉ - pas besoin de recharger les boissons
-                    } else {
-                        const err = await res.json();
-                        showMessage('history-message', 'Erreur: ' + err.detail, 'error');
-                    }
-                } catch (error) {
-                    showMessage('history-message', 'Erreur réseau lors de la suppression', 'error');
-                }
-            });
 
             tbody.appendChild(row);
         });
         
         document.getElementById('last-update').textContent = new Date().toLocaleTimeString('fr-FR');
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/admin/history?limit=50`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            populateHistory(data.history);
+        } else {
+            // Gérer les erreurs HTTP qui ne lèvent pas d'exception (ex: 500)
+            const errorText = await res.text();
+            console.error("Erreur serveur lors du chargement de l'historique:", errorText);
+            showMessage('history-message', `Erreur serveur (${res.status})`, 'error');
+        }
     } catch (error) {
         console.error("Erreur chargement historique:", error);
+        showMessage('history-message', 'Erreur réseau ou de parsing JSON.', 'error');
+    }
+}
+
+async function undoTransaction() {
+    if (!confirm('Êtes-vous sûr de vouloir annuler la dernière transaction ? Les prix seront rétablis.')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/history/undo`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            showMessage('history-message', `✅ Transaction pour ${data.details.drink_name || ''} annulée.`, 'success');
+            // Refresh data
+            await loadHistory();
+            await updatePurchaseTablePricesFromAPI();
+        } else {
+            const err = await res.json();
+            showMessage('history-message', `Erreur: ${err.detail}`, 'error');
+        }
+    } catch (e) {
+        showMessage('history-message', 'Erreur réseau lors de l\'annulation.', 'error');
     }
 }
 
@@ -1305,8 +1308,8 @@ async function updatePrice(drinkId) {
         if (res.ok) {
             const data = await res.json();
             showMessage('buy-message', `Prix mis à jour: ${data.old_price}€ → ${data.new_price}€`, 'success');
-            loadDrinks();
-            loadPriceControls();
+            // Recharger les données pour mettre à jour l'UI
+            loadInitialDataOptimized();
         } else {
             const err = await res.json();
             showMessage('buy-message', 'Erreur: ' + err.detail, 'error');
@@ -1368,14 +1371,13 @@ async function refreshData() {
         const drinks = pricesData.prices || [];
 
         // Mettre à jour le tableau d'achat avec les nouveaux prix
-        updatePurchaseTablePrices(drinks);
+        populatePurchaseTable(drinks);
 
         if (typeof wallStreetCharts !== 'undefined' && wallStreetCharts) {
             const beerPrices = drinks.filter(d => (d.type || '').toLowerCase() === 'beer').map(d => d.price);
             wallStreetCharts.updatePriceChart(beerPrices, true);
             // wallStreetCharts.updateVolumeChart(history); // SUPPRIMÉ pour éviter la requête histoire
         }
-        
         // Message discret - pas à chaque refresh
         // showMessage('buy-message', '🔄 Données actualisées !', 'success'); // SUPPRIMÉ
     } catch (e) {
@@ -1392,7 +1394,7 @@ async function manualRefresh() {
         const data = await response.json();
         const drinks = data.prices || [];
         
-        updatePurchaseTablePrices(drinks);
+        populatePurchaseTable(drinks);
         showMessage('buy-message', '🔄 Prix actualisés !', 'success');
         
     } catch (error) {
@@ -1631,32 +1633,26 @@ async function updateSyncStatus() {
 }
 
 // Charger les boissons dans le tableau d'achat (dynamique)
-async function loadPurchaseTable() {
+async function populatePurchaseTable(drinks) {
     const tableBody = document.querySelector('#purchase-table tbody');
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
-    try {
-        // Récupérer les prix publics ET les infos admin pour les min/max
-        const [publicRes, adminRes] = await Promise.all([
-            fetch(`${API_BASE}/prices`),
-            fetch(`${API_BASE}/admin/drinks`, { headers: { 'Authorization': 'Basic ' + authToken } })
-        ]);
-        
-        const publicData = await publicRes.json();
-        const adminData = await adminRes.json();
+    // On a besoin des données admin complètes pour les min/max/base, on les re-fetch ici pour être sûr.
+    const adminRes = await fetch(`${API_BASE}/admin/drinks`, { headers: { 'Authorization': 'Basic ' + authToken } });
+    const adminData = await adminRes.json();
         
         // Créer un map des infos admin pour référence rapide
         const adminInfo = {};
         (adminData.drinks || []).forEach(drink => {
             adminInfo[drink.id] = drink;
         });
-        
+
         // Trier les bières par ordre alphabétique
-        const sortedDrinks = (publicData.prices || []).sort((a, b) => a.name.localeCompare(b.name));
+    const sortedDrinks = (drinks || []).sort((a, b) => a.name.localeCompare(b.name));
         
         sortedDrinks.forEach(drink => {
-            const adminInfo_drink = adminInfo[drink.id] || { min_price: 0, max_price: 100 };
+        const adminInfo_drink = adminInfo[drink.id] || { min_price: 0, max_price: 100, base_price: drink.price };
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Boisson">
@@ -1765,13 +1761,24 @@ async function loadPurchaseTable() {
 
             tableBody.appendChild(row);
         });
+}
+
+async function loadPurchaseTable() {
+    const tableBody = document.querySelector('#purchase-table tbody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    try {
+        const publicRes = await fetch(`${API_BASE}/prices`);
+        const publicData = await publicRes.json();
+        populatePurchaseTable(publicData.prices);
     } catch (error) {
         console.error('Erreur loadPurchaseTable:', error);
     }
 }
 
 // Mettre à jour seulement les prix dans le tableau d'achat (synchronisation automatique)
-function updatePurchaseTablePrices(drinks) {
+function populatePurchaseTablePrices(drinks) {
     const tableBody = document.querySelector('#purchase-table tbody');
     if (!tableBody || !drinks) return;
 
@@ -1871,7 +1878,7 @@ async function updatePurchaseTablePricesFromAPI() {
         const drinks = data.prices || [];
         
         // Utiliser la fonction existante pour mettre à jour les prix
-        updatePurchaseTablePrices(drinks);
+        populatePurchaseTablePrices(drinks);
         
         // Nettoyer l'état d'affichage pour éviter les doublons
         cleanupPriceDisplay();
@@ -2036,38 +2043,28 @@ async function resetAllPrices() {
 }
 
 // ========== Fonctions Happy Hour ==========
+function populateHappyHourDrinks(drinks) {
+    const select = document.getElementById('happyHourDrinkSelect');
+    if (!select) {
+        console.error('Element happyHourDrinkSelect not found');
+        return;
+    }
+    // Vider la liste
+    select.innerHTML = '<option value="">Sélectionner une boisson...</option>';
+    // Ajouter chaque boisson
+    (drinks || []).forEach(drink => {
+        const option = document.createElement('option');
+        option.value = drink.id;
+        option.textContent = `${drink.name} (${drink.price.toFixed(2)}€)`;
+        select.appendChild(option);
+    });
+}
 
 async function loadHappyHourDrinks() {
     try {
-        const response = await fetch(`${API_BASE}/admin/drinks`, {
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const drinks = data.drinks || []; // Accéder à la propriété drinks
-            const select = document.getElementById('happyHourDrinkSelect');
-            
-            if (!select) {
-                console.error('Element happyHourDrinkSelect not found');
-                return;
-            }
-            
-            // Vider la liste
-            select.innerHTML = '<option value="">Sélectionner une boisson...</option>';
-            
-            // Ajouter chaque boisson
-            drinks.forEach(drink => {
-                const option = document.createElement('option');
-                option.value = drink.id;
-                option.textContent = `${drink.name} (${drink.price.toFixed(2)}€)`;
-                select.appendChild(option);
-            });
-            
-            console.log(`Loaded ${drinks.length} drinks for Happy Hour selector`);
-        } else {
-            console.error('Failed to load drinks for Happy Hour');
-        }
+        const response = await fetch(`${API_BASE}/admin/drinks`, { headers: { 'Authorization': 'Basic ' + authToken } });
+        const data = await response.json();
+        populateHappyHourDrinks(data.drinks);
     } catch (error) {
         console.error('Erreur lors du chargement des boissons pour Happy Hour:', error);
     }
@@ -2207,25 +2204,19 @@ async function stopHappyHour(drinkId) {
 
 let happyHourAdminTimerIntervalId = null; // Timer pour l'interface admin
 
-async function loadActiveHappyHours() {
-    try {
-        const response = await fetch(`${API_BASE}/admin/happy-hour/active`, {
-            headers: { 'Authorization': 'Basic ' + authToken }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const container = document.getElementById('happy-hours-list');
-            
-            if (data.active_happy_hours.length === 0) {
+function displayActiveHappyHours(active_happy_hours) {
+    const container = document.getElementById('happy-hours-list');
+    if (!container) return;
+
+    if (!active_happy_hours || active_happy_hours.length === 0) {
                 container.innerHTML = '<p style="color: #666; font-style: italic; margin: 0; font-size: 0.9em;">Aucune Happy Hour active</p>';
                 // Arrêter le timer s'il n'y a plus de Happy Hours
                 if (happyHourAdminTimerIntervalId) {
                     clearInterval(happyHourAdminTimerIntervalId);
                     happyHourAdminTimerIntervalId = null;
                 }
-            } else {
-                container.innerHTML = data.active_happy_hours.map(hh => {
+    } else {
+        container.innerHTML = active_happy_hours.map(hh => {
                     // Utiliser les données du serveur directement
                     const remaining = Math.max(0, hh.remaining || 0);
                     const minutes = Math.floor(remaining / 60);
@@ -2249,7 +2240,15 @@ async function loadActiveHappyHours() {
                     startHappyHourAdminTimer();
                 }
             }
-        }
+}
+
+async function loadActiveHappyHours() {
+    try {
+        const response = await fetch(`${API_BASE}/admin/happy-hour/active`, {
+            headers: { 'Authorization': 'Basic ' + authToken }
+        });
+        const data = await response.json();
+        displayActiveHappyHours(data.active_happy_hours);
     } catch (error) {
         console.error('Erreur lors du chargement des Happy Hours actives:', error);
     }

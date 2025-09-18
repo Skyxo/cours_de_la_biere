@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from typing import List, Optional
@@ -8,15 +8,17 @@ from datetime import datetime
 import os
 import secrets
 import uvicorn
+import io
 import json
 import csv
 from csv_data import CSVDataManager
-
 app = FastAPI()
 
 data_manager = CSVDataManager()
+data_manager.volatility = 1.0 # Initialiser l'attribut de volatilité
 
 current_refresh_interval = 10000
+market_volatility = 1.0
 active_drinks = set()
 timer_start_time = datetime.now()
 market_timer_start = datetime.now()  # Timer global du marché, indépendant des clients
@@ -24,13 +26,15 @@ market_timer_start = datetime.now()  # Timer global du marché, indépendant des
 # Fonction pour charger/sauvegarder l'état du timer persistant
 def load_timer_state():
     """Charger l'état du timer depuis le fichier de sauvegarde"""
-    global market_timer_start, current_refresh_interval
+    global market_timer_start, current_refresh_interval, market_volatility
     try:
         if os.path.exists('data/timer_state.json'):
             with open('data/timer_state.json', 'r') as f:
                 timer_data = json.load(f)
                 market_timer_start = datetime.fromisoformat(timer_data.get('market_timer_start', datetime.now().isoformat()))
                 current_refresh_interval = timer_data.get('refresh_interval', 10000)
+                market_volatility = timer_data.get('market_volatility', 1.0)
+                data_manager.volatility = market_volatility # Transmettre au data_manager
                 # Réduire les logs au démarrage
                 if not hasattr(load_timer_state, '_logged'):
                     print(f"⏰ Timer universel chargé: démarré le {market_timer_start}, intervalle {current_refresh_interval}ms")
@@ -48,12 +52,13 @@ def load_timer_state():
 
 def save_timer_state():
     """Sauvegarder l'état du timer dans un fichier"""
-    global market_timer_start, current_refresh_interval
+    global market_timer_start, current_refresh_interval, market_volatility
     try:
         os.makedirs('data', exist_ok=True)
         timer_data = {
             'market_timer_start': market_timer_start.isoformat(),
             'refresh_interval': current_refresh_interval,
+            'market_volatility': market_volatility,
             'last_saved': datetime.now().isoformat()
         }
         with open('data/timer_state.json', 'w') as f:
@@ -158,6 +163,9 @@ class BuyRequest(BaseModel):
 class IntervalRequest(BaseModel):
     interval_ms: int
 
+class VolatilityRequest(BaseModel):
+    factor: float
+
 class PriceItem(BaseModel):
     id: int
     name: str
@@ -168,7 +176,7 @@ class PriceItem(BaseModel):
 
 class HistoryItem(BaseModel):
     id: int
-    drink_id: int
+    drink_id: Optional[int] = None
     name: str
     price: float
     quantity: int
@@ -185,7 +193,6 @@ class CreateDrinkRequest(BaseModel):
 
 class SessionStartRequest(BaseModel):
     session_name: str
-    starting_cash: Optional[float] = 0.0
 
 class SessionSale(BaseModel):
     drink_id: int
@@ -201,7 +208,6 @@ class SessionStats(BaseModel):
     session_id: Optional[str]
     session_name: Optional[str]
     start_time: Optional[str]
-    starting_cash: float
     total_sales: float
     total_profit_loss: float
     drinks_sold: int
@@ -217,7 +223,10 @@ async def get_prices():
         elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
         
         # Calculer le temps restant jusqu'au prochain cycle
-        remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
+        if current_refresh_interval > 0:
+            remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
+        else:
+            remaining_ms = 0  # Mode manuel, pas de temps restant
         
         return {
             "prices": prices,
@@ -283,13 +292,31 @@ async def get_diagnostic():
 async def get_refresh_interval():
     return {"interval_ms": current_refresh_interval}
 
+@app.get("/admin/config/volatility")
+async def get_volatility(admin: str = Depends(get_current_admin)):
+    """Obtenir le facteur de volatilité actuel du marché."""
+    return {"factor": market_volatility}
+
+@app.post("/admin/config/volatility")
+async def set_volatility(request: VolatilityRequest, admin: str = Depends(get_current_admin)):
+    """Définir le facteur de volatilité du marché."""
+    global market_volatility
+    # Limiter la valeur pour la sécurité, correspondant au slider
+    market_volatility = max(0.25, min(request.factor, 4.0))
+    data_manager.volatility = market_volatility
+    save_timer_state()
+    return {"status": "ok", "factor": market_volatility}
+
 @app.get("/sync/timer")
 async def get_timer_sync():
     """Endpoint pour synchroniser le timer entre tous les clients"""
     current_time = datetime.now()
     elapsed_ms = int((current_time - market_timer_start).total_seconds() * 1000)
-    remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
-    
+    if current_refresh_interval > 0:
+        remaining_ms = current_refresh_interval - (elapsed_ms % current_refresh_interval)
+    else:
+        remaining_ms = 0  # Mode manuel, pas de temps restant
+
     # Debug info pour diagnostiquer les problèmes de synchronisation
     timer_age_minutes = (current_time - market_timer_start).total_seconds() / 60
     
@@ -330,6 +357,106 @@ async def restart_universal_timer(admin: str = Depends(get_current_admin)):
         "new_timer_start": market_timer_start.isoformat(),
         "interval_ms": current_refresh_interval
     }
+
+@app.get("/admin/initial-data")
+async def get_initial_admin_data(admin: str = Depends(get_current_admin)):
+    """
+    Endpoint to provide all necessary data for the admin interface in a single call.
+    """
+    try:
+        # 1. Get all drinks info (prices, min, max, etc.)
+        all_drinks = data_manager.get_all_prices()
+
+        # 2. Get purchase history
+        history = data_manager.get_history(limit=50)
+
+        # 3. Get active happy hours
+        active_happy_hours = data_manager.get_active_happy_hours()
+
+        # 4. Get previous sessions (logic from list_previous_sessions)
+        import glob
+        import pandas as pd
+        
+        sessions = []
+        session_files = glob.glob("data/session_*.csv")
+        
+        for file_path in session_files:
+            try:
+                if not os.path.exists(file_path):
+                    continue
+                filename = os.path.basename(file_path)
+                if filename.startswith("session_session_"):
+                    timestamp_str = filename.replace("session_session_", "").replace(".csv", "")
+                    created_at = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+                else:
+                    created_at = datetime.fromtimestamp(os.path.getctime(file_path))
+                
+                df = pd.read_csv(file_path)
+                df = df.dropna(how='all').fillna(0)
+                
+                if len(df) > 0:
+                    data_rows = df[df['drink_id'] != 'SESSION_SUMMARY']
+                    summary_rows = df[df['drink_id'] == 'SESSION_SUMMARY']
+                    
+                    total_sales = data_rows['total_price'].sum()
+                    total_profit_loss = data_rows['profit_loss'].sum()
+                    total_drinks_sold = data_rows['quantity'].sum()
+                    
+                    session_name = "Session inconnue"
+                    if len(summary_rows) > 0:
+                        session_info = summary_rows.iloc[0]['drink_name']
+                        if session_info and 'Session: ' in str(session_info):
+                            session_name = str(session_info).replace('Session: ', '')
+                        elif session_info and 'Barman: ' in str(session_info):
+                             session_name = str(session_info).replace('Barman: ', '')
+                        else:
+                            session_name = str(session_info)
+
+                    duration_hours = None
+                    if len(summary_rows) > 0:
+                        try:
+                            start_str = str(summary_rows.iloc[0]['unit_price'])
+                            end_str = str(summary_rows.iloc[0]['base_price'])
+                            if start_str.startswith('Start: ') and end_str.startswith('End: '):
+                                start_time = pd.to_datetime(start_str.replace('Start: ', ''))
+                                end_time = pd.to_datetime(end_str.replace('End: ', ''))
+                                duration_hours = (end_time - start_time).total_seconds() / 3600
+                        except Exception:
+                            duration_hours = None
+                else:
+                    total_sales, total_profit_loss, total_drinks_sold, session_name, duration_hours = 0, 0, 0, "Session vide", None
+
+                sessions.append({
+                    "filename": filename,
+                    "created_at": created_at.isoformat(),
+                    "session_name": session_name,
+                    "total_sales": float(total_sales) if not pd.isna(total_sales) else 0.0,
+                    "total_profit_loss": float(total_profit_loss) if not pd.isna(total_profit_loss) else 0.0,
+                    "total_drinks_sold": int(total_drinks_sold) if not pd.isna(total_drinks_sold) else 0,
+                    "duration_hours": float(duration_hours) if duration_hours is not None and not pd.isna(duration_hours) else None
+                })
+            except Exception:
+                continue
+        
+        # 5. Get current session status
+        current_session_status = None
+        if current_session and current_session.get('is_active'):
+             current_session_status = current_session
+
+        # 6. Get volatility
+        volatility_factor = market_volatility
+
+        return {
+            "drinks": all_drinks,
+            "history": history,
+            "active_happy_hours": active_happy_hours,
+            "previous_sessions": sessions,
+            "current_session": current_session_status,
+            "volatility_factor": volatility_factor
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des données initiales: {str(e)}")
 
 @app.post("/config/interval")
 async def set_refresh_interval(request: IntervalRequest, admin: str = Depends(get_current_admin)):
@@ -450,7 +577,6 @@ async def start_session(request: SessionStartRequest, admin: str = Depends(get_c
         "session_id": session_id,
         "session_name": request.session_name,
         "start_time": datetime.now().isoformat(),
-        "starting_cash": request.starting_cash,
         "is_active": True
     }
     
@@ -474,7 +600,6 @@ async def get_current_session(admin: str = Depends(get_current_admin)):
         session_id=current_session.get('session_id'),
         session_name=current_session.get('session_name'),
         start_time=current_session.get('start_time'),
-        starting_cash=current_session.get('starting_cash', 0),
         total_sales=total_sales,
         total_profit_loss=total_profit_loss,
         drinks_sold=drinks_sold,
@@ -530,7 +655,7 @@ async def end_session(admin: str = Depends(get_current_admin)):
                 'base_price': f'End: {datetime.now().isoformat()}',
                 'total_price': total_sales,
                 'profit_loss': total_profit_loss,
-                'timestamp': f'Starting Cash: {current_session.get("starting_cash", 0)}'
+                'timestamp': '' # Anciennement 'Starting Cash'
             })
             
             # Ligne vide pour séparer
@@ -704,130 +829,73 @@ async def list_previous_sessions(admin: str = Depends(get_current_admin)):
     
     return {"sessions": sessions}
 
-@app.post("/admin/session/resume/{filename}")
+@app.post("/admin/session/resume/{filename:path}")
 async def resume_specific_session(filename: str, admin: str = Depends(get_current_admin)):
-    """Reprendre une session spécifique"""
+    """Reprendre une session spécifique à partir de son fichier CSV."""
     global current_session, session_sales
     
     import os
-    
-    # Sécurité : vérifier que le fichier existe et est valide
+    import pandas as pd
+
+    if current_session and current_session.get('is_active'):
+        raise HTTPException(status_code=409, detail="Une autre session est déjà active. Veuillez la terminer d'abord.")
+
     if not filename.endswith('.csv') or '..' in filename:
         raise HTTPException(status_code=400, detail="Nom de fichier invalide")
     
     file_path = f"data/{filename}"
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail=f"Session {filename} non trouvée. Le fichier a peut-être été supprimé.")
-    
+        raise HTTPException(status_code=404, detail=f"Session {filename} non trouvée.")
+
     try:
-        # Arrêter la session actuelle si elle existe
-        if current_session and current_session.get('is_active'):
-            current_session['is_active'] = False
-            save_session()
-        
-        # Charger les données de la session depuis le CSV
-        import pandas as pd
         df = pd.read_csv(file_path)
+        df = df.dropna(how='all').fillna(0)
         
-        # Filtrer les lignes de données réelles (ignorer les lignes de métadonnées)
-        # Les lignes valides sont celles qui n'ont pas SESSION_SUMMARY dans drink_id
-        df_sales = df[df['drink_id'] != 'SESSION_SUMMARY']
-        df_sales = df_sales.dropna(subset=['drink_id'])  # Supprimer les lignes vides
+        summary_rows = df[df['drink_id'] == 'SESSION_SUMMARY']
+        if summary_rows.empty:
+            raise HTTPException(status_code=400, detail="Fichier de session invalide (pas de résumé).")
+
+        summary = summary_rows.iloc[0]
         
-        # Extraire les informations de la session depuis la ligne SESSION_SUMMARY
-        session_info = df[df['drink_id'] == 'SESSION_SUMMARY']
-        if len(session_info) > 0:
-            session_info_name = session_info.iloc[0]['drink_name']  # Format: "Session: nom" ou "Barman: nom" (rétrocompatibilité)
-            if session_info_name and session_info_name.startswith('Session: '):
-                session_name = session_info_name.replace('Session: ', '')
-            elif session_info_name and session_info_name.startswith('Barman: '):
-                session_name = session_info_name.replace('Barman: ', '')
-            else:
-                session_name = "Session inconnue"
-            
-            start_time_info = session_info.iloc[0]['unit_price']  # Format: "Start: timestamp"
-            if start_time_info and start_time_info.startswith('Start: '):
-                try:
-                    created_at = pd.to_datetime(start_time_info.replace('Start: ', '')).to_pydatetime()
-                except:
-                    created_at = datetime.now()
-            else:
-                created_at = datetime.now()
+        session_name_info = summary['drink_name']
+        if session_name_info and 'Session: ' in str(session_name_info):
+            session_name = str(session_name_info).replace('Session: ', '')
         else:
-            session_name = "Session inconnue"
-            created_at = datetime.now()
-        
-        # Extraire l'ID de session original du nom de fichier
-        # Format: session_session_YYYYMMDD_HHMMSS.csv
-        if filename.startswith("session_session_"):
-            original_session_id = filename.replace("session_session_", "").replace(".csv", "")
+            session_name = "Session Reprise"
+
+        start_time_info = summary['unit_price']
+        if start_time_info and 'Start: ' in str(start_time_info):
+            start_time = str(start_time_info).replace('Start: ', '')
         else:
-            original_session_id = filename.replace("session_", "").replace(".csv", "")
-        
-        # Créer une session reprise basée sur les données existantes
+            start_time = datetime.now().isoformat()
+
         current_session = {
-            "session_id": f"session_{original_session_id}",  # Préfixer avec "session_"
+            "session_id": f"session_{filename.replace('.csv', '')}",
             "session_name": session_name,
-            "start_time": created_at.isoformat(),  # Utiliser start_time comme les nouvelles sessions
-            "starting_cash": 0.0,  # Par défaut
+            "start_time": start_time,
             "is_active": True,
             "resumed_from": filename
         }
+
+        sales_df = df[df['drink_id'] != 'SESSION_SUMMARY'].dropna(subset=['drink_id'])
+        sales_df['quantity'] = pd.to_numeric(sales_df['quantity'], errors='coerce').fillna(0).astype(int)
+        sales_df['unit_price'] = pd.to_numeric(sales_df['unit_price'], errors='coerce').fillna(0).astype(float)
+        sales_df['base_price'] = pd.to_numeric(sales_df['base_price'], errors='coerce').fillna(0).astype(float)
+        sales_df['total_price'] = pd.to_numeric(sales_df['total_price'], errors='coerce').fillna(0).astype(float)
+        sales_df['profit_loss'] = pd.to_numeric(sales_df['profit_loss'], errors='coerce').fillna(0).astype(float)
         
-        # Charger les ventes existantes
-        session_sales = []
-        for _, row in df.iterrows():
-            # Ignorer les lignes de résumé et les lignes vides
-            drink_id = row.get('drink_id', '')
-            drink_name = row.get('drink_name', '')
-            
-            # Vérifier que c'est une vraie vente (drink_id numérique)
-            try:
-                int(drink_id)  # Essayer de convertir en int
-                # Si ça marche, c'est une vraie vente
-                session_sales.append({
-                    "drink_id": drink_id,
-                    "drink_name": drink_name,
-                    "quantity": row.get('quantity', 0),
-                    "unit_price": row.get('unit_price', 0),
-                    "base_price": row.get('base_price', 0),
-                    "total_price": row.get('total_price', 0),
-                    "profit_loss": row.get('profit_loss', 0),
-                    "timestamp": row.get('timestamp', datetime.now().isoformat())
-                })
-            except (ValueError, TypeError):
-                # Ignorer les lignes non-numériques (SESSION_SUMMARY, lignes vides, etc.)
-                continue
+        session_sales = sales_df.to_dict('records')
         
-        # Sauvegarder la nouvelle session
         save_session()
-        
-        # Calculer la durée accumulée depuis SESSION_SUMMARY si disponible
-        accumulated_seconds = 0
-        if len(session_info) > 0:
-            try:
-                start_str = str(session_info.iloc[0]['unit_price'])  # "Start: timestamp"
-                end_str = str(session_info.iloc[0]['base_price'])    # "End: timestamp" 
-                
-                if start_str and end_str and start_str.startswith('Start: ') and end_str.startswith('End: '):
-                    start_time = pd.to_datetime(start_str.replace('Start: ', ''))
-                    end_time = pd.to_datetime(end_str.replace('End: ', ''))
-                    accumulated_seconds = int((end_time - start_time).total_seconds())
-            except Exception as e:
-                print(f"Erreur calcul durée accumulée: {e}")
-                accumulated_seconds = 0
-        
-        return {
-            "status": "resumed", 
-            "session": current_session, 
-            "sales_count": len(session_sales),
-            "accumulated_seconds": accumulated_seconds
-        }
-        
+
+        return {"status": "resumed", "session": current_session}
+
     except Exception as e:
+        current_session = None
+        session_sales = []
         raise HTTPException(status_code=500, detail=f"Erreur lors de la reprise de session: {str(e)}")
 
-@app.delete("/admin/session/delete/{filename}")
+@app.delete("/admin/session/delete/{filename:path}")
 async def delete_session(filename: str, admin: str = Depends(get_current_admin)):
     """Supprimer une session spécifique"""
     import os
@@ -846,6 +914,59 @@ async def delete_session(filename: str, admin: str = Depends(get_current_admin))
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression: {str(e)}")
+
+@app.get("/admin/session/export/{filename:path}")
+async def export_session_treasury(filename: str, admin: str = Depends(get_current_admin)):
+    """Exporter la trésorerie d'une session en CSV."""
+    import os
+    import pandas as pd
+
+    # Sécurité
+    if not filename.endswith('.csv') or '..' in filename:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide")
+    
+    file_path = f"data/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Session non trouvée")
+
+    try:
+        df = pd.read_csv(file_path)
+        
+        # Filtrer les ventes réelles
+        sales_df = df[df['drink_id'] != 'SESSION_SUMMARY'].dropna(subset=['drink_id'])
+        sales_df['quantity'] = pd.to_numeric(sales_df['quantity'], errors='coerce').fillna(0)
+        sales_df['total_price'] = pd.to_numeric(sales_df['total_price'], errors='coerce').fillna(0)
+        sales_df['profit_loss'] = pd.to_numeric(sales_df['profit_loss'], errors='coerce').fillna(0)
+
+        # Agréger les données par boisson
+        treasury_df = sales_df.groupby('drink_name').agg(
+            Quantite_Vendue=('quantity', 'sum'),
+            Chiffre_Affaires_Total=('total_price', 'sum'),
+            Profit_Perte_Total=('profit_loss', 'sum')
+        ).reset_index()
+
+        # Renommer la colonne
+        treasury_df.rename(columns={'drink_name': 'Boisson'}, inplace=True)
+
+        # Ajouter une ligne de totaux
+        total_row = pd.DataFrame({
+            'Boisson': ['TOTAL'],
+            'Quantite_Vendue': [treasury_df['Quantite_Vendue'].sum()],
+            'Chiffre_Affaires_Total': [treasury_df['Chiffre_Affaires_Total'].sum()],
+            'Profit_Perte_Total': [treasury_df['Profit_Perte_Total'].sum()]
+        })
+        
+        treasury_df = pd.concat([treasury_df, total_row], ignore_index=True)
+
+        output = io.StringIO()
+        treasury_df.to_csv(output, index=False, sep=';', encoding='utf-8-sig')
+        output.seek(0)
+
+        download_filename = f"tresorerie_{filename}"
+        return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={download_filename}"})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la génération du CSV: {str(e)}")
 
 @app.post('/crash')
 def crash():
@@ -975,6 +1096,13 @@ async def admin_clear_history(admin: str = Depends(get_current_admin)):
     data_manager.clear_history()
     return {'status': 'cleared'}
 
+@app.post("/admin/history/undo")
+async def admin_undo_transaction(admin: str = Depends(get_current_admin)):
+    undone = data_manager.undo_last_transaction()
+    if not undone:
+        raise HTTPException(status_code=404, detail="Aucune transaction à annuler")
+    return {"status": "undone", "details": undone}
+
 @app.post('/admin/market/crash')
 async def admin_trigger_crash(level: str = "medium", admin: str = Depends(get_current_admin)):
     """
@@ -1066,11 +1194,11 @@ async def admin_get_stats(admin: str = Depends(get_current_admin)):
         'market_volatility': round(max_price - min_price, 2)
     }
 
+# --- Static Files and SPA Handling ---
 client_path = os.path.join(os.path.dirname(__file__), 'client')
 if os.path.isdir(client_path):
-    # Monter les fichiers client sur /client
-    app.mount("/client", StaticFiles(directory=client_path, html=True), name="client")
-    # Monter aussi à la racine pour compatibilité
+    # This mount should be the last thing in the file. It will serve index.html for "/"
+    # and will pass requests to API routes if no file is found.
     app.mount("/", StaticFiles(directory=client_path, html=True), name="static")
 
 if __name__ == "__main__":
