@@ -133,7 +133,7 @@ app = FastAPI(title="Wall Street Bar")
 security = HTTPBasic()
 
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "wallstreet2024"
+ADMIN_PASSWORD = "admin"
 
 def get_current_admin(credentials: HTTPBasicCredentials = Depends(security)):
     is_correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
@@ -492,9 +492,11 @@ async def buy(request: Request):
         base_price = current_drink['base_price']
         
         if current_refresh_interval == 0:
+            # Mode immédiat : effet de marché complet
             updated_drink = data_manager.apply_buy(drink_id, quantity)
         else:
-            updated_drink = data_manager.apply_buy(drink_id, quantity)
+            # Mode timer : seul le prix de la boisson achetée augmente simplement
+            updated_drink = data_manager.apply_buy_simple(drink_id, quantity)
         
         # Enregistrer la vente dans la session si une session est active
         if current_session:

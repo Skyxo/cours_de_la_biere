@@ -89,7 +89,7 @@ python server.py
 ### Interface Admin
 1. Ouvrir http://localhost:8000/client/admin.html
 2. **Mot de passe par défaut** : `admin123`
-3. Gérer les bières, déclencher des événements, suivre les statistiques
+3. Gérer les bières, déclencher des événements, suivre les statistiques. Le mot de passe est `admin`
 
 ### Fonctionnalités Admin
 - ✅ Ajouter/Modifier/Supprimer des bières
@@ -140,7 +140,7 @@ cours_de_la_biere/
 ### Paramètres Serveur
 - **Port** : 8000 (modifiable dans `server.py`)
 - **Host** : 0.0.0.0 (accessible depuis le réseau)
-- **Mot de passe admin** : `admin123` (à changer en production)
+- **Mot de passe admin** : `admin` (modifiable dans `server.py`)
 
 ### Paramètres du Marché
 - **Intervalle de mise à jour** : 10 secondes (configurable)
